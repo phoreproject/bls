@@ -21,7 +21,7 @@ var B2Second, _ = NewFQ2([]*FQ{
 
 var B2 = B2First.Div(B2Second)
 
-var b12, _ = NewFQ12([]*FQ{
+var B12, _ = NewFQ12([]*FQ{
 	NewFQ(big.NewInt(3), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
@@ -119,5 +119,234 @@ func IsOnCurveFQP(pt [3]*FQP, b *FQP) (bool, error) {
 	y := pt[1]
 	z := pt[2]
 
+	y.Exp(big.NewInt(2))
+
 	return y.Exp(big.NewInt(2)).Mul(z).Sub(x.Exp(big.NewInt(3))).Equals(b.Mul(z.Exp(big.NewInt(3)))), nil
 }
+
+// DoubleFQ performs EC doubling.
+func DoubleFQ(pt [3]*FQ) [3]*FQ {
+	eight := big.NewInt(8)
+	four := big.NewInt(4)
+
+	x, y, z := pt[0], pt[1], pt[2]
+	w := x.Mul(x).Mul(NewFQ(big.NewInt(3), fieldModulus))
+	s := y.Mul(z)
+	b := x.Mul(y).Mul(s)
+	h := w.Mul(w).Sub(b.Mul(NewFQ(eight, fieldModulus)))
+	sSquared := s.Mul(s)
+	newX := NewFQ(bigTwo, fieldModulus).Mul(h).Mul(s)
+	newY := w.Mul(NewFQ(four, fieldModulus).Mul(B).Sub(h)).Sub(NewFQ(eight, fieldModulus).Mul(y).Mul(y).Mul(sSquared))
+	newZ := NewFQ(eight, fieldModulus).Mul(s).Mul(sSquared)
+	return [3]*FQ{newX, newY, newZ}
+}
+
+// DoubleFQP performs EC doubling.
+func DoubleFQP(pt [3]*FQP) [3]*FQP {
+	eight := big.NewInt(8)
+	four := big.NewInt(4)
+
+	x, y, z := pt[0], pt[1], pt[2]
+	w := x.Mul(x).MulScalar(NewFQ(big.NewInt(3), fieldModulus))
+	s := y.Mul(z)
+	b := x.Mul(y).Mul(s)
+	h := w.Mul(w).Sub(b.MulScalar(NewFQ(eight, fieldModulus)))
+	sSquared := s.Mul(s)
+	newX := h.MulScalar(NewFQ(bigTwo, fieldModulus)).Mul(s)
+	newY := w.Mul(b.MulScalar(NewFQ(four, fieldModulus)).Sub(h)).Sub(y.MulScalar(NewFQ(eight, fieldModulus)).Mul(y).Mul(sSquared))
+	newZ := s.MulScalar(NewFQ(eight, fieldModulus)).Mul(sSquared)
+	return [3]*FQP{newX, newY, newZ}
+}
+
+// AddFQ performs EC addition.
+func AddFQ(pt1 [3]*FQ, pt2 [3]*FQ) [3]*FQ {
+	one, zero := NewFQ(bigOne, fieldModulus), NewFQ(bigZero, fieldModulus)
+	two := NewFQ(bigTwo, fieldModulus)
+	if pt2[2].Equals(zero) {
+		return pt1
+	} else if pt1[2].Equals(zero) {
+		return pt2
+	}
+
+	x1, y1, z1 := pt1[0], pt1[1], pt1[2]
+	x2, y2, z2 := pt2[0], pt2[1], pt2[2]
+	u1 := y2.Mul(z1)
+	u2 := y1.Mul(z2)
+	v1 := x2.Mul(z1)
+	v2 := x1.Mul(z2)
+	if v1.Equals(v2) && u1.Equals(u2) {
+		return DoubleFQ(pt1)
+	} else if v1.Equals(v2) {
+		return [3]*FQ{one, one, zero}
+	}
+	u := u1.Sub(u2)
+	v := v1.Sub(v2)
+	vSquared := v.Mul(v)
+	vSquaredTimesV2 := vSquared.Mul(v2)
+	vCubed := vSquared.Mul(v)
+	w := z1.Mul(z2)
+	a := u.Mul(u).Mul(w).Sub(vCubed).Sub(vSquaredTimesV2.Mul(two))
+	newX := v.Mul(a)
+	newY := u.Mul(vSquaredTimesV2.Sub(a)).Sub(vCubed.Mul(u2))
+	newZ := vCubed.Mul(w)
+	return [3]*FQ{newX, newY, newZ}
+}
+
+// AddFQP performs EC addition.
+func AddFQP(pt1 [3]*FQP, pt2 [3]*FQP) [3]*FQP {
+	one, _ := FQPOne(pt1[0])
+	zero, _ := FQPZero(pt1[0])
+	two := NewFQ(bigTwo, fieldModulus)
+	if pt2[2].Equals(zero) {
+		return pt1
+	} else if pt1[2].Equals(zero) {
+		return pt2
+	}
+
+	x1, y1, z1 := pt1[0], pt1[1], pt1[2]
+	x2, y2, z2 := pt2[0], pt2[1], pt2[2]
+	u1 := y2.Mul(z1)
+	u2 := y1.Mul(z2)
+	v1 := x2.Mul(z1)
+	v2 := x1.Mul(z2)
+	if v1.Equals(v2) && u1.Equals(u2) {
+		return DoubleFQP(pt1)
+	} else if v1.Equals(v2) {
+		return [3]*FQP{one, one, zero}
+	}
+	u := u1.Sub(u2)
+	v := v1.Sub(v2)
+	vSquared := v.Mul(v)
+	vSquaredTimesV2 := vSquared.Mul(v2)
+	vCubed := vSquared.Mul(v)
+	w := z1.Mul(z2)
+	a := u.Mul(u).Mul(w).Sub(vCubed).Sub(vSquaredTimesV2.MulScalar(two))
+	newX := v.Mul(a)
+	newY := u.Mul(vSquaredTimesV2.Sub(a)).Sub(vCubed.Mul(u2))
+	newZ := vCubed.Mul(w)
+	return [3]*FQP{newX, newY, newZ}
+}
+
+// MultiplyFQ performs EC multiplication.
+func MultiplyFQ(point [3]*FQ, n *big.Int) [3]*FQ {
+	if n.Cmp(bigZero) == 0 {
+		one, zero := NewFQ(bigOne, fieldModulus), NewFQ(bigZero, fieldModulus)
+		return [3]*FQ{one, one, zero}
+	} else if n.Cmp(bigOne) == 0 {
+		return point
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) == 0 {
+		return MultiplyFQ(DoubleFQ(point), new(big.Int).Div(n, bigTwo))
+	} else {
+		return AddFQ(MultiplyFQ(DoubleFQ(point), new(big.Int).Div(n, bigTwo)), point)
+	}
+}
+
+// MultiplyFQP performs EC multiplication.
+func MultiplyFQP(point [3]*FQP, n *big.Int) [3]*FQP {
+	if n.Cmp(bigZero) == 0 {
+		one, _ := FQPOne(point[0])
+		zero, _ := FQPZero(point[0])
+		return [3]*FQP{one, one, zero}
+	} else if n.Cmp(bigOne) == 0 {
+		return point
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) == 0 {
+		return MultiplyFQP(DoubleFQP(point), new(big.Int).Div(n, bigTwo))
+	} else {
+		return AddFQP(MultiplyFQP(DoubleFQP(point), new(big.Int).Div(n, bigTwo)), point)
+	}
+}
+
+// FQPEqual checks if two points are equal?
+// TODO: update these docs. something about DDH?
+func FQPEqual(pt1 [3]*FQP, pt2 [3]*FQP) bool {
+	x1, y1, z1 := pt1[0], pt1[1], pt1[2]
+	x2, y2, z2 := pt2[0], pt2[1], pt2[2]
+	return x1.Mul(z2).Equals(x2.Mul(z1)) && y1.Mul(z2).Equals(y2.Mul(z1))
+}
+
+// FQEqual checks if two points are equal?
+// TODO: update these docs. something about DDH?
+func FQEqual(pt1 [3]*FQ, pt2 [3]*FQ) bool {
+	x1, y1, z1 := pt1[0], pt1[1], pt1[2]
+	x2, y2, z2 := pt2[0], pt2[1], pt2[2]
+	return x1.Mul(z2).Equals(x2.Mul(z1)) && y1.Mul(z2).Equals(y2.Mul(z1))
+}
+
+var w, _ = NewFQ12([]*FQ{
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigOne, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, fieldModulus),
+})
+
+// NegFQ converts P to -P
+func NegFQ(pt [3]*FQ) [3]*FQ {
+	return [3]*FQ{pt[0].Copy(), pt[1].Neg(), pt[2].Copy()}
+}
+
+// NegFQP converts P to -P
+func NegFQP(pt [3]*FQP) [3]*FQP {
+	return [3]*FQP{pt[0].Copy(), pt[1].Neg(), pt[2].Copy()}
+}
+
+// Twist twists a field from Z[p] / x**2 to Z[p] / x**2 - 18*x + 82
+func Twist(pt [3]*FQP) [3]*FQP {
+	x, y, z := pt[0], pt[1], pt[2]
+	nine := NewFQ(big.NewInt(9), fieldModulus)
+	bigThree := big.NewInt(3)
+
+	xCoeffs0 := x.elements[0].Sub(x.elements[1].Mul(nine))
+	xCoeffs1 := x.elements[1]
+	yCoeffs0 := y.elements[0].Sub(y.elements[1].Mul(nine))
+	yCoeffs1 := y.elements[1]
+	zCoeffs0 := z.elements[0].Sub(z.elements[1].Mul(nine))
+	zCoeffs1 := z.elements[1]
+
+	nxCoeffs := make([]*FQ, 12)
+	nxCoeffs[0] = xCoeffs0
+	nxCoeffs[6] = xCoeffs1
+	for i, f := range nxCoeffs {
+		if f == nil {
+			nxCoeffs[i] = NewFQ(bigZero, fieldModulus)
+		} else {
+			f.fieldModulus = fieldModulus
+		}
+	}
+	nx, _ := NewFQ12(nxCoeffs)
+
+	nyCoeffs := make([]*FQ, 12)
+	nyCoeffs[0] = yCoeffs0
+	nyCoeffs[6] = yCoeffs1
+	for i, f := range nyCoeffs {
+		if f == nil {
+			nyCoeffs[i] = NewFQ(bigZero, fieldModulus)
+		} else {
+			f.fieldModulus = fieldModulus
+		}
+	}
+	ny, _ := NewFQ12(nyCoeffs)
+
+	nzCoeffs := make([]*FQ, 12)
+	nzCoeffs[0] = zCoeffs0
+	nzCoeffs[6] = zCoeffs1
+	for i, f := range nzCoeffs {
+		if f == nil {
+			nzCoeffs[i] = NewFQ(bigZero, fieldModulus)
+		} else {
+			f.fieldModulus = fieldModulus
+		}
+	}
+	nz, _ := NewFQ12(nzCoeffs)
+
+	return [3]*FQP{nx.Mul(w.Exp(bigTwo)), ny.Mul(w.Exp(bigThree)), nz}
+}
+
+var G12 = Twist(G2)

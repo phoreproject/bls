@@ -361,10 +361,51 @@ func NewFQ2(coeffs []*FQ) (*FQP, error) {
 	return NewFQP(coeffs, modulusCoefficients, mcTuples)
 }
 
+// FQPZero gets the zero representation of an FQP of degree 2 or 12
+func FQPZero(f *FQP) (*FQP, error) {
+	if f.degree == 2 {
+		return FQ2Zero(), nil
+	} else if f.degree == 12 {
+		return FQ12Zero(), nil
+	} else {
+		return nil, errors.New("FQP is not of degree 2 or 12")
+	}
+}
+
+// FQPOne gets the one representation of an FQP of degree 2 or 12
+func FQPOne(f *FQP) (*FQP, error) {
+	if f.degree == 2 {
+		return FQ2One(), nil
+	} else if f.degree == 12 {
+		return FQ12One(), nil
+	} else {
+		return nil, errors.New("FQP is not of degree 2 or 12")
+	}
+}
+
 // FQ2One returns the 1-value FQ2
 func FQ2One() *FQP {
 	f, _ := NewFQ2([]*FQ{
 		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+	})
+	return f
+}
+
+// FQ12One returns the 1-value FQ12
+func FQ12One() *FQP {
+	f, _ := NewFQ2([]*FQ{
+		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 	})
 	return f
@@ -401,7 +442,8 @@ func FQ12Zero() *FQP {
 // NewFQ12 creates a new 12th-degree field extension.
 func NewFQ12(coeffs []*FQ) (*FQP, error) {
 	mcTuples := make(map[int]int)
-	mcTuples[0] = 1
+	mcTuples[0] = 82
+	mcTuples[6] = -18
 	if len(coeffs) != 12 {
 		return nil, errors.New("wrong number of coefficients for quadratic polynomial")
 	}

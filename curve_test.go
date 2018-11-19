@@ -18,4 +18,12 @@ func TestIsOnCurve(t *testing.T) {
 	if !onCurve {
 		t.Fatal("generator 2 is not on curve")
 	}
+
+	onCurve, err = bls.IsOnCurveFQP(bls.G12, bls.B12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !onCurve {
+		t.Fatal("generator 12 is not on curve")
+	}
 }
