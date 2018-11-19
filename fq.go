@@ -2,7 +2,6 @@ package bls
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 )
 
@@ -99,6 +98,10 @@ func (f FQ) Neg() *FQ {
 	return NewFQ(new(big.Int).Neg(f.n), f.fieldModulus)
 }
 
+func (f FQ) String() string {
+	return f.n.String()
+}
+
 // Polynomial is a polynomial with certain coefficients.
 type Polynomial []*big.Int
 
@@ -116,14 +119,21 @@ type FQP struct {
 	elements            []*FQ
 	modulusCoefficients []*big.Int
 	mcs                 map[int]int
+	degree              int
 }
 
 // NewFQP creates a new polynomial with field element coefficients.
 func NewFQP(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int) (*FQP, error) {
+	return NewFQPWithDegree(elements, modulusCoefficients, mcs, len(modulusCoefficients))
+}
+
+// NewFQPWithDegree creates a new polynomial with the specified degree.
+func NewFQPWithDegree(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int, degree int) (*FQP, error) {
 	if len(elements) == 0 {
 		return nil, errors.New("FQP cannot have 0 elements")
 	}
-	return &FQP{elements: elements, mcs: mcs, modulusCoefficients: modulusCoefficients}, nil
+	return &FQP{elements: elements, mcs: mcs, modulusCoefficients: modulusCoefficients, degree: degree}, nil
+
 }
 
 // Copy creates a copy of the FQP provided.
@@ -132,12 +142,7 @@ func (f FQP) Copy() *FQP {
 	for i, e := range f.elements {
 		newElements[i] = e.Copy()
 	}
-	return &FQP{elements: newElements}
-}
-
-// Deg gets the degree of the polynomial.
-func (f FQP) Deg() int {
-	return len(f.elements)
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // Add adds two FQp's together.
@@ -146,7 +151,7 @@ func (f FQP) Add(other *FQP) *FQP {
 	for i, e := range f.elements {
 		newElements[i] = e.Add(other.elements[i])
 	}
-	return &FQP{elements: newElements}
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // Sub subtracts one FQP from another.
@@ -155,7 +160,7 @@ func (f FQP) Sub(other *FQP) *FQP {
 	for i, e := range f.elements {
 		newElements[i] = e.Sub(other.elements[i])
 	}
-	return &FQP{elements: newElements}
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // MulScalar multiplies each element in an FQP by a scalar.
@@ -164,31 +169,31 @@ func (f FQP) MulScalar(scalar *FQ) *FQP {
 	for i, e := range f.elements {
 		newElements[i] = e.Mul(scalar)
 	}
-	return &FQP{elements: newElements}
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // Mul multiplies two polynomials together.
 func (f FQP) Mul(other *FQP) *FQP {
-	newElements := make([]*FQ, f.Deg()+other.Deg()-1)
+	newElements := make([]*FQ, f.degree*2-1)
 	for i, eli := range f.elements {
 		for j, elj := range other.elements {
 			toAdd := eli.Mul(elj)
-			fmt.Printf("i+j = %d, f.Deg() = %d, other.Deg() = %d\n", i+j, f.Deg(), other.Deg())
 			if newElements[i+j] == nil {
 				newElements[i+j] = toAdd
 			} else {
-				newElements[i+j].Add(toAdd)
+				newElements[i+j] = newElements[i+j].Add(toAdd)
 			}
 		}
 	}
 
-	for exp := f.Deg() - 2; exp > -1; exp-- {
-		top, newElements := newElements[len(newElements)-1], newElements[:len(newElements)-1]
+	for exp := f.degree - 2; exp > -1; exp-- {
+		top := newElements[len(newElements)-1]
+		newElements = newElements[:len(newElements)-1]
 		for i, c := range f.mcs {
 			newElements[exp+i] = newElements[exp+i].Sub(top.Mul(&FQ{n: big.NewInt(int64(c)), fieldModulus: fieldModulus}))
 		}
 	}
-	return &FQP{elements: newElements, mcs: f.mcs}
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // Exp exponentiates the polynomial to a power.
@@ -198,8 +203,7 @@ func (f FQP) Exp(other *big.Int) *FQP {
 			n:            big.NewInt(1),
 			fieldModulus: fieldModulus,
 		},
-	}, ZerosFQ(f.Deg()-1)...), mcs: f.mcs}
-	fmt.Println(o.Deg())
+	}, ZerosFQ(f.degree-1)...), mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 	t := &f
 	otherCopy := new(big.Int).Set(other)
 	for otherCopy.Cmp(bigZero) > 0 {
@@ -218,7 +222,7 @@ func (f FQP) DivScalar(scalar *FQ) *FQP {
 	for i, e := range f.elements {
 		newElements[i] = e.Mul(&FQ{n: primeFieldInv(scalar.n, f.elements[0].fieldModulus), fieldModulus: fieldModulus})
 	}
-	return &FQP{elements: newElements}
+	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
 
 // Div multiplies the polynomial by the inverse of the argument.
@@ -269,8 +273,8 @@ func polyRoundedDiv(a []*big.Int, b []*big.Int, mod *big.Int) []*big.Int {
 
 // Inv uses the extended euclidean algorithm to find the modular inverse.
 func (f FQP) Inv() *FQP {
-	lm := append([]*big.Int{new(big.Int).Set(bigOne)}, Zeros(f.Deg())...)
-	hm := Zeros(f.Deg() + 1)
+	lm := append([]*big.Int{new(big.Int).Set(bigOne)}, Zeros(f.degree)...)
+	hm := Zeros(f.degree + 1)
 	low := make([]*big.Int, len(f.elements)+1)
 	high := make([]*big.Int, len(f.elements)+1)
 	for i := range f.elements {
@@ -282,7 +286,7 @@ func (f FQP) Inv() *FQP {
 
 	for Polynomial(low).Deg() > 0 {
 		r := polyRoundedDiv(high, low, fieldModulus)
-		r = append(r, Zeros(f.Deg()+1-len(r))...)
+		r = append(r, Zeros(f.degree+1-len(r))...)
 		nm := make([]*big.Int, len(hm))
 		for i := range hm {
 			nm[i] = new(big.Int).Set(hm[i])
@@ -291,8 +295,8 @@ func (f FQP) Inv() *FQP {
 		for i := range high {
 			n[i] = new(big.Int).Set(high[i])
 		}
-		for i := 0; i < f.Deg()+1; i++ {
-			for j := 0; j < f.Deg()+1-i; j++ {
+		for i := 0; i < f.degree+1; i++ {
+			for j := 0; j < f.degree+1-i; j++ {
 				nm[i+j].Sub(nm[i+j], new(big.Int).Mul(lm[i], r[j]))
 				n[i+j].Sub(n[i+j], new(big.Int).Mul(low[i], r[j]))
 			}
@@ -311,7 +315,7 @@ func (f FQP) Inv() *FQP {
 		lmFQ[i] = &FQ{n: lm[i], fieldModulus: fieldModulus}
 	}
 
-	out := FQP{elements: lmFQ[:f.Deg()], mcs: f.mcs}.DivScalar(&FQ{n: low[0], fieldModulus: fieldModulus})
+	out := FQP{elements: lmFQ[:f.degree], mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}.DivScalar(&FQ{n: low[0], fieldModulus: fieldModulus})
 	return out
 }
 
@@ -334,7 +338,8 @@ func (f FQP) Neg() *FQP {
 	for i := range newElements {
 		newElements[i] = newElements[i].Neg()
 	}
-	return &FQP{elements: newElements, mcs: f.mcs}
+	newF, _ := NewFQPWithDegree(newElements, f.modulusCoefficients, f.mcs, f.degree)
+	return newF
 }
 
 func (f FQP) String() string {

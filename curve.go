@@ -9,17 +9,17 @@ var curveOrder, _ = new(big.Int).SetString("218882428718392752222464057452572750
 
 var B = NewFQ(big.NewInt(3), fieldModulus)
 
-var b2First, _ = NewFQ2([]*FQ{
+var B2First, _ = NewFQ2([]*FQ{
 	NewFQ(big.NewInt(3), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
 })
 
-var b2Second, _ = NewFQ2([]*FQ{
+var B2Second, _ = NewFQ2([]*FQ{
 	NewFQ(big.NewInt(9), fieldModulus),
 	NewFQ(big.NewInt(1), fieldModulus),
 })
 
-var B2 = b2First.Div(b2Second)
+var B2 = B2First.Div(B2Second)
 
 var b12, _ = NewFQ12([]*FQ{
 	NewFQ(big.NewInt(3), fieldModulus),
