@@ -1,37 +1,39 @@
 package bls_test
 
 import (
-	"crypto/rand"
 	"math/big"
-	"testing"
-
-	"github.com/phoreproject/bls"
 )
 
 var bigOne = big.NewInt(1)
 var oneLsh256Minus1 = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 256), bigOne)
 
-func TestAcceptance(t *testing.T) {
-	msgToSign := []byte("hello there...")
+// func TestHashToG2(t *testing.T) {
+// 	o := bls.Blake([]byte("hello there..."))
+// 	bls.HashToG2(o)
+// 	t.Fatal()
+// }
 
-	privKey, err := rand.Int(rand.Reader, oneLsh256Minus1)
-	if err != nil {
-		t.Fatal(err)
-	}
+// func TestAcceptance(t *testing.T) {
+// 	msgToSign := []byte("hello there...")
 
-	pubKey := bls.PrivToPub(privKey)
+// 	privKey, err := rand.Int(rand.Reader, oneLsh256Minus1)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
 
-	signature, err := bls.Sign(bls.Blake(msgToSign), privKey)
-	if err != nil {
-		t.Fatal(err)
-	}
+// 	pubKey := bls.PrivToPub(privKey)
 
-	valid, err := bls.Verify(bls.Blake(msgToSign), pubKey, signature)
-	if err != nil {
-		t.Fatal(err)
-	}
+// 	signature, err := bls.Sign(bls.Blake(msgToSign), privKey)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
 
-	if !valid {
-		t.Fatal("signature was not valid")
-	}
-}
+// 	valid, err := bls.Verify(bls.Blake(msgToSign), pubKey, signature)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	if !valid {
+// 		t.Fatal("signature was not valid")
+// 	}
+// }

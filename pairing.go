@@ -14,14 +14,14 @@ var pseudoBinaryEncoding = [65]int{
 	1, 0, 0, -1, 0, 0, 0, 1, 1, 0, -1, 0, 0, 1, 0, 1,
 }
 
-var finalExponentiationPower = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(fieldModulus, big.NewInt(12), nil), bigOne), curveOrder)
+var finalExponentiationPower = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(FieldModulus, big.NewInt(12), nil), bigOne), curveOrder)
 
 // LineFuncFQ creates a function representing a line between p1
 // and p2 and evaluates it at T. Returns a numerator and
 // denominator.
 func LineFuncFQ(p1 [3]*FQ, p2 [3]*FQ, t [3]*FQ) (*FQ, *FQ) {
-	zero := NewFQ(bigZero, fieldModulus)
-	three := NewFQ(big.NewInt(3), fieldModulus)
+	zero := NewFQ(bigZero, FieldModulus)
+	three := NewFQ(big.NewInt(3), FieldModulus)
 	x1, y1, z1 := p1[0], p1[1], p1[2]
 	x2, y2, z2 := p2[0], p2[1], p2[2]
 	xt, yt, zt := t[0], t[1], t[2]
@@ -33,7 +33,7 @@ func LineFuncFQ(p1 [3]*FQ, p2 [3]*FQ, t [3]*FQ) (*FQ, *FQ) {
 			mDenominator.Mul(zt).Mul(z1)
 	}
 	mNumerator = x1.Mul(x1).Mul(three)
-	mDenominator = y1.Mul(z1).Mul(NewFQ(bigTwo, fieldModulus))
+	mDenominator = y1.Mul(z1).Mul(NewFQ(bigTwo, FieldModulus))
 	return mNumerator.Mul(xt.Mul(z1).Sub(x1.Mul(zt))).Sub(mDenominator.Mul(yt.Mul(z1).Sub(y1.Mul(zt)))),
 		mDenominator.Mul(zt).Mul(z1)
 }
@@ -43,7 +43,7 @@ func LineFuncFQ(p1 [3]*FQ, p2 [3]*FQ, t [3]*FQ) (*FQ, *FQ) {
 // denominator.
 func LineFuncFQP(p1 [3]*FQP, p2 [3]*FQP, t [3]*FQP) (*FQP, *FQP) {
 	zero, _ := FQPZero(p1[0])
-	three := NewFQ(big.NewInt(3), fieldModulus)
+	three := NewFQ(big.NewInt(3), FieldModulus)
 	x1, y1, z1 := p1[0], p1[1], p1[2]
 	x2, y2, z2 := p2[0], p2[1], p2[2]
 	xt, yt, zt := t[0], t[1], t[2]
@@ -55,7 +55,7 @@ func LineFuncFQP(p1 [3]*FQP, p2 [3]*FQP, t [3]*FQP) (*FQP, *FQP) {
 			mDenominator.Mul(zt).Mul(z1)
 	}
 	mNumerator = x1.Mul(x1).MulScalar(three)
-	mDenominator = y1.Mul(z1).MulScalar(NewFQ(bigTwo, fieldModulus))
+	mDenominator = y1.Mul(z1).MulScalar(NewFQ(bigTwo, FieldModulus))
 	return mNumerator.Mul(xt.Mul(z1).Sub(x1.Mul(zt))).Sub(mDenominator.Mul(yt.Mul(z1).Sub(y1.Mul(zt)))),
 		mDenominator.Mul(zt).Mul(z1)
 }
@@ -64,17 +64,17 @@ func LineFuncFQP(p1 [3]*FQP, p2 [3]*FQP, t [3]*FQP) (*FQP, *FQP) {
 func CastFQToFQ12(i *FQ) *FQP {
 	f := NewFQ12([]*FQ{
 		i,
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
-		NewFQ(bigZero, fieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
+		NewFQ(bigZero, FieldModulus),
 	})
 	return f
 }
@@ -127,7 +127,7 @@ func MillerLoop(q [3]*FQP, p [3]*FQP, finalExponentiate bool) *FQP {
 	if r != MultiplyFQP(q, ateLoopCount) {
 		panic("r != q*ateLoopCount")
 	}
-	q1 := [3]*FQP{q[0].Exp(fieldModulus), q[1].Exp(fieldModulus), q[2].Exp(fieldModulus)}
+	q1 := [3]*FQP{q[0].Exp(FieldModulus), q[1].Exp(FieldModulus), q[2].Exp(FieldModulus)}
 	onCurve, err := IsOnCurveFQP(q1, B12)
 	if err != nil {
 		panic(err)
@@ -135,7 +135,7 @@ func MillerLoop(q [3]*FQP, p [3]*FQP, finalExponentiate bool) *FQP {
 	if !onCurve {
 		panic("q1 is not on b12")
 	}
-	nQ2 := [3]*FQP{q1[0].Exp(fieldModulus), q1[1].Exp(fieldModulus).Neg(), q1[2].Exp(fieldModulus)}
+	nQ2 := [3]*FQP{q1[0].Exp(FieldModulus), q1[1].Exp(FieldModulus).Neg(), q1[2].Exp(FieldModulus)}
 	onCurve, err = IsOnCurveFQP(nQ2, B12)
 	if err != nil {
 		panic(err)
@@ -169,7 +169,7 @@ func Pairing(q [3]*FQP, p [3]*FQ, finalExponentiate bool) (*FQP, error) {
 
 	qZero, _ := FQPZero(q[2])
 
-	if p[2].Equals(NewFQ(bigZero, fieldModulus)) || q[2].Equals(qZero) {
+	if p[2].Equals(NewFQ(bigZero, FieldModulus)) || q[2].Equals(qZero) {
 		return FQ12One(), nil
 	}
 	return MillerLoop(Twist(q), CastPointToFQ12(p), finalExponentiate), nil

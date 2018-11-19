@@ -15,7 +15,7 @@ var bigZero = big.NewInt(0)
 var bigOne = big.NewInt(1)
 var bigTwo = big.NewInt(2)
 
-var fieldModulus, _ = new(big.Int).SetString("21888242871839275222246405745257275088696311157297823662689037894645226208583", 10)
+var FieldModulus, _ = new(big.Int).SetString("21888242871839275222246405745257275088696311157297823662689037894645226208583", 10)
 
 func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 	if a.Cmp(bigZero) == 0 {
@@ -184,7 +184,7 @@ func (f FQP) Mul(other *FQP) *FQP {
 		top := newElements[len(newElements)-1]
 		newElements = newElements[:len(newElements)-1]
 		for i, c := range f.mcs {
-			newElements[exp+i] = newElements[exp+i].Sub(top.Mul(&FQ{n: big.NewInt(int64(c)), fieldModulus: fieldModulus}))
+			newElements[exp+i] = newElements[exp+i].Sub(top.Mul(&FQ{n: big.NewInt(int64(c)), fieldModulus: FieldModulus}))
 		}
 	}
 	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
@@ -195,7 +195,7 @@ func (f FQP) Exp(other *big.Int) *FQP {
 	o := &FQP{elements: append([]*FQ{
 		{
 			n:            big.NewInt(1),
-			fieldModulus: fieldModulus,
+			fieldModulus: FieldModulus,
 		},
 	}, ZerosFQ(f.degree-1)...), mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 	t := &f
@@ -214,7 +214,7 @@ func (f FQP) Exp(other *big.Int) *FQP {
 func (f FQP) DivScalar(scalar *FQ) *FQP {
 	newElements := make([]*FQ, len(f.elements))
 	for i, e := range f.elements {
-		newElements[i] = e.Mul(&FQ{n: primeFieldInv(scalar.n, f.elements[0].fieldModulus), fieldModulus: fieldModulus})
+		newElements[i] = e.Mul(&FQ{n: primeFieldInv(scalar.n, f.elements[0].fieldModulus), fieldModulus: FieldModulus})
 	}
 	return &FQP{elements: newElements, mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}
 }
@@ -237,7 +237,7 @@ func Zeros(num int) []*big.Int {
 func ZerosFQ(num int) []*FQ {
 	out := make([]*FQ, num)
 	for i := 0; i < num; i++ {
-		out[i] = &FQ{n: new(big.Int).Set(bigZero), fieldModulus: fieldModulus}
+		out[i] = &FQ{n: new(big.Int).Set(bigZero), fieldModulus: FieldModulus}
 	}
 	return out
 }
@@ -279,7 +279,7 @@ func (f FQP) Inv() *FQP {
 	low[len(low)-1] = new(big.Int).Set(bigZero)
 
 	for Polynomial(low).Deg() > 0 {
-		r := polyRoundedDiv(high, low, fieldModulus)
+		r := polyRoundedDiv(high, low, FieldModulus)
 		r = append(r, Zeros(f.degree+1-len(r))...)
 		nm := make([]*big.Int, len(hm))
 		for i := range hm {
@@ -296,20 +296,20 @@ func (f FQP) Inv() *FQP {
 			}
 		}
 		for i := range nm {
-			nm[i].Mod(nm[i], fieldModulus)
+			nm[i].Mod(nm[i], FieldModulus)
 		}
 		for i := range n {
-			n[i].Mod(n[i], fieldModulus)
+			n[i].Mod(n[i], FieldModulus)
 		}
 		lm, low, hm, high = nm, n, lm, low
 	}
 
 	lmFQ := make([]*FQ, len(lm))
 	for i := range lmFQ {
-		lmFQ[i] = &FQ{n: lm[i], fieldModulus: fieldModulus}
+		lmFQ[i] = &FQ{n: lm[i], fieldModulus: FieldModulus}
 	}
 
-	out := FQP{elements: lmFQ[:f.degree], mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}.DivScalar(&FQ{n: low[0], fieldModulus: fieldModulus})
+	out := FQP{elements: lmFQ[:f.degree], mcs: f.mcs, modulusCoefficients: f.modulusCoefficients, degree: f.degree}.DivScalar(&FQ{n: low[0], fieldModulus: FieldModulus})
 	return out
 }
 
@@ -380,8 +380,8 @@ func FQPOne(f *FQP) (*FQP, error) {
 // FQ2One returns the 1-value FQ2
 func FQ2One() *FQP {
 	f := NewFQ2([]*FQ{
-		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(1), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 	})
 	return f
 }
@@ -389,18 +389,18 @@ func FQ2One() *FQP {
 // FQ12One returns the 1-value FQ12
 func FQ12One() *FQP {
 	f := NewFQ2([]*FQ{
-		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(1), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 	})
 	return f
 }
@@ -408,8 +408,8 @@ func FQ12One() *FQP {
 // FQ2Zero returns the 0-value FQ2
 func FQ2Zero() *FQP {
 	f := NewFQ2([]*FQ{
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 	})
 	return f
 }
@@ -417,18 +417,18 @@ func FQ2Zero() *FQP {
 // FQ12Zero returns the 0-value FQ12
 func FQ12Zero() *FQP {
 	f := NewFQ12([]*FQ{
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
-		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 	})
 	return f
 }

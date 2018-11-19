@@ -11,8 +11,8 @@ var hexRootX, _ = new(big.Int).SetString("21573744529824266246521972077326577680
 var hexRootY, _ = new(big.Int).SetString("16854739155576650954933913186877292401521110422362946064090026408937773542853", 10)
 
 var hexRoot = NewFQ2([]*FQ{
-	NewFQ(hexRootX, fieldModulus),
-	NewFQ(hexRootY, fieldModulus),
+	NewFQ(hexRootX, FieldModulus),
+	NewFQ(hexRootY, FieldModulus),
 })
 
 var oneLsh255 = new(big.Int).Lsh(bigOne, 255)
@@ -27,23 +27,23 @@ func CompressG1(pt [3]*FQ) *big.Int {
 func DecompressG1(pt *big.Int) [3]*FQ {
 	if pt.Cmp(bigZero) == 0 {
 		return [3]*FQ{
-			NewFQ(bigOne, fieldModulus),
-			NewFQ(bigOne, fieldModulus),
-			NewFQ(bigZero, fieldModulus),
+			NewFQ(bigOne, FieldModulus),
+			NewFQ(bigOne, FieldModulus),
+			NewFQ(bigZero, FieldModulus),
 		}
 	}
 	x := new(big.Int).Mod(pt, oneLsh255)
 	yMod2 := new(big.Int).Div(pt, oneLsh255)
-	yBase := new(big.Int).Mod(new(big.Int).Add(new(big.Int).Exp(x, big.NewInt(3), nil), B.n), fieldModulus)
-	yPow := new(big.Int).Div(new(big.Int).Add(fieldModulus, bigOne), big.NewInt(4))
-	y := new(big.Int).Exp(yBase, yPow, fieldModulus)
+	yBase := new(big.Int).Mod(new(big.Int).Add(new(big.Int).Exp(x, big.NewInt(3), nil), B.n), FieldModulus)
+	yPow := new(big.Int).Div(new(big.Int).Add(FieldModulus, bigOne), big.NewInt(4))
+	y := new(big.Int).Exp(yBase, yPow, FieldModulus)
 	if new(big.Int).Mod(y, bigTwo).Cmp(yMod2) != 0 {
-		y = new(big.Int).Sub(fieldModulus, y)
+		y = new(big.Int).Sub(FieldModulus, y)
 	}
 	return [3]*FQ{
-		NewFQ(x, fieldModulus),
-		NewFQ(y, fieldModulus),
-		NewFQ(bigOne, fieldModulus),
+		NewFQ(x, FieldModulus),
+		NewFQ(y, FieldModulus),
+		NewFQ(bigOne, FieldModulus),
 	}
 }
 
@@ -64,7 +64,7 @@ func CompressG2(pt [3]*FQP) ([2]*big.Int, error) {
 	return [2]*big.Int{xPart, x.elements[1].n}, nil
 }
 
-var sqrtFQ2Exponent = new(big.Int).Div(new(big.Int).Add(new(big.Int).Exp(fieldModulus, bigTwo, nil), big.NewInt(15)), big.NewInt(32))
+var sqrtFQ2Exponent = new(big.Int).Div(new(big.Int).Add(new(big.Int).Exp(FieldModulus, bigTwo, nil), big.NewInt(15)), big.NewInt(32))
 
 // SqrtFQ2 square-roots an FQ2 element.
 func SqrtFQ2(x *FQP) *FQP {
@@ -82,8 +82,8 @@ func DecompressG2(compressed [2]*big.Int) ([3]*FQP, error) {
 	y1Mod2 := new(big.Int).Div(compressed[0], oneLsh255)
 	x2 := compressed[1]
 	x := NewFQ2([]*FQ{
-		NewFQ(x1, fieldModulus),
-		NewFQ(x2, fieldModulus),
+		NewFQ(x1, FieldModulus),
+		NewFQ(x2, FieldModulus),
 	})
 	if x.Equals(FQ2Zero()) {
 		return [3]*FQP{
@@ -94,7 +94,7 @@ func DecompressG2(compressed [2]*big.Int) ([3]*FQP, error) {
 	}
 	y := SqrtFQ2(x.Exp(big.NewInt(3)).Add(B2))
 	if new(big.Int).Mod(y.elements[0].n, bigTwo).Cmp(y1Mod2) != 0 {
-		y = y.MulScalar(NewFQ(big.NewInt(-1), fieldModulus))
+		y = y.MulScalar(NewFQ(big.NewInt(-1), FieldModulus))
 	}
 	out := [3]*FQP{
 		x,
@@ -113,10 +113,13 @@ func DecompressG2(compressed [2]*big.Int) ([3]*FQP, error) {
 
 // Blake calculates the blake2b hash of the given bytes.
 func Blake(x []byte) Hash {
-	return Hash(blake2b.Sum256(x))
+	var out Hash
+	o := blake2b.Sum512(x)
+	copy(out[:], o[:32])
+	return Hash(out)
 }
 
-var hashToG2Exponent = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(fieldModulus, bigTwo, nil), bigOne), bigTwo)
+var hashToG2Exponent = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(FieldModulus, bigTwo, nil), bigOne), bigTwo)
 
 // HashToG2 converts a 256-bit hash into a point on G2.
 func HashToG2(m Hash) [3]*FQP {
@@ -128,11 +131,11 @@ func HashToG2(m Hash) [3]*FQP {
 	for {
 		k1 := Blake(k2[:])
 		k2 := Blake(k1[:])
-		x1 := new(big.Int).SetBytes(k1[:])
-		x2 := new(big.Int).SetBytes(k2[:])
+		x1 := new(big.Int).Mod(new(big.Int).SetBytes(k1[:]), FieldModulus)
+		x2 := new(big.Int).Mod(new(big.Int).SetBytes(k2[:]), FieldModulus)
 		x = NewFQ2([]*FQ{
-			NewFQ(x1, fieldModulus),
-			NewFQ(x2, fieldModulus),
+			NewFQ(x1, FieldModulus),
+			NewFQ(x2, FieldModulus),
 		})
 		xcb = x.Exp(big.NewInt(3)).Add(B2)
 		if xcb.Exp(hashToG2Exponent).Equals(one) {
@@ -145,7 +148,7 @@ func HashToG2(m Hash) [3]*FQP {
 		y,
 		FQ2One(),
 	}
-	mulFactor := new(big.Int).Sub(new(big.Int).Mul(bigTwo, fieldModulus), curveOrder)
+	mulFactor := new(big.Int).Sub(new(big.Int).Mul(bigTwo, FieldModulus), curveOrder)
 	o := MultiplyFQP(originalPoint, mulFactor)
 	return o
 }

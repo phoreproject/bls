@@ -7,39 +7,43 @@ import (
 
 var curveOrder, _ = new(big.Int).SetString("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10)
 
-var B = NewFQ(big.NewInt(3), fieldModulus)
+// B is the first field.
+var B = NewFQ(big.NewInt(3), FieldModulus)
 
-var B2First = NewFQ2([]*FQ{
-	NewFQ(big.NewInt(3), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
+var b2First = NewFQ2([]*FQ{
+	NewFQ(big.NewInt(3), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
 })
 
-var B2Second = NewFQ2([]*FQ{
-	NewFQ(big.NewInt(9), fieldModulus),
-	NewFQ(big.NewInt(1), fieldModulus),
+var b2Second = NewFQ2([]*FQ{
+	NewFQ(big.NewInt(9), FieldModulus),
+	NewFQ(big.NewInt(1), FieldModulus),
 })
 
-var B2 = B2First.Div(B2Second)
+// B2 is the quadratic field extension of B.
+var B2 = b2First.Div(b2Second)
 
+// B12 is the 12th-degree field extension of B.
 var B12 = NewFQ12([]*FQ{
-	NewFQ(big.NewInt(3), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
-	NewFQ(big.NewInt(0), fieldModulus),
+	NewFQ(big.NewInt(3), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
+	NewFQ(big.NewInt(0), FieldModulus),
 })
 
+// G1 is the B1 generator point.
 var G1 = [3]*FQ{
-	NewFQ(big.NewInt(1), fieldModulus),
-	NewFQ(big.NewInt(2), fieldModulus),
-	NewFQ(big.NewInt(1), fieldModulus),
+	NewFQ(big.NewInt(1), FieldModulus),
+	NewFQ(big.NewInt(2), FieldModulus),
+	NewFQ(big.NewInt(1), FieldModulus),
 }
 
 var g211, _ = new(big.Int).SetString("10857046999023057135944570762232829481370756359578518086990519993285655852781", 10)
@@ -48,15 +52,16 @@ var g221, _ = new(big.Int).SetString("849565392312343141760497324748927243841819
 var g222, _ = new(big.Int).SetString("4082367875863433681332203403145435568316851327593401208105741076214120093531", 10)
 
 var g21 = NewFQ2([]*FQ{
-	NewFQ(g211, fieldModulus),
-	NewFQ(g212, fieldModulus),
+	NewFQ(g211, FieldModulus),
+	NewFQ(g212, FieldModulus),
 })
 
 var g22 = NewFQ2([]*FQ{
-	NewFQ(g221, fieldModulus),
-	NewFQ(g222, fieldModulus),
+	NewFQ(g221, FieldModulus),
+	NewFQ(g222, FieldModulus),
 })
 
+// G2 is the B2 generator point.
 var G2 = [3]*FQP{
 	g21,
 	g22,
@@ -130,14 +135,14 @@ func DoubleFQ(pt [3]*FQ) [3]*FQ {
 	four := big.NewInt(4)
 
 	x, y, z := pt[0], pt[1], pt[2]
-	w := x.Mul(x).Mul(NewFQ(big.NewInt(3), fieldModulus))
+	w := x.Mul(x).Mul(NewFQ(big.NewInt(3), FieldModulus))
 	s := y.Mul(z)
 	b := x.Mul(y).Mul(s)
-	h := w.Mul(w).Sub(b.Mul(NewFQ(eight, fieldModulus)))
+	h := w.Mul(w).Sub(b.Mul(NewFQ(eight, FieldModulus)))
 	sSquared := s.Mul(s)
-	newX := NewFQ(bigTwo, fieldModulus).Mul(h).Mul(s)
-	newY := w.Mul(NewFQ(four, fieldModulus).Mul(B).Sub(h)).Sub(NewFQ(eight, fieldModulus).Mul(y).Mul(y).Mul(sSquared))
-	newZ := NewFQ(eight, fieldModulus).Mul(s).Mul(sSquared)
+	newX := NewFQ(bigTwo, FieldModulus).Mul(h).Mul(s)
+	newY := w.Mul(NewFQ(four, FieldModulus).Mul(b).Sub(h)).Sub(NewFQ(eight, FieldModulus).Mul(y).Mul(y).Mul(sSquared))
+	newZ := NewFQ(eight, FieldModulus).Mul(s).Mul(sSquared)
 	return [3]*FQ{newX, newY, newZ}
 }
 
@@ -147,21 +152,21 @@ func DoubleFQP(pt [3]*FQP) [3]*FQP {
 	four := big.NewInt(4)
 
 	x, y, z := pt[0], pt[1], pt[2]
-	w := x.Mul(x).MulScalar(NewFQ(big.NewInt(3), fieldModulus))
+	w := x.Mul(x).MulScalar(NewFQ(big.NewInt(3), FieldModulus))
 	s := y.Mul(z)
 	b := x.Mul(y).Mul(s)
-	h := w.Mul(w).Sub(b.MulScalar(NewFQ(eight, fieldModulus)))
+	h := w.Mul(w).Sub(b.MulScalar(NewFQ(eight, FieldModulus)))
 	sSquared := s.Mul(s)
-	newX := h.MulScalar(NewFQ(bigTwo, fieldModulus)).Mul(s)
-	newY := w.Mul(b.MulScalar(NewFQ(four, fieldModulus)).Sub(h)).Sub(y.MulScalar(NewFQ(eight, fieldModulus)).Mul(y).Mul(sSquared))
-	newZ := s.MulScalar(NewFQ(eight, fieldModulus)).Mul(sSquared)
+	newX := h.MulScalar(NewFQ(bigTwo, FieldModulus)).Mul(s)
+	newY := w.Mul(b.MulScalar(NewFQ(four, FieldModulus)).Sub(h)).Sub(y.MulScalar(NewFQ(eight, FieldModulus)).Mul(y).Mul(sSquared))
+	newZ := s.MulScalar(NewFQ(eight, FieldModulus)).Mul(sSquared)
 	return [3]*FQP{newX, newY, newZ}
 }
 
 // AddFQ performs EC addition.
 func AddFQ(pt1 [3]*FQ, pt2 [3]*FQ) [3]*FQ {
-	one, zero := NewFQ(bigOne, fieldModulus), NewFQ(bigZero, fieldModulus)
-	two := NewFQ(bigTwo, fieldModulus)
+	one, zero := NewFQ(bigOne, FieldModulus), NewFQ(bigZero, FieldModulus)
+	two := NewFQ(bigTwo, FieldModulus)
 	if pt2[2].Equals(zero) {
 		return pt1
 	} else if pt1[2].Equals(zero) {
@@ -196,7 +201,7 @@ func AddFQ(pt1 [3]*FQ, pt2 [3]*FQ) [3]*FQ {
 func AddFQP(pt1 [3]*FQP, pt2 [3]*FQP) [3]*FQP {
 	one, _ := FQPOne(pt1[0])
 	zero, _ := FQPZero(pt1[0])
-	two := NewFQ(bigTwo, fieldModulus)
+	two := NewFQ(bigTwo, FieldModulus)
 	if pt2[2].Equals(zero) {
 		return pt1
 	} else if pt1[2].Equals(zero) {
@@ -230,14 +235,14 @@ func AddFQP(pt1 [3]*FQP, pt2 [3]*FQP) [3]*FQP {
 // MultiplyFQ performs EC multiplication.
 func MultiplyFQ(point [3]*FQ, n *big.Int) [3]*FQ {
 	if n.Cmp(bigZero) == 0 {
-		one, zero := NewFQ(bigOne, fieldModulus), NewFQ(bigZero, fieldModulus)
+		one, zero := NewFQ(bigOne, FieldModulus), NewFQ(bigZero, FieldModulus)
 		return [3]*FQ{one, one, zero}
 	} else if n.Cmp(bigOne) == 0 {
 		return point
-	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) == 0 {
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) != 0 {
 		return MultiplyFQ(DoubleFQ(point), new(big.Int).Div(n, bigTwo))
 	} else {
-		return AddFQ(MultiplyFQ(DoubleFQ(point), new(big.Int).Div(n, bigTwo)), point)
+		return AddFQ(MultiplyFQ(DoubleFQ(point), new(big.Int).Rsh(n, 1)), point)
 	}
 }
 
@@ -249,10 +254,10 @@ func MultiplyFQP(point [3]*FQP, n *big.Int) [3]*FQP {
 		return [3]*FQP{one, one, zero}
 	} else if n.Cmp(bigOne) == 0 {
 		return point
-	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) == 0 {
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigOne) != 0 {
 		return MultiplyFQP(DoubleFQP(point), new(big.Int).Div(n, bigTwo))
 	} else {
-		return AddFQP(MultiplyFQP(DoubleFQP(point), new(big.Int).Div(n, bigTwo)), point)
+		return AddFQP(MultiplyFQP(DoubleFQP(point), new(big.Int).Rsh(n, 1)), point)
 	}
 }
 
@@ -273,18 +278,18 @@ func FQEqual(pt1 [3]*FQ, pt2 [3]*FQ) bool {
 }
 
 var w = NewFQ12([]*FQ{
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigOne, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
-	NewFQ(bigZero, fieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigOne, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
+	NewFQ(bigZero, FieldModulus),
 })
 
 // NegFQ converts P to -P
@@ -300,7 +305,7 @@ func NegFQP(pt [3]*FQP) [3]*FQP {
 // Twist twists a field from Z[p] / x**2 to Z[p] / x**2 - 18*x + 82
 func Twist(pt [3]*FQP) [3]*FQP {
 	x, y, z := pt[0], pt[1], pt[2]
-	nine := NewFQ(big.NewInt(9), fieldModulus)
+	nine := NewFQ(big.NewInt(9), FieldModulus)
 	bigThree := big.NewInt(3)
 
 	xCoeffs0 := x.elements[0].Sub(x.elements[1].Mul(nine))
@@ -315,9 +320,9 @@ func Twist(pt [3]*FQP) [3]*FQP {
 	nxCoeffs[6] = xCoeffs1
 	for i, f := range nxCoeffs {
 		if f == nil {
-			nxCoeffs[i] = NewFQ(bigZero, fieldModulus)
+			nxCoeffs[i] = NewFQ(bigZero, FieldModulus)
 		} else {
-			f.fieldModulus = fieldModulus
+			f.fieldModulus = FieldModulus
 		}
 	}
 	nx := NewFQ12(nxCoeffs)
@@ -327,9 +332,9 @@ func Twist(pt [3]*FQP) [3]*FQP {
 	nyCoeffs[6] = yCoeffs1
 	for i, f := range nyCoeffs {
 		if f == nil {
-			nyCoeffs[i] = NewFQ(bigZero, fieldModulus)
+			nyCoeffs[i] = NewFQ(bigZero, FieldModulus)
 		} else {
-			f.fieldModulus = fieldModulus
+			f.fieldModulus = FieldModulus
 		}
 	}
 	ny := NewFQ12(nyCoeffs)
@@ -339,9 +344,9 @@ func Twist(pt [3]*FQP) [3]*FQP {
 	nzCoeffs[6] = zCoeffs1
 	for i, f := range nzCoeffs {
 		if f == nil {
-			nzCoeffs[i] = NewFQ(bigZero, fieldModulus)
+			nzCoeffs[i] = NewFQ(bigZero, FieldModulus)
 		} else {
-			f.fieldModulus = fieldModulus
+			f.fieldModulus = FieldModulus
 		}
 	}
 	nz := NewFQ12(nzCoeffs)
@@ -349,4 +354,5 @@ func Twist(pt [3]*FQP) [3]*FQP {
 	return [3]*FQP{nx.Mul(w.Exp(bigTwo)), ny.Mul(w.Exp(bigThree)), nz}
 }
 
+// G12 is the B12 generator point.
 var G12 = Twist(G2)
