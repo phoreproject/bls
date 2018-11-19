@@ -388,7 +388,7 @@ func FQ2One() *FQP {
 
 // FQ12One returns the 1-value FQ12
 func FQ12One() *FQP {
-	f := NewFQ2([]*FQ{
+	f := NewFQ12([]*FQ{
 		&FQ{n: big.NewInt(1), fieldModulus: FieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
