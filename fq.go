@@ -29,10 +29,7 @@ func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 		r := new(big.Int).Div(high, low)
 		nm := new(big.Int).Sub(hm, new(big.Int).Mul(lm, r))
 		new := new(big.Int).Sub(high, new(big.Int).Mul(low, r))
-		lm = nm
-		low = new
-		hm = lm
-		high = low
+		lm, low, hm, high = nm, new, lm, low
 	}
 	return new(big.Int).Mod(lm, n)
 }
@@ -358,8 +355,8 @@ func NewFQ2(coeffs []*FQ) (*FQP, error) {
 		return nil, errors.New("wrong number of coefficients for quadratic polynomial")
 	}
 	modulusCoefficients := []*big.Int{
-		big.NewInt(0),
 		big.NewInt(1),
+		big.NewInt(0),
 	}
 	return NewFQP(coeffs, modulusCoefficients, mcTuples)
 }
