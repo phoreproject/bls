@@ -116,7 +116,7 @@ func Blake(x []byte) Hash {
 	return Hash(blake2b.Sum256(x))
 }
 
-var hashToG2Exponent = new(big.Int).Div(new(big.Int).Add(new(big.Int).Exp(fieldModulus, bigTwo, nil), bigOne), bigTwo)
+var hashToG2Exponent = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(fieldModulus, bigTwo, nil), bigOne), bigTwo)
 
 // HashToG2 converts a 256-bit hash into a point on G2.
 func HashToG2(m Hash) [3]*FQP {
