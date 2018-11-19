@@ -2,6 +2,7 @@ package bls
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 )
 
@@ -168,10 +169,11 @@ func (f FQP) MulScalar(scalar *FQ) *FQP {
 
 // Mul multiplies two polynomials together.
 func (f FQP) Mul(other *FQP) *FQP {
-	newElements := make([]*FQ, f.Deg()*2-1)
+	newElements := make([]*FQ, f.Deg()+other.Deg()-1)
 	for i, eli := range f.elements {
 		for j, elj := range other.elements {
 			toAdd := eli.Mul(elj)
+			fmt.Printf("i+j = %d, f.Deg() = %d, other.Deg() = %d\n", i+j, f.Deg(), other.Deg())
 			if newElements[i+j] == nil {
 				newElements[i+j] = toAdd
 			} else {
@@ -183,17 +185,38 @@ func (f FQP) Mul(other *FQP) *FQP {
 	for exp := f.Deg() - 2; exp > -1; exp-- {
 		top, newElements := newElements[len(newElements)-1], newElements[:len(newElements)-1]
 		for i, c := range f.mcs {
-			newElements[exp+i] = newElements[exp+i].Sub(top.Mul(&FQ{n: big.NewInt(int64(c))}))
+			newElements[exp+i] = newElements[exp+i].Sub(top.Mul(&FQ{n: big.NewInt(int64(c)), fieldModulus: fieldModulus}))
 		}
 	}
 	return &FQP{elements: newElements, mcs: f.mcs}
+}
+
+// Exp exponentiates the polynomial to a power.
+func (f FQP) Exp(other *big.Int) *FQP {
+	o := &FQP{elements: append([]*FQ{
+		{
+			n:            big.NewInt(1),
+			fieldModulus: fieldModulus,
+		},
+	}, ZerosFQ(f.Deg()-1)...), mcs: f.mcs}
+	fmt.Println(o.Deg())
+	t := &f
+	otherCopy := new(big.Int).Set(other)
+	for otherCopy.Cmp(bigZero) > 0 {
+		if new(big.Int).And(otherCopy, bigOne).Cmp(bigZero) > 0 {
+			o = o.Mul(t) // t.Deg() = 3 o.Deg() = 2
+		}
+		otherCopy.Rsh(otherCopy, 1)
+		t = t.Mul(t)
+	}
+	return o
 }
 
 // DivScalar multiplies each element by the prime field inverse of the scalar.
 func (f FQP) DivScalar(scalar *FQ) *FQP {
 	newElements := make([]*FQ, len(f.elements))
 	for i, e := range f.elements {
-		newElements[i] = e.Mul(&FQ{n: primeFieldInv(scalar.n, f.elements[0].fieldModulus)})
+		newElements[i] = e.Mul(&FQ{n: primeFieldInv(scalar.n, f.elements[0].fieldModulus), fieldModulus: fieldModulus})
 	}
 	return &FQP{elements: newElements}
 }
@@ -203,11 +226,20 @@ func (f FQP) Div(other *FQP) *FQP {
 	return f.Mul(other.Inv())
 }
 
-// Zeros puts a bunch of FQ zeros in an array.
+// Zeros puts a bunch of big.Int zeros in an array.
 func Zeros(num int) []*big.Int {
 	out := make([]*big.Int, num)
 	for i := 0; i < num; i++ {
 		out[i] = new(big.Int).Set(bigZero)
+	}
+	return out
+}
+
+// ZerosFQ puts a bunch of FQ zeros in an array.
+func ZerosFQ(num int) []*FQ {
+	out := make([]*FQ, num)
+	for i := 0; i < num; i++ {
+		out[i] = &FQ{n: new(big.Int).Set(bigZero), fieldModulus: fieldModulus}
 	}
 	return out
 }
@@ -279,7 +311,7 @@ func (f FQP) Inv() *FQP {
 		lmFQ[i] = &FQ{n: lm[i], fieldModulus: fieldModulus}
 	}
 
-	out := FQP{elements: lmFQ[:f.Deg()], mcs: f.mcs}.DivScalar(&FQ{n: low[0]})
+	out := FQP{elements: lmFQ[:f.Deg()], mcs: f.mcs}.DivScalar(&FQ{n: low[0], fieldModulus: fieldModulus})
 	return out
 }
 
@@ -325,6 +357,43 @@ func NewFQ2(coeffs []*FQ) (*FQP, error) {
 		big.NewInt(1),
 	}
 	return NewFQP(coeffs, modulusCoefficients, mcTuples)
+}
+
+// FQ2One returns the 1-value FQ2
+func FQ2One() *FQP {
+	f, _ := NewFQ2([]*FQ{
+		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+	})
+	return f
+}
+
+// FQ2Zero returns the 0-value FQ2
+func FQ2Zero() *FQP {
+	f, _ := NewFQ2([]*FQ{
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+	})
+	return f
+}
+
+// FQ12Zero returns the 0-value FQ12
+func FQ12Zero() *FQP {
+	f, _ := NewFQ12([]*FQ{
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
+	})
+	return f
 }
 
 // NewFQ12 creates a new 12th-degree field extension.
