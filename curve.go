@@ -9,19 +9,19 @@ var curveOrder, _ = new(big.Int).SetString("218882428718392752222464057452572750
 
 var B = NewFQ(big.NewInt(3), fieldModulus)
 
-var B2First, _ = NewFQ2([]*FQ{
+var B2First = NewFQ2([]*FQ{
 	NewFQ(big.NewInt(3), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
 })
 
-var B2Second, _ = NewFQ2([]*FQ{
+var B2Second = NewFQ2([]*FQ{
 	NewFQ(big.NewInt(9), fieldModulus),
 	NewFQ(big.NewInt(1), fieldModulus),
 })
 
 var B2 = B2First.Div(B2Second)
 
-var B12, _ = NewFQ12([]*FQ{
+var B12 = NewFQ12([]*FQ{
 	NewFQ(big.NewInt(3), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
 	NewFQ(big.NewInt(0), fieldModulus),
@@ -47,12 +47,12 @@ var g212, _ = new(big.Int).SetString("115597320329863871079910040213922857839258
 var g221, _ = new(big.Int).SetString("8495653923123431417604973247489272438418190587263600148770280649306958101930", 10)
 var g222, _ = new(big.Int).SetString("4082367875863433681332203403145435568316851327593401208105741076214120093531", 10)
 
-var g21, _ = NewFQ2([]*FQ{
+var g21 = NewFQ2([]*FQ{
 	NewFQ(g211, fieldModulus),
 	NewFQ(g212, fieldModulus),
 })
 
-var g22, _ = NewFQ2([]*FQ{
+var g22 = NewFQ2([]*FQ{
 	NewFQ(g221, fieldModulus),
 	NewFQ(g222, fieldModulus),
 })
@@ -272,7 +272,7 @@ func FQEqual(pt1 [3]*FQ, pt2 [3]*FQ) bool {
 	return x1.Mul(z2).Equals(x2.Mul(z1)) && y1.Mul(z2).Equals(y2.Mul(z1))
 }
 
-var w, _ = NewFQ12([]*FQ{
+var w = NewFQ12([]*FQ{
 	NewFQ(bigZero, fieldModulus),
 	NewFQ(bigOne, fieldModulus),
 	NewFQ(bigZero, fieldModulus),
@@ -320,7 +320,7 @@ func Twist(pt [3]*FQP) [3]*FQP {
 			f.fieldModulus = fieldModulus
 		}
 	}
-	nx, _ := NewFQ12(nxCoeffs)
+	nx := NewFQ12(nxCoeffs)
 
 	nyCoeffs := make([]*FQ, 12)
 	nyCoeffs[0] = yCoeffs0
@@ -332,7 +332,7 @@ func Twist(pt [3]*FQP) [3]*FQP {
 			f.fieldModulus = fieldModulus
 		}
 	}
-	ny, _ := NewFQ12(nyCoeffs)
+	ny := NewFQ12(nyCoeffs)
 
 	nzCoeffs := make([]*FQ, 12)
 	nzCoeffs[0] = zCoeffs0
@@ -344,7 +344,7 @@ func Twist(pt [3]*FQP) [3]*FQP {
 			f.fieldModulus = fieldModulus
 		}
 	}
-	nz, _ := NewFQ12(nzCoeffs)
+	nz := NewFQ12(nzCoeffs)
 
 	return [3]*FQP{nx.Mul(w.Exp(bigTwo)), ny.Mul(w.Exp(bigThree)), nz}
 }

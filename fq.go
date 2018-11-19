@@ -120,16 +120,13 @@ type FQP struct {
 }
 
 // NewFQP creates a new polynomial with field element coefficients.
-func NewFQP(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int) (*FQP, error) {
+func NewFQP(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int) *FQP {
 	return NewFQPWithDegree(elements, modulusCoefficients, mcs, len(modulusCoefficients))
 }
 
 // NewFQPWithDegree creates a new polynomial with the specified degree.
-func NewFQPWithDegree(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int, degree int) (*FQP, error) {
-	if len(elements) == 0 {
-		return nil, errors.New("FQP cannot have 0 elements")
-	}
-	return &FQP{elements: elements, mcs: mcs, modulusCoefficients: modulusCoefficients, degree: degree}, nil
+func NewFQPWithDegree(elements []*FQ, modulusCoefficients []*big.Int, mcs map[int]int, degree int) *FQP {
+	return &FQP{elements: elements, mcs: mcs, modulusCoefficients: modulusCoefficients, degree: degree}
 
 }
 
@@ -335,7 +332,7 @@ func (f FQP) Neg() *FQP {
 	for i := range newElements {
 		newElements[i] = newElements[i].Neg()
 	}
-	newF, _ := NewFQPWithDegree(newElements, f.modulusCoefficients, f.mcs, f.degree)
+	newF := NewFQPWithDegree(newElements, f.modulusCoefficients, f.mcs, f.degree)
 	return newF
 }
 
@@ -348,12 +345,9 @@ func (f FQP) String() string {
 }
 
 // NewFQ2 creates a new quadratic field extension.
-func NewFQ2(coeffs []*FQ) (*FQP, error) {
+func NewFQ2(coeffs []*FQ) *FQP {
 	mcTuples := make(map[int]int)
 	mcTuples[0] = 1
-	if len(coeffs) != 2 {
-		return nil, errors.New("wrong number of coefficients for quadratic polynomial")
-	}
 	modulusCoefficients := []*big.Int{
 		big.NewInt(1),
 		big.NewInt(0),
@@ -385,7 +379,7 @@ func FQPOne(f *FQP) (*FQP, error) {
 
 // FQ2One returns the 1-value FQ2
 func FQ2One() *FQP {
-	f, _ := NewFQ2([]*FQ{
+	f := NewFQ2([]*FQ{
 		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 	})
@@ -394,7 +388,7 @@ func FQ2One() *FQP {
 
 // FQ12One returns the 1-value FQ12
 func FQ12One() *FQP {
-	f, _ := NewFQ2([]*FQ{
+	f := NewFQ2([]*FQ{
 		&FQ{n: big.NewInt(1), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
@@ -413,7 +407,7 @@ func FQ12One() *FQP {
 
 // FQ2Zero returns the 0-value FQ2
 func FQ2Zero() *FQP {
-	f, _ := NewFQ2([]*FQ{
+	f := NewFQ2([]*FQ{
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 	})
@@ -422,7 +416,7 @@ func FQ2Zero() *FQP {
 
 // FQ12Zero returns the 0-value FQ12
 func FQ12Zero() *FQP {
-	f, _ := NewFQ12([]*FQ{
+	f := NewFQ12([]*FQ{
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
 		&FQ{n: big.NewInt(0), fieldModulus: fieldModulus},
@@ -440,13 +434,10 @@ func FQ12Zero() *FQP {
 }
 
 // NewFQ12 creates a new 12th-degree field extension.
-func NewFQ12(coeffs []*FQ) (*FQP, error) {
+func NewFQ12(coeffs []*FQ) *FQP {
 	mcTuples := make(map[int]int)
 	mcTuples[0] = 82
 	mcTuples[6] = -18
-	if len(coeffs) != 12 {
-		return nil, errors.New("wrong number of coefficients for quadratic polynomial")
-	}
 	modulusCoefficients := []*big.Int{
 		big.NewInt(82),
 		big.NewInt(0),

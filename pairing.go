@@ -62,7 +62,7 @@ func LineFuncFQP(p1 [3]*FQP, p2 [3]*FQP, t [3]*FQP) (*FQP, *FQP) {
 
 // CastFQToFQ12 converts an field element to FQ12 form
 func CastFQToFQ12(i *FQ) *FQP {
-	f, _ := NewFQ12([]*FQ{
+	f := NewFQ12([]*FQ{
 		i,
 		NewFQ(bigZero, fieldModulus),
 		NewFQ(bigZero, fieldModulus),
@@ -83,6 +83,22 @@ func CastFQToFQ12(i *FQ) *FQP {
 func CastPointToFQ12(pt [3]*FQ) [3]*FQP {
 	x, y, z := pt[0], pt[1], pt[2]
 	return [3]*FQP{CastFQToFQ12(x), CastFQToFQ12(y), CastFQToFQ12(z)}
+}
+
+// Normalize normalizes the point.
+func Normalize(p [3]*FQ) [2]*FQ {
+	return [2]*FQ{
+		p[0].Div(p[2]),
+		p[1].Div(p[2]),
+	}
+}
+
+// NormalizeFQP normalizes the point.
+func NormalizeFQP(p [3]*FQP) [2]*FQP {
+	return [2]*FQP{
+		p[0].Div(p[2]),
+		p[1].Div(p[2]),
+	}
 }
 
 // MillerLoop is the main miller loop.
