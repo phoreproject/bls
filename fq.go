@@ -15,6 +15,7 @@ var bigZero = big.NewInt(0)
 var bigOne = big.NewInt(1)
 var bigTwo = big.NewInt(2)
 
+// FieldModulus is the modulus of the field.
 var FieldModulus, _ = new(big.Int).SetString("21888242871839275222246405745257275088696311157297823662689037894645226208583", 10)
 
 func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
