@@ -69,9 +69,9 @@ var G2 = [3]*FQP{
 }
 
 var z1 = [3]*FQ{
-	&FQ{n: big.NewInt(1)},
-	&FQ{n: big.NewInt(1)},
-	&FQ{n: big.NewInt(0)},
+	&FQ{n: big.NewInt(1), fieldModulus: FieldModulus},
+	&FQ{n: big.NewInt(1), fieldModulus: FieldModulus},
+	&FQ{n: big.NewInt(0), fieldModulus: FieldModulus},
 }
 
 var z2 = [3]*FQP{

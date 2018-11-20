@@ -20,7 +20,10 @@ var oneLsh255 = new(big.Int).Lsh(bigOne, 255)
 // CompressG1 compresses a point into a single 256-bit number.
 func CompressG1(pt [3]*FQ) *big.Int {
 	pt2 := Normalize(pt)
-	return new(big.Int).Mod(new(big.Int).Add(pt2[0].n, new(big.Int).Mul(new(big.Int).Mod(pt[1].n, bigTwo), oneLsh255)), oneLsh255)
+	x, y := pt2[0].n, pt2[1].n
+	yComp := new(big.Int).Mul(new(big.Int).Mod(y, bigTwo), oneLsh255)
+	o := new(big.Int).Add(x, yComp)
+	return o
 }
 
 // DecompressG1 decompresses the number into a point.
@@ -33,7 +36,7 @@ func DecompressG1(pt *big.Int) [3]*FQ {
 		}
 	}
 	x := new(big.Int).Mod(pt, oneLsh255)
-	yMod2 := new(big.Int).Div(pt, oneLsh255)
+	yMod2 := new(big.Int).Rsh(pt, 255)
 	yBase := new(big.Int).Mod(new(big.Int).Add(new(big.Int).Exp(x, big.NewInt(3), nil), B.n), FieldModulus)
 	yPow := new(big.Int).Div(new(big.Int).Add(FieldModulus, bigOne), big.NewInt(4))
 	y := new(big.Int).Exp(yBase, yPow, FieldModulus)

@@ -51,6 +51,20 @@ func TestPrivToPub(t *testing.T) {
 	}
 }
 
+func TestAggregatePub(t *testing.T) {
+	expected, _ := new(big.Int).SetString("76567886179779284224189792362388560932074712457819040371924168577401574193491", 10)
+	actual := bls.AggregatePubs([]*big.Int{
+		bls.PrivToPub(big.NewInt(31)),
+		bls.PrivToPub(big.NewInt(32)),
+		bls.PrivToPub(big.NewInt(33)),
+	})
+
+	if expected.Cmp(actual) != 0 {
+		t.Log(actual)
+		t.Fatal("generated aggregate pub key does not match expected")
+	}
+}
+
 func TestSign(t *testing.T) {
 	privKey := big.NewInt(31)
 
@@ -68,6 +82,51 @@ func TestSign(t *testing.T) {
 	}
 
 	if expected[0].Cmp(signature[0]) != 0 || expected[1].Cmp(signature[1]) != 0 {
+		t.Fatal("signature is not the expected value")
+	}
+}
+
+func TestAggregateSigs(t *testing.T) {
+	msgToSign := []byte("hello there...")
+
+	privKey := big.NewInt(31)
+	privKey2 := big.NewInt(32)
+	privKey3 := big.NewInt(33)
+
+	signature, err := bls.Sign(bls.Blake(msgToSign), privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signature2, err := bls.Sign(bls.Blake(msgToSign), privKey2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signature3, err := bls.Sign(bls.Blake(msgToSign), privKey3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	aggSig, err := bls.AggregateSigs([][2]*big.Int{
+		signature,
+		signature2,
+		signature3,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedX, _ := new(big.Int).SetString("70833351510663594547914567330691953309850463208229197421639351538173448336186", 10)
+	expectedY, _ := new(big.Int).SetString("18767200545140868266663087309855633907948826726328537863515205390611507623657", 10)
+
+	expected := [2]*big.Int{
+		expectedX,
+		expectedY,
+	}
+
+	if expected[0].Cmp(aggSig[0]) != 0 || expected[1].Cmp(aggSig[1]) != 0 {
+		t.Log(signature)
 		t.Fatal("signature is not the expected value")
 	}
 }
