@@ -329,7 +329,7 @@ func (f FQP) Equals(other *FQP) bool {
 // Neg negates each coefficient in the FQP.
 func (f FQP) Neg() *FQP {
 	newElements := make([]*FQ, len(f.elements))
-	for i, e := range newElements {
+	for i, e := range f.elements {
 		newElements[i] = e.Neg()
 	}
 	newF := NewFQPWithDegree(newElements, f.modulusCoefficients, f.mcs, f.degree)

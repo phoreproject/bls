@@ -1,7 +1,6 @@
 package bls_test
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -121,8 +120,6 @@ func TestPointMultiplication(t *testing.T) {
 		bls.NewFQ(expectedY, bls.FieldModulus),
 		bls.NewFQ(expectedZ, bls.FieldModulus),
 	}
-
-	fmt.Println(mulled)
 
 	if !bls.FQEqual(mulled, expected) {
 		t.Fatal("MultiplyFQ does not produce the expected result")

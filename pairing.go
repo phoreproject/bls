@@ -124,9 +124,6 @@ func MillerLoop(q [3]*FQP, p [3]*FQP, finalExponentiate bool) *FQP {
 			r = AddFQP(r, nQ)
 		}
 	}
-	if r != MultiplyFQP(q, ateLoopCount) {
-		panic("r != q*ateLoopCount")
-	}
 	q1 := [3]*FQP{q[0].Exp(FieldModulus), q[1].Exp(FieldModulus), q[2].Exp(FieldModulus)}
 	onCurve, err := IsOnCurveFQP(q1, B12)
 	if err != nil {

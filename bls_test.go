@@ -51,6 +51,27 @@ func TestPrivToPub(t *testing.T) {
 	}
 }
 
+func TestSign(t *testing.T) {
+	privKey := big.NewInt(31)
+
+	signature, err := bls.Sign(bls.Blake([]byte("hello there...")), privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedX, _ := new(big.Int).SetString("70772078571232765286143179693160658568440484937938627703833120323413604697796", 10)
+	expectedY, _ := new(big.Int).SetString("18287142191612266472237976109408356862260626942308333203241078978015435008942", 10)
+
+	expected := [2]*big.Int{
+		expectedX,
+		expectedY,
+	}
+
+	if expected[0].Cmp(signature[0]) != 0 || expected[1].Cmp(signature[1]) != 0 {
+		t.Fatal("signature is not the expected value")
+	}
+}
+
 func TestAcceptance(t *testing.T) {
 	msgToSign := []byte("hello there...")
 
