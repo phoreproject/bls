@@ -79,6 +79,14 @@ func TestAcceptance(t *testing.T) {
 
 	pubKey := bls.PrivToPub(privKey)
 
+	privKey2 := big.NewInt(32)
+
+	pubKey2 := bls.PrivToPub(privKey2)
+
+	privKey3 := big.NewInt(33)
+
+	pubKey3 := bls.PrivToPub(privKey3)
+
 	signature, err := bls.Sign(bls.Blake(msgToSign), privKey)
 	if err != nil {
 		t.Fatal(err)
@@ -91,5 +99,39 @@ func TestAcceptance(t *testing.T) {
 
 	if !valid {
 		t.Fatal("signature was not valid")
+	}
+
+	signature2, err := bls.Sign(bls.Blake(msgToSign), privKey2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signature3, err := bls.Sign(bls.Blake(msgToSign), privKey3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	aggPub := bls.AggregatePubs([]*big.Int{
+		pubKey,
+		pubKey2,
+		pubKey3,
+	})
+
+	aggSig, err := bls.AggregateSigs([][2]*big.Int{
+		signature,
+		signature2,
+		signature3,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	valid, err = bls.Verify(bls.Blake(msgToSign), aggPub, aggSig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !valid {
+		t.Fatal("aggregate signature did not validate")
 	}
 }
