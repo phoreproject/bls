@@ -11,7 +11,7 @@ var pseudoBinaryEncoding = [65]int{
 	0, 0, 0, 1, 0, 1, 0, -1, 0, 0, 1, -1, 0, 0, 1, 0,
 	0, 1, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0, 0, 0, 1, 1,
 	1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 1,
-	1, 0, 0, -1, 0, 0, 0, 1, 1, 0, -1, 0, 0, 1, 0, 1,
+	1, 0, 0, -1, 0, 0, 0, 1, 1, 0, -1, 0, 0, 1, 0, 1, 1,
 }
 
 var finalExponentiationPower = new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(FieldModulus, big.NewInt(12), nil), bigOne), curveOrder)
@@ -105,7 +105,7 @@ func NormalizeFQP(p [3]*FQP) [2]*FQP {
 func MillerLoop(q [3]*FQP, p [3]*FQP, finalExponentiate bool) *FQP {
 	r := q
 	fNum, fDen := FQ12One(), FQ12One()
-	for i := 63; i > 0; i-- {
+	for i := 63; i > -1; i-- {
 		v := pseudoBinaryEncoding[i]
 		n, d := LineFuncFQP(r, r, p)
 		fNum = fNum.Mul(fNum).Mul(n)
