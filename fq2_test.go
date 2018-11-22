@@ -5,16 +5,13 @@ import (
 	"math/big"
 	"testing"
 
-	"crypto/rand"
-
 	"github.com/phoreproject/bls"
 )
 
 var (
-	bigZero           = big.NewInt(0)
-	bigOne            = big.NewInt(1)
-	bigTwo            = big.NewInt(2)
-	oneLsh384MinusOne = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 384), bigOne)
+	bigZero = big.NewInt(0)
+	bigOne  = big.NewInt(1)
+	bigTwo  = big.NewInt(2)
 )
 
 func TestFQ2Ordering(t *testing.T) {
@@ -257,18 +254,10 @@ func TestFQ2MulNonresidue(t *testing.T) {
 	nqr := bls.NewFQ2(bls.FQOne, bls.FQOne)
 
 	for i := 0; i < 1000; i++ {
-		i0, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+		a, err := bls.RandFQ2()
 		if err != nil {
 			t.Fatal(err)
 		}
-		i1, err := rand.Int(rand.Reader, oneLsh384MinusOne)
-		if err != nil {
-			t.Fatal(err)
-		}
-		a := bls.NewFQ2(
-			bls.NewFQ(i0),
-			bls.NewFQ(i1),
-		)
 		b := a.Copy()
 		a = a.MultiplyByNonresidue()
 		b = b.Mul(nqr)

@@ -3,7 +3,11 @@ package bls
 import (
 	"fmt"
 	"math/big"
+
+	"crypto/rand"
 )
+
+var oneLsh384MinusOne = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 384), bigOne)
 
 // FQ2 represents an element of Fq2, represented by c0 + c1 * u.
 type FQ2 struct {
@@ -210,4 +214,20 @@ func (f *FQ2) Copy() *FQ2 {
 		c0: f.c0.Copy(),
 		c1: f.c1.Copy(),
 	}
+}
+
+// RandFQ2 generates a random FQ2 element.
+func RandFQ2() (*FQ2, error) {
+	i0, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+	if err != nil {
+		return nil, err
+	}
+	i1, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+	if err != nil {
+		return nil, err
+	}
+	return NewFQ2(
+		NewFQ(i0),
+		NewFQ(i1),
+	), nil
 }
