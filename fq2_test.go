@@ -1,16 +1,20 @@
 package bls_test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
+
+	"crypto/rand"
 
 	"github.com/phoreproject/bls"
 )
 
 var (
-	bigZero = big.NewInt(0)
-	bigOne  = big.NewInt(1)
-	bigTwo  = big.NewInt(2)
+	bigZero           = big.NewInt(0)
+	bigOne            = big.NewInt(1)
+	bigTwo            = big.NewInt(2)
+	oneLsh384MinusOne = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 384), bigOne)
 )
 
 func TestFQ2Ordering(t *testing.T) {
@@ -246,5 +250,33 @@ func TestFQ2Legendre(t *testing.T) {
 	m1 = m1.MultiplyByNonresidue()
 	if bls.LegendreQuadraticNonResidue != m1.Legendre() {
 		t.Error("1.Neg().MulByNonresidue() is quadratic residue")
+	}
+}
+
+func TestFQ2MulNonresidue(t *testing.T) {
+	nqr := bls.NewFQ2(bls.FQOne, bls.FQOne)
+
+	for i := 0; i < 1000; i++ {
+		i0, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+		if err != nil {
+			t.Fatal(err)
+		}
+		i1, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+		if err != nil {
+			t.Fatal(err)
+		}
+		a := bls.NewFQ2(
+			bls.NewFQ(i0),
+			bls.NewFQ(i1),
+		)
+		b := a.Copy()
+		a = a.MultiplyByNonresidue()
+		b = b.Mul(nqr)
+
+		fmt.Println(a)
+
+		if !a.Equals(b) {
+			t.Error("a != b")
+		}
 	}
 }

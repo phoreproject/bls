@@ -35,10 +35,9 @@ func (f FQ2) Cmp(other *FQ2) int {
 // MultiplyByNonresidue multiplies this element by the cubic and quadratic
 // nonresidue 1 + u.
 func (f FQ2) MultiplyByNonresidue() *FQ2 {
-	t0 := f.c0.Copy()
 	return &FQ2{
 		c0: f.c0.Sub(f.c1),
-		c1: f.c1.Add(t0),
+		c1: f.c1.Add(f.c0),
 	}
 }
 
