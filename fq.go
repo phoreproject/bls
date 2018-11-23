@@ -125,6 +125,20 @@ func (f FQ) Square() *FQ {
 	return NewFQ(new(big.Int).Mul(f.n, f.n))
 }
 
+// Sqrt calculates the square root of the field element.
+func (f FQ) Sqrt() *FQ {
+	// Shank's algorithm for q mod 4 = 3
+	// https://eprint.iacr.org/2012/685.pdf (page 9, algorithm 2)
+
+	a1 := f.Exp(qMinus3Over4)
+	a0 := a1.Square().Mul(&f)
+
+	if a0.Equals(NewFQ(negativeOne)) {
+		return nil
+	}
+	return a1.Mul(&f)
+}
+
 func isEven(b *big.Int) bool {
 	return new(big.Int).Mod(b, bigTwo).Cmp(bigZero) == 0
 }

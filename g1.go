@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 )
@@ -84,6 +85,100 @@ func (g G1Affine) IsOnCurve() bool {
 	x3b := g.x.Square().Mul(g.x).Add(NewFQ(bCoeff))
 
 	return y2.Equals(x3b)
+}
+
+// GetG1PointFromX attempts to reconstruct an affine point given
+// an x-coordinate. The point is not guaranteed to be in the subgroup.
+// If and only if `greatest` is set will the lexicographically
+// largest y-coordinate be selected.
+func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
+	x3b := x.Square().Mul(x).Add(NewFQ(bCoeff))
+
+	y := x3b.Sqrt()
+
+	if y == nil {
+		return nil
+	}
+
+	negY := y.Neg()
+
+	yVal := negY
+	if (y.Cmp(negY) < 0) != greatest {
+		yVal = y
+	}
+	return NewG1Affine(x, yVal)
+}
+
+// IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
+// field characteristic equals zero.
+func (g G1Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
+	return g.Mul(FieldModulus).IsZero()
+}
+
+// DecompressG1 decompresses the big int into an affine point and checks
+// if it is in the correct prime group.
+func DecompressG1(b *big.Int) (*G1Affine, error) {
+	affine, err := DecompressG1Unchecked(b)
+	if err != nil {
+		return nil, err
+	}
+
+	if !affine.IsInCorrectSubgroupAssumingOnCurve() {
+		return nil, errors.New("not in correct subgroup")
+	}
+	return affine, nil
+}
+
+// DecompressG1Unchecked decompresses the big int into an affine point without
+// checking if it's in the correct prime group.
+func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
+	copy := new(big.Int).Set(b)
+
+	copyBytes := copy.Bytes()
+
+	if copyBytes[0]&(1<<7) == 0 {
+		return nil, errors.New("unexpected compression mode")
+	}
+
+	if copyBytes[0]&(1<<6) != 0 {
+		// this is the point at infinity
+		copyBytes[0] &= 0x3f
+
+		for _, b := range copyBytes {
+			if b != 0 {
+				return nil, errors.New("unexpected information in compressed infinity")
+			}
+		}
+
+		return G1AffineZero.Copy(), nil
+	}
+	greatest := copyBytes[0]&(1<<5) != 0
+
+	copyBytes[0] &= 0x1f
+
+	x := NewFQ(new(big.Int).SetBytes(copyBytes))
+
+	return GetG1PointFromX(x, greatest), nil
+}
+
+// CompressG1 compresses a G1 point into an int.
+func CompressG1(affine *G1Affine) *big.Int {
+	res := [48]byte{}
+	if affine.IsZero() {
+		res[0] |= 1 << 6
+	} else {
+		out0 := new(big.Int).Set(affine.x.n).Bytes()
+		copy(res[:], out0)
+
+		negY := affine.y.Neg()
+
+		if affine.y.Cmp(negY) > 0 {
+			res[0] |= 1 << 5
+		}
+	}
+
+	res[0] |= 1 << 7
+	return new(big.Int).SetBytes(res[:])
 }
 
 // G1Projective is a projective point on the G1 curve.
