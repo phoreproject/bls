@@ -196,10 +196,6 @@ func (f FQ2) Sqrt() *FQ2 {
 	a1 = a1.Mul(&f)
 
 	if alpha.Equals(neg1) {
-		fmt.Println(a1.Mul(&FQ2{
-			c0: FQZero,
-			c1: FQOne,
-		}))
 		return a1.Mul(&FQ2{
 			c0: FQZero,
 			c1: FQOne,

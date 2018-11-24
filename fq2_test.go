@@ -1,7 +1,6 @@
 package bls_test
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -261,8 +260,6 @@ func TestFQ2MulNonresidue(t *testing.T) {
 		b := a.Copy()
 		a = a.MultiplyByNonresidue()
 		b = b.Mul(nqr)
-
-		fmt.Println(a)
 
 		if !a.Equals(b) {
 			t.Error("a != b")

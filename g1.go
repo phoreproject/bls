@@ -24,7 +24,8 @@ var G1AffineZero = &G1Affine{FQZero, FQOne, true}
 var g1GeneratorX, _ = new(big.Int).SetString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
 var g1GeneratorY, _ = new(big.Int).SetString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
 
-var bCoeff, _ = new(big.Int).SetString("1514052131932888505822357196874193114600527104240479143842906308145652716846165732392247483508051665748635331395571", 10)
+// BCoeff of the G1 curve.
+var BCoeff = big.NewInt(4)
 
 // G1AffineOne represents the point at 1 on G1.
 var G1AffineOne = &G1Affine{NewFQ(g1GeneratorX), NewFQ(g1GeneratorY), false}
@@ -66,8 +67,10 @@ func (g G1Affine) ToProjective() *G1Projective {
 func (g G1Affine) Mul(b *big.Int) *G1Projective {
 	bs := b.Bytes()
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < uint(b.BitLen()); i++ {
-		o := bs[i/8]&(1<<(i%8)) > 0
+	for i := uint(0); i < uint((b.BitLen()+7)/8)*8; i++ {
+		part := i / 8
+		bit := 7 - i%8
+		o := bs[part]&(1<<(bit)) > 0
 		res = res.Double()
 		if o {
 			res = res.AddAffine(&g)
@@ -82,7 +85,7 @@ func (g G1Affine) IsOnCurve() bool {
 		return true
 	}
 	y2 := g.y.Square()
-	x3b := g.x.Square().Mul(g.x).Add(NewFQ(bCoeff))
+	x3b := g.x.Square().Mul(g.x).Add(NewFQ(BCoeff))
 
 	return y2.Equals(x3b)
 }
@@ -92,7 +95,7 @@ func (g G1Affine) IsOnCurve() bool {
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
 func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
-	x3b := x.Square().Mul(x).Add(NewFQ(bCoeff))
+	x3b := x.Square().Mul(x).Add(NewFQ(BCoeff))
 
 	y := x3b.Sqrt()
 
@@ -109,10 +112,25 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 	return NewG1Affine(x, yVal)
 }
 
+var frChar, _ = new(big.Int).SetString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
+
 // IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
 // field characteristic equals zero.
 func (g G1Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
-	return g.Mul(FieldModulus).IsZero()
+	return g.Mul(frChar).IsZero()
+}
+
+// G1 cofactor = (x - 1)^2 / 3  = 76329603384216526031706109802092473003
+var g1Cofactor, _ = new(big.Int).SetString("76329603384216526031706109802092473003", 10)
+
+// ScaleByCofactor scales the G1Affine point by the cofactor.
+func (g G1Affine) ScaleByCofactor() *G1Projective {
+	return g.Mul(g1Cofactor)
+}
+
+// Equals checks if two affine points are equal.
+func (g G1Affine) Equals(other *G1Affine) bool {
+	return (g.infinity == other.infinity) || (g.x.Equals(other.x) && g.y.Equals(other.y))
 }
 
 // DecompressG1 decompresses the big int into an affine point and checks
@@ -200,7 +218,10 @@ var G1ProjectiveZero = &G1Projective{FQZero, FQOne, FQZero}
 var G1ProjectiveOne = G1AffineOne.ToProjective()
 
 func (g G1Projective) String() string {
-	return fmt.Sprintf("G1: (%s, %s, %s)", g.x, g.y, g.z)
+	if g.IsZero() {
+		return "G1: Infinity"
+	}
+	return g.ToAffine().String()
 }
 
 // Copy returns a copy of the G1Projective point.
@@ -400,8 +421,10 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 func (g G1Projective) Mul(b *big.Int) *G1Projective {
 	bs := b.Bytes()
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < uint(b.BitLen()); i++ {
-		o := bs[i/8]&(1<<(i%8)) > 0
+	for i := uint(0); i < uint((b.BitLen()+7)/8)*8; i++ {
+		part := i / 8
+		bit := 7 - i%8
+		o := bs[part]&(1<<(bit)) > 0
 		res = res.Double()
 		if o {
 			res = res.Add(&g)

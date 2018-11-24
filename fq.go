@@ -1,7 +1,6 @@
 package bls
 
 import (
-	"fmt"
 	"math/big"
 )
 
@@ -154,7 +153,6 @@ func (f FQ) Inverse() *FQ {
 	c := FQZero.Copy()
 
 	for u.Cmp(bigOne) != 0 && v.Cmp(bigOne) != 0 {
-		fmt.Println(b, c)
 		for isEven(u) {
 			u.Div(u, bigTwo)
 			if isEven(b.n) {
