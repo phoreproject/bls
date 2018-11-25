@@ -2,6 +2,7 @@ package bls
 
 import (
 	"fmt"
+	"io"
 	"math/big"
 )
 
@@ -243,16 +244,16 @@ func (f FQ6) Inverse() *FQ6 {
 }
 
 // RandFQ6 generates a random FQ6 element.
-func RandFQ6() (*FQ6, error) {
-	c0, err := RandFQ2()
+func RandFQ6(reader io.Reader) (*FQ6, error) {
+	c0, err := RandFQ2(reader)
 	if err != nil {
 		return nil, err
 	}
-	c1, err := RandFQ2()
+	c1, err := RandFQ2(reader)
 	if err != nil {
 		return nil, err
 	}
-	c2, err := RandFQ2()
+	c2, err := RandFQ2(reader)
 	if err != nil {
 		return nil, err
 	}

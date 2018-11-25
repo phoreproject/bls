@@ -2,9 +2,8 @@ package bls
 
 import (
 	"fmt"
+	"io"
 	"math/big"
-
-	"crypto/rand"
 )
 
 var oneLsh384MinusOne = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 384), bigOne)
@@ -213,17 +212,17 @@ func (f *FQ2) Copy() *FQ2 {
 }
 
 // RandFQ2 generates a random FQ2 element.
-func RandFQ2() (*FQ2, error) {
-	i0, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+func RandFQ2(reader io.Reader) (*FQ2, error) {
+	i0, err := RandFQ(reader)
 	if err != nil {
 		return nil, err
 	}
-	i1, err := rand.Int(rand.Reader, oneLsh384MinusOne)
+	i1, err := RandFQ(reader)
 	if err != nil {
 		return nil, err
 	}
 	return NewFQ2(
-		NewFQ(i0),
-		NewFQ(i1),
+		i0,
+		i1,
 	), nil
 }

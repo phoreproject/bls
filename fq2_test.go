@@ -1,6 +1,7 @@
 package bls_test
 
 import (
+	"crypto/rand"
 	"math/big"
 	"testing"
 
@@ -253,7 +254,7 @@ func TestFQ2MulNonresidue(t *testing.T) {
 	nqr := bls.NewFQ2(bls.FQOne, bls.FQOne)
 
 	for i := 0; i < 1000; i++ {
-		a, err := bls.RandFQ2()
+		a, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}

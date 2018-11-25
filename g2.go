@@ -441,3 +441,104 @@ func (g G2Projective) Mul(b *big.Int) *G2Projective {
 	}
 	return res
 }
+
+var blsX, _ = new(big.Int).SetString("d201000000010000", 16)
+
+const blsIsNegative = true
+
+// G2Prepared is a prepared G2 point multiplication by blsX.
+type G2Prepared struct {
+	coeffs   [][3]*FQ2
+	infinity bool
+}
+
+// IsZero checks if the point is at infinity.
+func (g G2Prepared) IsZero() bool {
+	return g.infinity
+}
+
+// G2AffineToPrepared performs multiplication of the affine point by blsX.
+func G2AffineToPrepared(q *G2Affine) *G2Prepared {
+	if q.IsZero() {
+		return &G2Prepared{infinity: true}
+	}
+
+	doublingStep := func(r *G2Projective) (*FQ2, *FQ2, *FQ2) {
+		tmp0 := r.x.Square()
+		tmp1 := r.y.Square()
+		tmp2 := tmp1.Square()
+		tmp3 := tmp1.Add(r.x).Square().Sub(tmp0).Sub(tmp2).Double()
+		tmp4 := tmp0.Double().Add(tmp0)
+		tmp6 := r.x.Add(tmp4)
+		tmp5 := tmp4.Square()
+		zSquared := r.z.Square()
+		r.x = tmp5.Sub(tmp3).Sub(tmp3)
+		r.z = r.z.Add(r.y).Square().Sub(tmp1).Sub(zSquared)
+		r.y = tmp3.Sub(r.x).Mul(tmp4)
+		tmp2 = tmp2.Double().Double().Double()
+		r.y = r.y.Sub(tmp2)
+		tmp3 = tmp4.Mul(zSquared).Double().Neg()
+		tmp6 = tmp6.Square().Sub(tmp0).Sub(tmp5)
+		tmp1 = tmp1.Double().Double()
+		tmp6 = tmp6.Sub(tmp1)
+		tmp0 = r.z.Mul(zSquared).Double()
+		return tmp0, tmp3, tmp6
+	}
+
+	additionStep := func(r *G2Projective, q *G2Affine) (*FQ2, *FQ2, *FQ2) {
+		zSquared := r.z.Square()
+		ySquared := r.y.Square()
+		t0 := zSquared.Mul(q.x)
+		t1 := q.y.Add(r.z).Square().Sub(ySquared).Sub(zSquared).Mul(zSquared)
+		t2 := t0.Sub(r.x)
+		t3 := t2.Square()
+		t4 := t3.Double().Double()
+		t5 := t4.Mul(t2)
+		t6 := t1.Sub(r.y).Sub(r.y)
+		t9 := t6.Mul(q.x)
+		t7 := t4.Mul(r.x)
+		r.x = t6.Square().Sub(t5).Sub(t7).Sub(t7)
+		r.z = r.z.Add(t2).Square().Sub(zSquared).Sub(t3)
+		t10 := q.y.Add(r.z)
+		t8 := t7.Sub(r.x).Mul(t6)
+		t0 = r.y.Mul(t5).Double()
+		r.y = t8.Sub(t0)
+		t10 = t10.Square().Sub(ySquared).Sub(r.z.Square())
+		t9 = t9.Double().Sub(t10)
+		t10 = r.z.Double()
+		t6 = t6.Neg()
+		t1 = t6.Double()
+
+		return t10, t1, t9
+	}
+
+	coeffs := [][3]*FQ2{}
+	r := q.ToProjective()
+
+	foundOne := false
+	blsXLsh1 := new(big.Int).Rsh(blsX, 1)
+	bs := blsXLsh1.Bytes()
+	for i := uint(0); i < uint(len(bs)*8); i++ {
+		segment := i / 8
+		bit := 7 - i%8
+		set := bs[segment]&(1<<bit) > 0
+		if !foundOne {
+			foundOne = set
+			continue
+		}
+
+		o0, o1, o2 := doublingStep(r)
+
+		coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+
+		if set {
+			o0, o1, o2 := additionStep(r, q)
+			coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+		}
+	}
+	o0, o1, o2 := doublingStep(r)
+
+	coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+
+	return &G2Prepared{coeffs, false}
+}

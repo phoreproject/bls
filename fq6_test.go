@@ -1,6 +1,7 @@
 package bls_test
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -10,7 +11,7 @@ func TestFQ6MultiplyByNonresidue(t *testing.T) {
 	nqr := bls.NewFQ6(bls.FQ2Zero, bls.FQ2One, bls.FQ2Zero)
 
 	for i := 0; i < 1000; i++ {
-		a, err := bls.RandFQ6()
+		a, err := bls.RandFQ6(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -24,11 +25,11 @@ func TestFQ6MultiplyByNonresidue(t *testing.T) {
 
 func TestFQ6MultiplyBy1(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		c1, err := bls.RandFQ2()
+		c1, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		a, err := bls.RandFQ6()
+		a, err := bls.RandFQ6(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -43,15 +44,15 @@ func TestFQ6MultiplyBy1(t *testing.T) {
 
 func TestFQ6MultiplyBy01(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		c0, err := bls.RandFQ2()
+		c0, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c1, err := bls.RandFQ2()
+		c1, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		a, err := bls.RandFQ6()
+		a, err := bls.RandFQ6(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}

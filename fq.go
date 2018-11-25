@@ -1,6 +1,8 @@
 package bls
 
 import (
+	"crypto/rand"
+	"io"
 	"math/big"
 )
 
@@ -13,14 +15,8 @@ var bigZero = big.NewInt(0)
 var bigOne = big.NewInt(1)
 var bigTwo = big.NewInt(2)
 
-// FieldModulus is the modulus of the field.
-var FieldModulus, _ = new(big.Int).SetString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", 10)
-
-// R = 2**384 % FieldModulus
-var R, _ = new(big.Int).SetString("3380320199399472671518931668520476396067793891014375699959770179129436917079669831430077592723774664465579537268733", 10)
-
-// R2 = R**2 % FieldModulus
-var R2, _ = new(big.Int).SetString("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750", 10)
+// QFieldModulus is the modulus of the field.
+var QFieldModulus, _ = new(big.Int).SetString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", 10)
 
 func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 	if a.Cmp(bigZero) == 0 {
@@ -41,7 +37,7 @@ func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 
 // NewFQ creates a new field element.
 func NewFQ(n *big.Int) *FQ {
-	outN := new(big.Int).Mod(n, FieldModulus)
+	outN := new(big.Int).Mod(n, QFieldModulus)
 	return &FQ{n: outN}
 }
 
@@ -53,27 +49,27 @@ func (f FQ) Copy() *FQ {
 // Add adds two field elements together.
 func (f FQ) Add(other *FQ) *FQ {
 	out := new(big.Int).Add(f.n, other.n)
-	out.Mod(out, FieldModulus)
+	out.Mod(out, QFieldModulus)
 	return &FQ{n: out}
 }
 
 // Mul multiplies two field elements together.
 func (f FQ) Mul(other *FQ) *FQ {
 	out := new(big.Int).Mul(f.n, other.n)
-	out.Mod(out, FieldModulus)
+	out.Mod(out, QFieldModulus)
 	return &FQ{n: out}
 }
 
 // Sub subtracts one field element from the other.
 func (f FQ) Sub(other *FQ) *FQ {
 	out := new(big.Int).Sub(f.n, other.n)
-	out.Mod(out, FieldModulus)
+	out.Mod(out, QFieldModulus)
 	return &FQ{n: out}
 }
 
 // Div divides one field element by another.
 func (f FQ) Div(other *FQ) *FQ {
-	otherInverse := &FQ{n: primeFieldInv(other.n, FieldModulus)}
+	otherInverse := &FQ{n: primeFieldInv(other.n, QFieldModulus)}
 	return f.Mul(otherInverse)
 }
 
@@ -95,7 +91,7 @@ func (f FQ) Equals(other *FQ) bool {
 	return f.n.Cmp(other.n) == 0
 }
 
-// Neg gets the negative value of the field element mod fieldModulus.
+// Neg gets the negative value of the field element mod QFieldModulus.
 func (f FQ) Neg() *FQ {
 	return NewFQ(new(big.Int).Neg(f.n))
 }
@@ -111,7 +107,7 @@ func (f FQ) Cmp(other *FQ) int {
 
 // Double doubles the
 func (f FQ) Double() *FQ {
-	return NewFQ(new(big.Int).Mul(f.n, bigTwo))
+	return NewFQ(new(big.Int).Lsh(f.n, 1))
 }
 
 // IsZero checks if the field element is zero.
@@ -148,7 +144,7 @@ func (f FQ) Inverse() *FQ {
 		return nil
 	}
 	u := new(big.Int).Set(f.n)
-	v := new(big.Int).Set(FieldModulus)
+	v := new(big.Int).Set(QFieldModulus)
 	b := NewFQ(new(big.Int).Set(bigOne))
 	c := FQZero.Copy()
 
@@ -158,7 +154,7 @@ func (f FQ) Inverse() *FQ {
 			if isEven(b.n) {
 				b.n.Div(b.n, bigTwo)
 			} else {
-				b.n.Add(b.n, FieldModulus)
+				b.n.Add(b.n, QFieldModulus)
 				b.n.Div(b.n, bigTwo)
 			}
 		}
@@ -168,7 +164,7 @@ func (f FQ) Inverse() *FQ {
 			if isEven(c.n) {
 				c.n.Div(c.n, bigTwo)
 			} else {
-				c.n.Add(c.n, FieldModulus)
+				c.n.Add(c.n, QFieldModulus)
 				c.n.Div(c.n, bigTwo)
 			}
 		}
@@ -213,6 +209,15 @@ func (f *FQ) Legendre() LegendreSymbol {
 	} else {
 		return LegendreQuadraticNonResidue
 	}
+}
+
+// RandFQ generates a random FQ element.
+func RandFQ(reader io.Reader) (*FQ, error) {
+	r, err := rand.Int(reader, QFieldModulus)
+	if err != nil {
+		return nil, err
+	}
+	return NewFQ(r), nil
 }
 
 // FQZero is the FQ at 0.

@@ -2,6 +2,7 @@ package bls
 
 import (
 	"fmt"
+	"io"
 	"math/big"
 )
 
@@ -77,12 +78,12 @@ func (f FQ12) Sub(other *FQ12) *FQ12 {
 }
 
 // RandFQ12 generates a random FQ12 element.
-func RandFQ12() (*FQ12, error) {
-	a, err := RandFQ6()
+func RandFQ12(reader io.Reader) (*FQ12, error) {
+	a, err := RandFQ6(reader)
 	if err != nil {
 		return nil, err
 	}
-	b, err := RandFQ6()
+	b, err := RandFQ6(reader)
 	if err != nil {
 		return nil, err
 	}

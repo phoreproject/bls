@@ -1,6 +1,7 @@
 package bls_test
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -8,19 +9,19 @@ import (
 
 func TestFQ12MulBy014(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		c0, err := bls.RandFQ2()
+		c0, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c1, err := bls.RandFQ2()
+		c1, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c5, err := bls.RandFQ2()
+		c5, err := bls.RandFQ2(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		a, err := bls.RandFQ12()
+		a, err := bls.RandFQ12(rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}
