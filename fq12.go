@@ -90,6 +90,24 @@ func RandFQ12(reader io.Reader) (*FQ12, error) {
 	return NewFQ12(a, b), nil
 }
 
+// Copy returns a copy of the FQ12 element.
+func (f FQ12) Copy() *FQ12 {
+	return NewFQ12(f.c0.Copy(), f.c1.Copy())
+}
+
+// Exp raises the element ot a specific power.
+func (f FQ12) Exp(n *big.Int) *FQ12 {
+	if n.Cmp(bigZero) == 0 {
+		return FQ12One.Copy()
+	} else if n.Cmp(bigOne) == 0 {
+		return f.Copy()
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigZero) == 0 {
+		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo))
+	} else {
+		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo)).Mul(&f)
+	}
+}
+
 var frobeniusCoeffFQ12c110, _ = new(big.Int).SetString("1376889598125376727959055341295674356654925039980005395128828212993454708588385020118431646457834669954221389501541", 10)
 var frobeniusCoeffFQ12c111, _ = new(big.Int).SetString("2625519957096290665458734484440229799901957779959002490203229923130576941902452844324255982671180994083672883058246", 10)
 var frobeniusCoeffFQ12c130, _ = new(big.Int).SetString("1821461487266245992767491788684378228087062278322214693001359809350238716280406307949636812899085786271837335624401", 10)

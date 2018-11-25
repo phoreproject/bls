@@ -172,6 +172,7 @@ func (f *FR) Legendre() LegendreSymbol {
 	}
 }
 
+// ToBig converts the FR element to the underlying big number.
 func (f *FR) ToBig() *big.Int {
 	return new(big.Int).Set(f.n)
 }
