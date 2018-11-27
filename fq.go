@@ -136,7 +136,7 @@ func (f FQ) Sqrt() *FQ {
 }
 
 func isEven(b *big.Int) bool {
-	return new(big.Int).Mod(b, bigTwo).Cmp(bigZero) == 0
+	return b.Bit(0) == 0
 }
 
 // Inverse finds the inverse of the field element.
