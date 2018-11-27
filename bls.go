@@ -6,8 +6,8 @@ import (
 
 // MillerLoopItem are the inputs to the miller loop.
 type MillerLoopItem struct {
-	p *G1Affine
-	q *G2Prepared
+	P *G1Affine
+	Q *G2Prepared
 }
 
 type pairingItem struct {
@@ -20,10 +20,10 @@ type pairingItem struct {
 func MillerLoop(items []MillerLoopItem) *FQ12 {
 	pairs := make([]pairingItem, len(items))
 	for i, item := range items {
-		if !item.p.IsZero() && !item.q.IsZero() {
+		if !item.P.IsZero() && !item.Q.IsZero() {
 			pairs[i] = pairingItem{
-				p:      item.p.Copy(),
-				q:      item.q.coeffs,
+				p:      item.P.Copy(),
+				q:      item.Q.coeffs,
 				qIndex: 0,
 			}
 		}

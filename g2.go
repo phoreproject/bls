@@ -3,6 +3,7 @@ package bls
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 )
 
@@ -541,4 +542,31 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 	coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
 
 	return &G2Prepared{coeffs, false}
+}
+
+// RandG2 generates a random G2 element.
+func RandG2(r io.Reader) (*G2Projective, error) {
+	for {
+		b := make([]byte, 1)
+		_, err := r.Read(b)
+		if err != nil {
+			return nil, err
+		}
+		greatest := false
+		if b[0]%2 == 0 {
+			greatest = true
+		}
+		f, err := RandFQ2(r)
+		if err != nil {
+			return nil, err
+		}
+		p := GetG2PointFromX(f, greatest)
+		if p == nil {
+			continue
+		}
+		p1 := p.ScaleByCofactor()
+		if !p.IsZero() {
+			return p1, nil
+		}
+	}
 }

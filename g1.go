@@ -3,6 +3,7 @@ package bls
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 )
 
@@ -431,4 +432,31 @@ func (g G1Projective) Mul(b *big.Int) *G1Projective {
 		}
 	}
 	return res
+}
+
+// RandG1 generates a random G1 element.
+func RandG1(r io.Reader) (*G1Projective, error) {
+	for {
+		b := make([]byte, 1)
+		_, err := r.Read(b)
+		if err != nil {
+			return nil, err
+		}
+		greatest := false
+		if b[0]%2 == 0 {
+			greatest = true
+		}
+		f, err := RandFQ(r)
+		if err != nil {
+			return nil, err
+		}
+		p := GetG1PointFromX(f, greatest)
+		if p == nil {
+			continue
+		}
+		p1 := p.ScaleByCofactor()
+		if !p.IsZero() {
+			return p1, nil
+		}
+	}
 }
