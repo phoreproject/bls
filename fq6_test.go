@@ -81,6 +81,7 @@ func BenchmarkFQ6Add(b *testing.B) {
 			f2: f2,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -105,6 +106,7 @@ func BenchmarkFQ6Sub(b *testing.B) {
 			f2: f2,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -129,6 +131,7 @@ func BenchmarkFQ6Mul(b *testing.B) {
 			f2: f2,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -150,6 +153,7 @@ func BenchmarkFQ6Square(b *testing.B) {
 			f1: f1,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -171,6 +175,7 @@ func BenchmarkFQ6Inverse(b *testing.B) {
 			f1: f1,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {

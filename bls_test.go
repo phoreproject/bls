@@ -72,6 +72,8 @@ func BenchmarkG2Prepare(b *testing.B) {
 		}
 	}
 
+	b.ResetTimer()
+
 	count := 0
 	for i := 0; i < b.N; i++ {
 		bls.G2AffineToPrepared(inData[count].g2)
@@ -96,6 +98,8 @@ func BenchmarkMillerLoop(b *testing.B) {
 		}
 	}
 
+	b.ResetTimer()
+
 	count := 0
 	for i := 0; i < b.N; i++ {
 		bls.MillerLoop([]bls.MillerLoopItem{{P: inData[count].p, Q: inData[count].q}})
@@ -117,6 +121,8 @@ func BenchmarkFinalExponentiation(b *testing.B) {
 		})
 	}
 
+	b.ResetTimer()
+
 	count := 0
 	for i := 0; i < b.N; i++ {
 		bls.FinalExponentiation(inData[count])
@@ -136,6 +142,8 @@ func BenchmarkPairing(b *testing.B) {
 		f1, _ := bls.RandG1(r)
 		inData[i] = pairingData{g1: f1, g2: f2}
 	}
+
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {

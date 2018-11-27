@@ -24,6 +24,7 @@ func BenchmarkG2MulAssign(b *testing.B) {
 			f: randFR,
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -52,6 +53,7 @@ func BenchmarkG2AddAssign(b *testing.B) {
 			g2: bls.NewG2Projective(g2x, g2y, g2z),
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {
@@ -79,6 +81,7 @@ func BenchmarkG2AddAssignMixed(b *testing.B) {
 			g2: bls.NewG2Affine(g2x, g2y),
 		}
 	}
+	b.ResetTimer()
 
 	count := 0
 	for i := 0; i < b.N; i++ {

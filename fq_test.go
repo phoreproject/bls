@@ -1,53 +1,22 @@
 package bls_test
 
 import (
-	"crypto/rand"
 	"testing"
 
 	"github.com/phoreproject/bls"
 )
 
-func TestFQ12MulBy014(t *testing.T) {
-	for i := 0; i < 1000; i++ {
-		c0, err := bls.RandFQ2(rand.Reader)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c1, err := bls.RandFQ2(rand.Reader)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c5, err := bls.RandFQ2(rand.Reader)
-		if err != nil {
-			t.Fatal(err)
-		}
-		a, err := bls.RandFQ12(rand.Reader)
-		if err != nil {
-			t.Fatal(err)
-		}
-		b := a.Mul(bls.NewFQ12(
-			bls.NewFQ6(c0, c1, bls.FQ2Zero),
-			bls.NewFQ6(bls.FQ2Zero, c5, bls.FQ2Zero),
-		))
-		a = a.MulBy014(c0, c1, c5)
-
-		if !a.Equals(b) {
-			t.Error("MulBy014 is broken.")
-		}
-	}
-}
-
-func BenchmarkFQ12Add(b *testing.B) {
+func BenchmarkFQAdd(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ12
-		f2 *bls.FQ12
+		f1 *bls.FQ
+		f2 *bls.FQ
 	}
 
 	r := NewXORShift(1)
 	inData := [g1MulAssignSamples]addData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
-		f2, _ := bls.RandFQ12(r)
+		f1, _ := bls.RandFQ(r)
+		f2, _ := bls.RandFQ(r)
 		inData[i] = addData{
 			f1: f1,
 			f2: f2,
@@ -63,17 +32,17 @@ func BenchmarkFQ12Add(b *testing.B) {
 	}
 }
 
-func BenchmarkFQ12Sub(b *testing.B) {
+func BenchmarkFQSub(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ12
-		f2 *bls.FQ12
+		f1 *bls.FQ
+		f2 *bls.FQ
 	}
 
 	r := NewXORShift(1)
 	inData := [g1MulAssignSamples]addData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
-		f2, _ := bls.RandFQ12(r)
+		f1, _ := bls.RandFQ(r)
+		f2, _ := bls.RandFQ(r)
 		inData[i] = addData{
 			f1: f1,
 			f2: f2,
@@ -89,20 +58,17 @@ func BenchmarkFQ12Sub(b *testing.B) {
 	}
 }
 
-func BenchmarkFQ12Mul(b *testing.B) {
+func BenchmarkFQMul2(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ12
-		f2 *bls.FQ12
+		f1 *bls.FQ
 	}
 
 	r := NewXORShift(1)
 	inData := [g1MulAssignSamples]addData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
-		f2, _ := bls.RandFQ12(r)
+		f1, _ := bls.RandFQ(r)
 		inData[i] = addData{
 			f1: f1,
-			f2: f2,
 		}
 	}
 
@@ -110,20 +76,20 @@ func BenchmarkFQ12Mul(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Mul(inData[count].f2)
+		inData[count].f1.Double()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ12Square(b *testing.B) {
+func BenchmarkFQSquare(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ12
+		f1 *bls.FQ
 	}
 
 	r := NewXORShift(1)
 	inData := [g1MulAssignSamples]addData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
+		f1, _ := bls.RandFQ(r)
 		inData[i] = addData{
 			f1: f1,
 		}
@@ -138,15 +104,15 @@ func BenchmarkFQ12Square(b *testing.B) {
 	}
 }
 
-func BenchmarkFQ12Inverse(b *testing.B) {
+func BenchmarkFQInverse(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ12
+		f1 *bls.FQ
 	}
 
 	r := NewXORShift(1)
 	inData := [g1MulAssignSamples]addData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
+		f1, _ := bls.RandFQ(r)
 		inData[i] = addData{
 			f1: f1,
 		}
@@ -157,6 +123,52 @@ func BenchmarkFQ12Inverse(b *testing.B) {
 	count := 0
 	for i := 0; i < b.N; i++ {
 		inData[count].f1.Inverse()
+		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
+func BenchmarkFQNegate(b *testing.B) {
+	type addData struct {
+		f1 *bls.FQ
+	}
+
+	r := NewXORShift(1)
+	inData := [g1MulAssignSamples]addData{}
+	for i := 0; i < g1MulAssignSamples; i++ {
+		f1, _ := bls.RandFQ(r)
+		inData[i] = addData{
+			f1: f1,
+		}
+	}
+
+	b.ResetTimer()
+
+	count := 0
+	for i := 0; i < b.N; i++ {
+		inData[count].f1.Neg()
+		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
+func BenchmarkFQSqrt(b *testing.B) {
+	type addData struct {
+		f1 *bls.FQ
+	}
+
+	r := NewXORShift(1)
+	inData := [g1MulAssignSamples]addData{}
+	for i := 0; i < g1MulAssignSamples; i++ {
+		f1, _ := bls.RandFQ(r)
+		inData[i] = addData{
+			f1: f1,
+		}
+	}
+
+	b.ResetTimer()
+
+	count := 0
+	for i := 0; i < b.N; i++ {
+		inData[count].f1.Sqrt()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
