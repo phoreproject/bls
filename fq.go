@@ -2,6 +2,7 @@ package bls
 
 import (
 	"crypto/rand"
+	"fmt"
 	"io"
 	"math/big"
 )
@@ -97,7 +98,7 @@ func (f FQ) Neg() *FQ {
 }
 
 func (f FQ) String() string {
-	return f.n.String()
+	return fmt.Sprintf("Fq(0x%096x)", f.n)
 }
 
 // Cmp compares this field element to another.

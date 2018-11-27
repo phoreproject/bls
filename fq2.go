@@ -23,7 +23,7 @@ func NewFQ2(c0 *FQ, c1 *FQ) *FQ2 {
 }
 
 func (f FQ2) String() string {
-	return fmt.Sprintf("Fq2(%x + %x * u)", f.c0.n, f.c1.n)
+	return fmt.Sprintf("Fq2(%s + %s * u)", f.c0, f.c1)
 }
 
 // Cmp compares two FQ2 elements.

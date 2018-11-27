@@ -32,9 +32,9 @@ var G1AffineOne = &G1Affine{NewFQ(g1GeneratorX), NewFQ(g1GeneratorY), false}
 
 func (g G1Affine) String() string {
 	if g.infinity {
-		return fmt.Sprintf("G1: infinity")
+		return fmt.Sprintf("G1(infinity)")
 	}
-	return fmt.Sprintf("G1: (%s, %s)", g.x, g.y)
+	return fmt.Sprintf("G1(x=%s, y=%s)", g.x, g.y)
 }
 
 // Copy returns a copy of the G1Affine point.

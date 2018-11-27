@@ -21,30 +21,30 @@ func NewG2Affine(x *FQ2, y *FQ2) *G2Affine {
 // G2AffineZero represents the point at infinity on G2.
 var G2AffineZero = &G2Affine{FQ2Zero, FQ2One, true}
 
-var g2GeneratorXC0, _ = new(big.Int).SetString("3059144344244213709971259814753781636986470325476647558659373206291635324768958432433509563104347017837885763365758", 10)
-var g2GeneratorXC1, _ = new(big.Int).SetString("352701069587466618187139116011060144890029952792775240219908644239793785735715026873347600343865175952761926303160", 10)
-var g2GeneratorYC0, _ = new(big.Int).SetString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
-var g2GeneratorYC1, _ = new(big.Int).SetString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
+var g2GeneratorXC1, _ = new(big.Int).SetString("3059144344244213709971259814753781636986470325476647558659373206291635324768958432433509563104347017837885763365758", 10)
+var g2GeneratorXC0, _ = new(big.Int).SetString("352701069587466618187139116011060144890029952792775240219908644239793785735715026873347600343865175952761926303160", 10)
+var g2GeneratorYC1, _ = new(big.Int).SetString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
+var g2GeneratorYC0, _ = new(big.Int).SetString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
 
 // BCoeffFQ2 of the G2 curve.
 var BCoeffFQ2 = NewFQ2(NewFQ(BCoeff), NewFQ(BCoeff))
 
 // G2AffineOne represents the point at 1 on G2.
 var G2AffineOne = &G2Affine{
-	NewFQ2(
+	x: NewFQ2(
 		NewFQ(g2GeneratorXC0),
 		NewFQ(g2GeneratorXC1),
 	),
-	NewFQ2(
+	y: NewFQ2(
 		NewFQ(g2GeneratorYC0),
 		NewFQ(g2GeneratorYC1),
-	), false}
+	), infinity: false}
 
 func (g G2Affine) String() string {
 	if g.infinity {
-		return fmt.Sprintf("G2: infinity")
+		return fmt.Sprintf("G2(Infinity)")
 	}
-	return fmt.Sprintf("G2: (%s, %s)", g.x, g.y)
+	return fmt.Sprintf("G2(x=%s, y=%s)", g.x, g.y)
 }
 
 // Copy returns a copy of the G2Affine point.
@@ -487,7 +487,7 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 
 	additionStep := func(r *G2Projective, q *G2Affine) (*FQ2, *FQ2, *FQ2) {
 		zSquared := r.z.Square()
-		ySquared := r.y.Square()
+		ySquared := q.y.Square()
 		t0 := zSquared.Mul(q.x)
 		t1 := q.y.Add(r.z).Square().Sub(ySquared).Sub(zSquared).Mul(zSquared)
 		t2 := t0.Sub(r.x)
