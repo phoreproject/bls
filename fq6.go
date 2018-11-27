@@ -117,65 +117,52 @@ func (f FQ6) Sub(other *FQ6) *FQ6 {
 	)
 }
 
-var fq6c10, _ = new(big.Int).SetString("3380320199399472671518931668520476396067793891014375699959770179129436917079669831430077592723774664465579537268733", 10)
-var fq6c11, _ = new(big.Int).SetString("3838308620157845674988348254171675463841990158783295489149568424364307477627266222040030802976299176456994858070129", 10)
-var fq6c12, _ = new(big.Int).SetString("786190290886016440328299728779656453203981590080344581554777668754318906274739675415266862557957487153214149780712", 10)
-var fq6c21, _ = new(big.Int).SetString("3216219264335650953089490096956247703352901229858663303777280467369712744216098189027420766571058176884680122779075", 10)
-var fq6c20, _ = new(big.Int).SetString("622089355822194721898858157215427760489088928924632185372287956994594733411168033012610036405240999572314735291054", 10)
-var fq6c25, _ = new(big.Int).SetString("164100935063821718429441571564228692714892661155712396182489711759724172863571642402656826152716487580899414489658", 10)
+func getFrobExpMinus1Over3(power int64) *big.Int {
+	return new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(QFieldModulus, big.NewInt(power), nil), bigOne), bigThree)
+}
+
+func get2FrobExpMinus2Over3(power int64) *big.Int {
+	qPow := new(big.Int).Exp(QFieldModulus, big.NewInt(power), nil)
+	qPowDouble := new(big.Int).Mul(qPow, bigTwo)
+	qPowMinusTwo := new(big.Int).Sub(qPowDouble, bigTwo)
+	return new(big.Int).Div(qPowMinusTwo, bigThree)
+}
+
+var bigThree = big.NewInt(3)
+
+var fq2nqr = NewFQ2(
+	FQOne,
+	FQOne,
+)
 
 var frobeniusCoeffFQ6c1 = [6]*FQ2{
-	{
-		c0: NewFQ(fq6c10),
-		c1: FQZero,
-	},
-	{
-		c0: FQZero,
-		c1: NewFQ(fq6c11),
-	},
-	{
-		c0: NewFQ(fq6c12),
-		c1: FQZero,
-	},
-	{
-		c0: FQZero,
-		c1: NewFQ(fq6c10),
-	},
-	{
-		c0: NewFQ(fq6c11),
-		c1: FQZero,
-	},
-	{
-		c0: FQZero,
-		c1: NewFQ(fq6c12),
-	},
+	// Fq2(u + 1)**(((q^0) - 1) / 3)
+	FQ2One,
+	// Fq2(u + 1)**(((q^1) - 1) / 3)
+	fq2nqr.Exp(getFrobExpMinus1Over3(1)),
+	// Fq2(u + 1)**(((q^2) - 1) / 3)
+	fq2nqr.Exp(getFrobExpMinus1Over3(2)),
+	// Fq2(u + 1)**(((q^3) - 1) / 3)
+	fq2nqr.Exp(getFrobExpMinus1Over3(3)),
+	// Fq2(u + 1)**(((q^4) - 1) / 3)
+	fq2nqr.Exp(getFrobExpMinus1Over3(4)),
+	// Fq2(u + 1)**(((q^5) - 1) / 3)
+	fq2nqr.Exp(getFrobExpMinus1Over3(5)),
 }
 
 var frobeniusCoeffFQ6c2 = [6]*FQ2{
-	{
-		c0: NewFQ(fq6c10),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(fq6c21),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(fq6c11),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(fq6c20),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(fq6c11),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(fq6c25),
-		c1: FQZero,
-	},
+	// Fq2(u + 1)**(((2q^0) - 2) / 3)
+	FQ2One,
+	// Fq2(u + 1)**(((2q^1) - 2) / 3)
+	fq2nqr.Exp(get2FrobExpMinus2Over3(1)),
+	// Fq2(u + 1)**(((2q^2) - 2) / 3)
+	fq2nqr.Exp(get2FrobExpMinus2Over3(2)),
+	// Fq2(u + 1)**(((2q^3) - 2) / 3)
+	fq2nqr.Exp(get2FrobExpMinus2Over3(3)),
+	// Fq2(u + 1)**(((2q^4) - 2) / 3)
+	fq2nqr.Exp(get2FrobExpMinus2Over3(4)),
+	// Fq2(u + 1)**(((2q^5) - 2) / 3)
+	fq2nqr.Exp(get2FrobExpMinus2Over3(5)),
 }
 
 // FrobeniusMap runs the frobenius map algorithm with a certain power.

@@ -108,73 +108,36 @@ func (f FQ12) Exp(n *big.Int) *FQ12 {
 	}
 }
 
-var frobeniusCoeffFQ12c110, _ = new(big.Int).SetString("1376889598125376727959055341295674356654925039980005395128828212993454708588385020118431646457834669954221389501541", 10)
-var frobeniusCoeffFQ12c111, _ = new(big.Int).SetString("2625519957096290665458734484440229799901957779959002490203229923130576941902452844324255982671180994083672883058246", 10)
-var frobeniusCoeffFQ12c130, _ = new(big.Int).SetString("1821461487266245992767491788684378228087062278322214693001359809350238716280406307949636812899085786271837335624401", 10)
-var frobeniusCoeffFQ12c131, _ = new(big.Int).SetString("2180948067955421400650298037051525928469820541616793192330698326773792934210431556493050816229929877766056936935386", 10)
-var frobeniusCoeffFQ12c150, _ = new(big.Int).SetString("444571889140869264808436447388703871432137238342209297872531596356784007692021287831205166441251116317615946122860", 10)
-var frobeniusCoeffFQ12c151, _ = new(big.Int).SetString("3557837666080798128609353378347200285124745581596798587459526539767247642798816576611482462687764547720278326436927", 10)
+var bigSix = big.NewInt(6)
+
+func getFrobExpMinus1Over6(power int64) *big.Int {
+	return new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(QFieldModulus, big.NewInt(power), nil), bigOne), bigSix)
+}
 
 var frobeniusCoeffFQ12c1 = [12]*FQ2{
-	{
-		c0: NewFQ(fq6c10),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c110),
-		c1: NewFQ(frobeniusCoeffFQ12c111),
-	},
-	{
-		c0: NewFQ(fq6c25),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c130),
-		c1: NewFQ(frobeniusCoeffFQ12c131),
-	},
-	{
-		c0: NewFQ(fq6c12),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c150),
-		c1: NewFQ(frobeniusCoeffFQ12c151),
-	},
-	{
-		c0: NewFQ(fq6c20),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c111),
-		c1: NewFQ(frobeniusCoeffFQ12c110),
-	},
-	{
-		c0: NewFQ(fq6c11),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c131),
-		c1: NewFQ(frobeniusCoeffFQ12c130),
-	},
-	{
-		c0: NewFQ(fq6c21),
-		c1: FQZero,
-	},
-	{
-		c0: NewFQ(frobeniusCoeffFQ12c151),
-		c1: NewFQ(frobeniusCoeffFQ12c150),
-	},
+	FQ2One,
+	fq2nqr.Exp(getFrobExpMinus1Over6(1)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(2)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(3)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(4)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(5)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(6)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(7)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(8)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(9)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(10)),
+	fq2nqr.Exp(getFrobExpMinus1Over6(11)),
 }
 
 // FrobeniusMap calculates the frobenius map of an FQ12 element.
 func (f FQ12) FrobeniusMap(power uint8) *FQ12 {
-	n := f.c1.FrobeniusMap(power)
+	c1 := f.c1.FrobeniusMap(power)
 	return NewFQ12(
 		f.c0.FrobeniusMap(power),
 		NewFQ6(
-			n.c0.Mul(frobeniusCoeffFQ12c1[power%12]),
-			n.c1.Mul(frobeniusCoeffFQ12c1[power%12]),
-			n.c2.Mul(frobeniusCoeffFQ12c1[power%12]),
+			c1.c0.Mul(frobeniusCoeffFQ12c1[power%12]),
+			c1.c1.Mul(frobeniusCoeffFQ12c1[power%12]),
+			c1.c2.Mul(frobeniusCoeffFQ12c1[power%12]),
 		),
 	)
 }
