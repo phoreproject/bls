@@ -268,9 +268,12 @@ func (f FQ6) Square() *FQ6 {
 
 // Mul multiplies two FQ6 elements together.
 func (f FQ6) Mul(other *FQ6) *FQ6 {
-	aa := f.c0.Mul(other.c0)
-	bb := f.c1.Mul(other.c1)
-	cc := f.c2.Mul(other.c2)
+	aa := f.c0.Copy()
+	aa.MulAssign(other.c0)
+	bb := f.c1.Copy()
+	bb.MulAssign(other.c1)
+	cc := f.c2.Copy()
+	cc.MulAssign(other.c2)
 
 	tmp := f.c1.Add(f.c2)
 	t1 := other.c1.Add(other.c2)
@@ -303,9 +306,12 @@ func (f FQ6) Mul(other *FQ6) *FQ6 {
 
 // MulAssign multiplies two FQ6 elements together.
 func (f *FQ6) MulAssign(other *FQ6) {
-	aa := f.c0.Mul(other.c0)
-	bb := f.c1.Mul(other.c1)
-	cc := f.c2.Mul(other.c2)
+	aa := f.c0.Copy()
+	aa.MulAssign(other.c0)
+	bb := f.c1.Copy()
+	bb.MulAssign(other.c1)
+	cc := f.c2.Copy()
+	cc.MulAssign(other.c2)
 
 	tmp := f.c1.Add(f.c2)
 	t1 := other.c1.Add(other.c2)

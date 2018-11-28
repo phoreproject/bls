@@ -109,15 +109,17 @@ func (f FQ12) Copy() *FQ12 {
 
 // Exp raises the element ot a specific power.
 func (f FQ12) Exp(n *big.Int) *FQ12 {
-	if n.Cmp(bigZero) == 0 {
-		return FQ12One.Copy()
-	} else if n.Cmp(bigOne) == 0 {
-		return f.Copy()
-	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigZero) == 0 {
-		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo))
-	} else {
-		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo)).Mul(&f)
+	nCopy := new(big.Int).Set(n)
+	res := FQ12One.Copy()
+	fi := f.Copy()
+	for nCopy.Cmp(bigZero) != 0 {
+		if !isEven(nCopy) {
+			res.MulAssign(fi)
+		}
+		fi.MulAssign(fi)
+		nCopy.Rsh(nCopy, 1)
 	}
+	return res
 }
 
 var bigSix = big.NewInt(6)
@@ -176,6 +178,20 @@ func (f FQ12) Square() *FQ12 {
 	)
 }
 
+// SquareAssign squares the FQ2 element.
+func (f *FQ12) SquareAssign() {
+	ab := f.c0.Mul(f.c1)
+	c0 := f.c1.Neg()
+	c0.AddAssign(f.c0)
+	f.c0.AddAssign(f.c1)
+	c0.MulAssign(f.c0)
+	c0.SubAssign(ab)
+	c0.AddAssign(ab)
+	ab.AddAssign(ab)
+	f.c0 = c0
+	f.c1 = ab
+}
+
 // Mul multiplies two FQ12 elements together.
 func (f FQ12) Mul(other *FQ12) *FQ12 {
 	aa := f.c0.Copy()
@@ -197,9 +213,12 @@ func (f FQ12) Mul(other *FQ12) *FQ12 {
 
 // MulAssign multiplies two FQ12 elements together.
 func (f *FQ12) MulAssign(other *FQ12) {
-	aa := f.c0.Mul(other.c0)
-	bb := f.c1.Mul(other.c1)
-	o := other.c0.Add(other.c1)
+	aa := f.c0.Copy()
+	aa.MulAssign(other.c0)
+	bb := f.c1.Copy()
+	bb.MulAssign(other.c1)
+	o := other.c0.Copy()
+	o.AddAssign(other.c1)
 
 	f.c1 = f.c1.Add(f.c0)
 	f.c1.MulAssign(o)

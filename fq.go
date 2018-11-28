@@ -39,7 +39,10 @@ func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 
 // NewFQ creates a new field element.
 func NewFQ(n *big.Int) *FQ {
-	outN := new(big.Int).Mod(n, QFieldModulus)
+	outN := n
+	if n.Cmp(QFieldModulus) >= 0 || n.Cmp(bigZero) < 0 {
+		outN.Mod(outN, QFieldModulus)
+	}
 	return &FQ{n: outN}
 }
 
@@ -51,14 +54,18 @@ func (f FQ) Copy() *FQ {
 // Add adds two field elements together.
 func (f FQ) Add(other *FQ) *FQ {
 	out := new(big.Int).Add(f.n, other.n)
-	out.Mod(out, QFieldModulus)
+	if out.Cmp(QFieldModulus) >= 0 || out.Cmp(bigZero) < 0 {
+		out.Mod(out, QFieldModulus)
+	}
 	return &FQ{n: out}
 }
 
 // AddAssign multiplies a field element by this one.
 func (f FQ) AddAssign(other *FQ) {
 	f.n.Add(f.n, other.n)
-	f.n.Mod(f.n, QFieldModulus)
+	if f.n.Cmp(QFieldModulus) >= 0 || f.n.Cmp(bigZero) < 0 {
+		f.n.Mod(f.n, QFieldModulus)
+	}
 }
 
 // Mul multiplies two field elements together.
@@ -71,20 +78,32 @@ func (f FQ) Mul(other *FQ) *FQ {
 // MulAssign multiplies a field element by this one.
 func (f FQ) MulAssign(other *FQ) {
 	f.n.Mul(f.n, other.n)
-	f.n.Mod(f.n, QFieldModulus)
+	if f.n.Cmp(QFieldModulus) < 0 && f.n.Cmp(bigZero) > 0 {
+		return
+	} else if f.n.BitLen() < 386 && f.n.Sign() == 1 {
+		for f.n.Cmp(QFieldModulus) >= 0 {
+			f.n.Sub(f.n, QFieldModulus)
+		}
+	} else {
+		f.n.Mod(f.n, QFieldModulus)
+	}
 }
 
 // Sub subtracts one field element from the other.
 func (f FQ) Sub(other *FQ) *FQ {
 	out := new(big.Int).Sub(f.n, other.n)
-	out.Mod(out, QFieldModulus)
+	if out.Cmp(QFieldModulus) >= 0 || out.Cmp(bigZero) < 0 {
+		out.Mod(out, QFieldModulus)
+	}
 	return &FQ{n: out}
 }
 
 // SubAssign subtracts a field element from this one.
 func (f FQ) SubAssign(other *FQ) {
 	f.n.Sub(f.n, other.n)
-	f.n.Mod(f.n, QFieldModulus)
+	if f.n.Cmp(QFieldModulus) >= 0 || f.n.Cmp(bigZero) < 0 {
+		f.n.Mod(f.n, QFieldModulus)
+	}
 }
 
 // Div divides one field element by another.

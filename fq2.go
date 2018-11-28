@@ -168,8 +168,10 @@ func (f *FQ2) SubAssign(other *FQ2) {
 
 // Mul multiplies two FQ2 elements together.
 func (f FQ2) Mul(other *FQ2) *FQ2 {
-	aa := f.c0.Mul(other.c0)
-	bb := f.c1.Mul(other.c1)
+	aa := f.c0.Copy()
+	aa.MulAssign(other.c0)
+	bb := f.c1.Copy()
+	bb.MulAssign(other.c1)
 	o := other.c0.Add(other.c1)
 	c1 := f.c1.Add(f.c0)
 	c1.MulAssign(o)
@@ -186,8 +188,10 @@ func (f FQ2) Mul(other *FQ2) *FQ2 {
 
 // MulAssign multiplies two FQ2 elements together.
 func (f *FQ2) MulAssign(other *FQ2) {
-	aa := f.c0.Mul(other.c0)
-	bb := f.c1.Mul(other.c1)
+	aa := f.c0.Copy()
+	aa.MulAssign(other.c0)
+	bb := f.c1.Copy()
+	bb.MulAssign(other.c1)
 	o := other.c0.Copy()
 	o.AddAssign(other.c1)
 	f.c1.AddAssign(f.c0)
