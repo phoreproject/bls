@@ -99,15 +99,15 @@ func (f FQ2) Square() *FQ2 {
 // SquareAssign squares the FQ2 element.
 func (f *FQ2) SquareAssign() {
 	ab := f.c0.Mul(f.c1)
-	c0c1 := f.c0.Add(f.c1)
 	c0 := f.c1.Neg()
 	c0.AddAssign(f.c0)
-	c0.MulAssign(c0c1)
+	f.c0.AddAssign(f.c1)
+	c0.MulAssign(f.c0)
 	c0.SubAssign(ab)
-	f.c1 = ab
-	f.c1.AddAssign(ab)
 	c0.AddAssign(ab)
+	ab.AddAssign(ab)
 	f.c0 = c0
+	f.c1 = ab
 }
 
 // Double doubles an FQ2 element.
