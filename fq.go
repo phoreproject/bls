@@ -251,7 +251,7 @@ func (f FQ) Parity() bool {
 
 // MulBits multiplies the number by a big number.
 func (f FQ) MulBits(b *big.Int) *FQ {
-	res := FQZero
+	res := FQZero.Copy()
 	for i := 0; i < b.BitLen(); i++ {
 		res.DoubleAssign()
 		if b.Bit(b.BitLen()-1-i) == 1 {

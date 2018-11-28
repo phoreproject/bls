@@ -323,15 +323,15 @@ func (g G2Projective) Double() *G2Projective {
 	newZ.DoubleAssign()
 
 	// x3 = F-2*D
-	newX := f
+	newX := f.Sub(d)
 	newX.SubAssign(d)
-	newX.SubAssign(d)
+
+	c.DoubleAssign()
+	c.DoubleAssign()
+	c.DoubleAssign()
 
 	newY := d.Sub(newX)
 	newY.MulAssign(e)
-	c.DoubleAssign()
-	c.DoubleAssign()
-	c.DoubleAssign()
 	newY.SubAssign(c)
 
 	return NewG2Projective(newX, newY, newZ)
@@ -427,8 +427,7 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 	u2 := other.x.Mul(z1z1)
 
 	// S2 = Y2*Z1*Z1Z1
-	s2 := other.y.Mul(g.z)
-	s2.MulAssign(z1z1)
+	s2 := other.y.Mul(g.z).Mul(z1z1)
 
 	if g.x.Equals(u2) && g.y.Equals(s2) {
 		// points are equal
@@ -436,40 +435,40 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 	}
 
 	// H = U2-X1
-	h := u2.Sub(g.x)
+	u2.SubAssign(g.x)
 
 	// HH = H^2
-	hh := h.Square()
+	hh := u2.Square()
 
 	// I = 4*HH
 	i := hh.Double()
 	i.DoubleAssign()
 
 	// J = H * I
-	j := h.Mul(i)
+	j := u2.Mul(i)
 
 	// r = 2*(S2-Y1)
-	r := s2.Sub(g.y)
+	s2.SubAssign(g.y)
 	s2.DoubleAssign()
 
 	// v = X1*I
 	v := g.x.Mul(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := r.Square()
+	newX := s2.Square()
 	newX.SubAssign(j)
 	newX.SubAssign(v)
 	newX.SubAssign(v)
 
 	// Y3 = r*(V - X3) - 2*Y1*J
 	newY := v.Sub(newX)
-	newY.MulAssign(r)
+	newY.MulAssign(s2)
 	i0 := g.y.Mul(j)
 	i0.DoubleAssign()
 	newY.SubAssign(i0)
 
 	// Z3 = (Z1+H)^2 - Z1Z1 - HH
-	newZ := g.z.Add(h)
+	newZ := g.z.Add(u2)
 	newZ.SquareAssign()
 	newZ.SubAssign(z1z1)
 	newZ.SubAssign(hh)
@@ -653,8 +652,8 @@ func RandG2(r io.Reader) (*G2Projective, error) {
 
 var swencSqrtNegThree, _ = new(big.Int).SetString("1586958781458431025242759403266842894121773480562120986020912974854563298150952611241517463240701", 10)
 var swencSqrtNegThreeMinusOneDivTwo, _ = new(big.Int).SetString("793479390729215512621379701633421447060886740281060493010456487427281649075476305620758731620350", 10)
-var swencSqrtNegThreeFQ2 = NewFQ2(NewFQ(swencSqrtNegThree), FQZero)
-var swencSqrtNegThreeMinusOneDivTwoFQ2 = NewFQ2(NewFQ(swencSqrtNegThreeMinusOneDivTwo), FQZero)
+var swencSqrtNegThreeFQ2 = NewFQ2(NewFQ(swencSqrtNegThree), FQZero.Copy())
+var swencSqrtNegThreeMinusOneDivTwoFQ2 = NewFQ2(NewFQ(swencSqrtNegThreeMinusOneDivTwo), FQZero.Copy())
 
 // SWEncodeG2 implements the Shallue-van de Woestijne encoding.
 func SWEncodeG2(t *FQ2) *G2Affine {

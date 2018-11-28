@@ -559,7 +559,7 @@ func HashG1(msg []byte) *G1Projective {
 	hasher0.Write(msg)
 	hasher0.Write([]byte("G2_0"))
 	hasher1, _ := blake2b.New(64, nil)
-	hasher0.Write(msg)
+	hasher1.Write(msg)
 	hasher1.Write([]byte("G2_1"))
 	t0 := HashFQ(hasher0)
 	t0Affine := SWEncodeG1(t0)
