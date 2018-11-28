@@ -161,3 +161,46 @@ func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 		t.Fatal("signature verifies with duplicate message")
 	}
 }
+
+func BenchmarkBLSAggregateSignature(b *testing.B) {
+	r := NewXORShift(5)
+	priv, _ := bls.RandKey(r)
+	msg := []byte(fmt.Sprintf(">16 character identical message"))
+	sig := bls.Sign(msg, priv)
+
+	s := bls.NewAggregateSignature()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Aggregate(sig)
+	}
+}
+
+func BenchmarkBLSSign(b *testing.B) {
+	r := NewXORShift(5)
+	privs := make([]*bls.SecretKey, b.N)
+	for i := range privs {
+		privs[i], _ = bls.RandKey(r)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		msg := []byte(fmt.Sprintf("Hello world! 16 characters %d", i))
+		bls.Sign(msg, privs[i])
+		// if !bls.Verify(msg, pub, sig) {
+		// 	return errors.New("sig did not verify")
+		// }
+	}
+}
+
+func BenchmarkBLSVerify(b *testing.B) {
+	r := NewXORShift(5)
+	priv, _ := bls.RandKey(r)
+	pub := bls.PrivToPub(priv)
+	msg := []byte(fmt.Sprintf(">16 character identical message"))
+	sig := bls.Sign(msg, priv)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bls.Verify(msg, pub, sig)
+	}
+}
