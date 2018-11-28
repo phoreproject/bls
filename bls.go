@@ -34,10 +34,10 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 		c0 := coeffs[0]
 		c1 := coeffs[1]
 
-		c0.c0 = c0.c0.Mul(p.y)
-		c0.c1 = c0.c1.Mul(p.y)
-		c1.c0 = c1.c0.Mul(p.x)
-		c1.c1 = c1.c1.Mul(p.x)
+		c0.c0.MulAssign(p.y)
+		c0.c1.MulAssign(p.y)
+		c1.c0.MulAssign(p.x)
+		c1.c1.MulAssign(p.x)
 
 		return f.MulBy014(coeffs[2], c1, c0)
 	}
@@ -89,12 +89,14 @@ func FinalExponentiation(r *FQ12) *FQ12 {
 		return nil
 	}
 	r = f1.Mul(f2)
-	r = r.FrobeniusMap(2).Mul(r)
+	f2 = r.Copy()
+	r.FrobeniusMapAssign(2)
+	r.MulAssign(f2)
 
 	ExpByX := func(f *FQ12, x *big.Int) *FQ12 {
 		newf := f.Exp(x)
 		if blsIsNegative {
-			newf = newf.Conjugate()
+			newf.ConjugateAssign()
 		}
 		return newf
 	}
@@ -107,18 +109,23 @@ func FinalExponentiation(r *FQ12) *FQ12 {
 	y2 := ExpByX(y1, x)
 	x.Lsh(x, 1)
 	y3 := r.Conjugate()
-	y1 = y1.Mul(y3).Conjugate().Mul(y2)
+	y1 = y1.Mul(y3)
+	y1.ConjugateAssign()
+	y1.MulAssign(y2)
 	y2 = ExpByX(y1, x)
 	y3 = ExpByX(y2, x)
-	y1 = y1.Conjugate()
-	y3 = y3.Mul(y1)
-	y1 = y1.Conjugate().FrobeniusMap(3)
-	y2 = y2.FrobeniusMap(2)
-	y1 = y1.Mul(y2)
-	y2 = ExpByX(y3, x).Mul(y0).Mul(r)
-	y1 = y1.Mul(y2)
-	y2 = y3.FrobeniusMap(1)
-	y1 = y1.Mul(y2)
+	y1.ConjugateAssign()
+	y3.MulAssign(y1)
+	y1.ConjugateAssign()
+	y1.FrobeniusMapAssign(3)
+	y2.FrobeniusMapAssign(2)
+	y1.MulAssign(y2)
+	y2 = ExpByX(y3, x)
+	y2.MulAssign(y0)
+	y2.MulAssign(r)
+	y1.MulAssign(y2)
+	y3.FrobeniusMapAssign(1)
+	y1.MulAssign(y3)
 	return y1
 }
 

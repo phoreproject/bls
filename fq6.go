@@ -302,7 +302,7 @@ func (f FQ6) Mul(other *FQ6) *FQ6 {
 }
 
 // MulAssign multiplies two FQ6 elements together.
-func (f FQ6) MulAssign(other *FQ6) {
+func (f *FQ6) MulAssign(other *FQ6) {
 	aa := f.c0.Mul(other.c0)
 	bb := f.c1.Mul(other.c1)
 	cc := f.c2.Mul(other.c2)
@@ -316,22 +316,20 @@ func (f FQ6) MulAssign(other *FQ6) {
 	t1.AddAssign(aa)
 
 	tmp = f.c0.Add(f.c2)
-	t3 := other.c0.Add(other.c2)
-	t3.MulAssign(tmp)
-	t3.SubAssign(aa)
-	t3.AddAssign(bb)
-	t3.SubAssign(cc)
+	f.c2 = other.c0.Add(other.c2)
+	f.c2.MulAssign(tmp)
+	f.c2.SubAssign(aa)
+	f.c2.AddAssign(bb)
+	f.c2.SubAssign(cc)
 	tmp = f.c0.Add(f.c1)
-	t2 := other.c0.Add(other.c1)
-	t2.MulAssign(tmp)
-	t2.SubAssign(aa)
-	t2.SubAssign(bb)
+	f.c1 = other.c0.Add(other.c1)
+	f.c1.MulAssign(tmp)
+	f.c1.SubAssign(aa)
+	f.c1.SubAssign(bb)
 	cc.MultiplyByNonresidueAssign()
-	t2.AddAssign(cc)
+	f.c1.AddAssign(cc)
 
 	f.c0 = t1
-	f.c1 = t2
-	f.c2 = t3
 }
 
 // Inverse finds the inverse of the FQ6 element.
