@@ -34,8 +34,15 @@ func (f *FQ12) MulBy014(c0 *FQ2, c1 *FQ2, c4 *FQ2) *FQ12 {
 	aa := f.c0.MulBy01(c0, c1)
 	bb := f.c1.MulBy1(c4)
 	o := c1.Add(c4)
+	c1Out := f.c1.Copy()
+	c1Out.AddAssign(f.c0)
+	c1Out.MulBy01Assign(c0, o)
+	c1Out.SubAssign(aa)
+	c1Out.SubAssign(bb)
+	outB := bb.MulByNonresidue()
+	outB.AddAssign(aa)
 	return NewFQ12(
-		bb.MulByNonresidue().Add(aa),
+		outB,
 		f.c1.Add(f.c0).MulBy01(c0, o).Sub(aa).Sub(bb),
 	)
 }
@@ -172,8 +179,7 @@ func (f FQ12) MulAssign(other *FQ12) {
 	bb := f.c1.Mul(other.c1)
 	o := other.c0.Add(other.c1)
 
-	f.c0 = bb.Copy()
-	f.c0.MulByNonresidueAssign()
+	f.c0 = bb.MulByNonresidue()
 	f.c0.AddAssign(aa)
 
 	f.c1.AddAssign(f.c0)

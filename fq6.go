@@ -33,12 +33,9 @@ func (f FQ6) Copy() *FQ6 {
 
 // MulByNonresidue multiplies by quadratic nonresidue v.
 func (f FQ6) MulByNonresidue() *FQ6 {
-	return NewFQ6(f.c2.Copy().MultiplyByNonresidue(), f.c0.Copy(), f.c1.Copy())
-}
-
-// MulByNonresidueAssign multiplies by quadratic nonresidue v.
-func (f FQ6) MulByNonresidueAssign() {
-	f.c2.MultiplyByNonresidueAssign()
+	out := NewFQ6(f.c2.Copy(), f.c0.Copy(), f.c1.Copy())
+	out.c0.MultiplyByNonresidueAssign()
+	return out
 }
 
 // MulBy1 multiplies the FQ6 by an FQ2.
@@ -57,17 +54,50 @@ func (f FQ6) MulBy01(c0 *FQ2, c1 *FQ2) *FQ6 {
 	b := f.c1.Mul(c1)
 
 	tmp := f.c1.Add(f.c2)
-	t1 := c1.Mul(tmp).Sub(b).MultiplyByNonresidue().Add(a)
+	t1 := c1.Mul(tmp)
+	t1.SubAssign(b)
+	t1.MultiplyByNonresidueAssign()
+	t1.AddAssign(a)
 	tmp = f.c0.Add(f.c2)
-	t3 := c0.Mul(tmp).Sub(a).Add(b)
+	t3 := c0.Mul(tmp)
+	t3.SubAssign(a)
+	t3.AddAssign(b)
 	tmp = f.c0.Add(f.c1)
-	t2 := c0.Add(c1).Mul(tmp).Sub(a).Sub(b)
+	t2 := c0.Add(c1)
+	t2.MulAssign(tmp)
+	t2.SubAssign(a)
+	t2.SubAssign(b)
 
 	return NewFQ6(
 		t1,
 		t2,
 		t3,
 	)
+}
+
+// MulBy01Assign multiplies by c0 and c1.
+func (f *FQ6) MulBy01Assign(c0 *FQ2, c1 *FQ2) {
+	a := f.c0.Mul(c0)
+	b := f.c1.Mul(c1)
+
+	tmp := f.c1.Add(f.c2)
+	t1 := c1.Mul(tmp)
+	t1.SubAssign(b)
+	t1.MultiplyByNonresidueAssign()
+	t1.AddAssign(a)
+	tmp = f.c0.Add(f.c2)
+	t3 := c0.Mul(tmp)
+	t3.SubAssign(a)
+	t3.AddAssign(b)
+	tmp = f.c0.Add(f.c1)
+	t2 := c0.Add(c1)
+	t2.MulAssign(tmp)
+	t2.SubAssign(a)
+	t2.SubAssign(b)
+
+	f.c0 = t1
+	f.c1 = t2
+	f.c2 = t3
 }
 
 // FQ6Zero represents the zero value of FQ6.
