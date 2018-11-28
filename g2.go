@@ -296,21 +296,34 @@ func (g G2Projective) Double() *G2Projective {
 	c := b.Square()
 
 	// D = 2*((X1+B)^2-A-C)
-	d := g.x.Add(b).Square().Sub(a).Sub(c).Double()
+	d := g.x.Add(b)
+	d.SquareAssign()
+	d.SubAssign(a)
+	d.SubAssign(c)
+	d.DoubleAssign()
 
 	// E = 3*A
-	e := a.Double().Add(a)
+	e := a.Double()
+	e.AddAssign(a)
 
 	// F = E^2
 	f := e.Square()
 
 	// z3 = 2*Y1*Z1
-	newZ := g.z.Mul(g.y).Double()
+	newZ := g.z.Mul(g.y)
+	newZ.DoubleAssign()
 
 	// x3 = F-2*D
-	newX := f.Sub(d).Sub(d)
+	newX := f
+	newX.SubAssign(d)
+	newX.SubAssign(d)
 
-	newY := d.Sub(newX).Mul(e).Sub(c.Double().Double().Double())
+	newY := d.Sub(newX)
+	newY.MulAssign(e)
+	c.DoubleAssign()
+	c.DoubleAssign()
+	c.DoubleAssign()
+	newY.SubAssign(c)
 
 	return NewG2Projective(newX, newY, newZ)
 }
@@ -337,10 +350,12 @@ func (g G2Projective) Add(other *G2Projective) *G2Projective {
 	u2 := other.x.Mul(z1z1)
 
 	// S1 = Y1*Z2*Z2Z2
-	s1 := g.y.Mul(other.z).Mul(z2z2)
+	s1 := g.y.Mul(other.z)
+	s1.MulAssign(z2z2)
 
 	// S2 = Y2*Z1*Z1Z1
-	s2 := other.y.Mul(g.z).Mul(z1z1)
+	s2 := other.y.Mul(g.z)
+	s2.MulAssign(z1z1)
 
 	if u1.Equals(u2) && s1.Equals(s2) {
 		// points are equal
@@ -351,27 +366,40 @@ func (g G2Projective) Add(other *G2Projective) *G2Projective {
 	h := u2.Sub(u1)
 
 	// I = (2*H)^2
-	i := h.Double().Square()
+	i := h.Double()
+	i.SquareAssign()
 
 	// J = H * I
 	j := h.Mul(i)
 
 	// r = 2*(S2-S1)
-	r := s2.Sub(s1).Double()
+	r := s2.Sub(s1)
+	r.DoubleAssign()
 
 	// v = U1*I
-	v := u1.Mul(i)
+	u1.MulAssign(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := r.Square().Sub(j).Sub(v).Sub(v)
+	newX := r.Square()
+	newX.SubAssign(j)
+	newX.SubAssign(u1)
+	newX.SubAssign(u1)
 
 	// Y3 = r*(V - X3) - 2*S1*J
-	newY := v.Sub(newX).Mul(r).Sub(s1.Mul(j).Double())
+	u1.SubAssign(newX)
+	u1.MulAssign(r)
+	s1.MulAssign(j)
+	s1.DoubleAssign()
+	u1.SubAssign(s1)
 
 	// Z3 = ((Z1+Z2)^2 - Z1Z1 - Z2Z2)*H
-	newZ := g.z.Add(other.z).Square().Sub(z1z1).Sub(z2z2).Mul(h)
+	newZ := g.z.Add(other.z)
+	newZ.SquareAssign()
+	newZ.SubAssign(z1z1)
+	newZ.SubAssign(z2z2)
+	newZ.MulAssign(h)
 
-	return NewG2Projective(newX, newY, newZ)
+	return NewG2Projective(newX, u1, newZ)
 }
 
 // AddAffine performs an EC Add operation with an affine point.
@@ -390,7 +418,8 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 	u2 := other.x.Mul(z1z1)
 
 	// S2 = Y2*Z1*Z1Z1
-	s2 := other.y.Mul(g.z).Mul(z1z1)
+	s2 := other.y.Mul(g.z)
+	s2.MulAssign(z1z1)
 
 	if g.x.Equals(u2) && g.y.Equals(s2) {
 		// points are equal
@@ -404,25 +433,37 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 	hh := h.Square()
 
 	// I = 4*HH
-	i := hh.Double().Double()
+	i := hh.Double()
+	i.DoubleAssign()
 
 	// J = H * I
 	j := h.Mul(i)
 
 	// r = 2*(S2-Y1)
-	r := s2.Sub(g.y).Double()
+	r := s2.Sub(g.y)
+	s2.DoubleAssign()
 
 	// v = X1*I
 	v := g.x.Mul(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := r.Square().Sub(j).Sub(v).Sub(v)
+	newX := r.Square()
+	newX.SubAssign(j)
+	newX.SubAssign(v)
+	newX.SubAssign(v)
 
 	// Y3 = r*(V - X3) - 2*Y1*J
-	newY := v.Sub(newX).Mul(r).Sub(g.y.Mul(j).Double())
+	newY := v.Sub(newX)
+	newY.MulAssign(r)
+	i0 := g.y.Mul(j)
+	i0.DoubleAssign()
+	newY.SubAssign(i0)
 
 	// Z3 = (Z1+H)^2 - Z1Z1 - HH
-	newZ := g.z.Add(h).Square().Sub(z1z1).Sub(hh)
+	newZ := g.z.Add(h)
+	newZ.SquareAssign()
+	newZ.SubAssign(z1z1)
+	newZ.SubAssign(hh)
 
 	return NewG2Projective(newX, newY, newZ)
 }

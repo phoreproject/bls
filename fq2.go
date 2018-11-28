@@ -82,14 +82,17 @@ func (f FQ2) IsZero() bool {
 // Square squares the FQ2 element.
 func (f FQ2) Square() *FQ2 {
 	ab := f.c0.Mul(f.c1)
-	c0c1 := f.c0.Add(f.c1)
+	c0c1 := f.c0.Copy()
+	c0c1.AddAssign(f.c1)
 	c0 := f.c1.Neg()
 	c0.AddAssign(f.c0)
 	c0.MulAssign(c0c1)
 	c0.SubAssign(ab)
+	c0.AddAssign(ab)
+	ab.AddAssign(ab)
 	return &FQ2{
-		c0: c0.Add(ab),
-		c1: ab.Add(ab),
+		c0: c0,
+		c1: ab,
 	}
 }
 
@@ -168,9 +171,16 @@ func (f FQ2) Mul(other *FQ2) *FQ2 {
 	aa := f.c0.Mul(other.c0)
 	bb := f.c1.Mul(other.c1)
 	o := other.c0.Add(other.c1)
+	c1 := f.c1.Add(f.c0)
+	c1.MulAssign(o)
+	c1.SubAssign(aa)
+	c1.SubAssign(bb)
+
+	aa.SubAssign(bb)
+
 	return &FQ2{
-		c1: f.c1.Add(f.c0).Mul(o).Sub(aa).Sub(bb),
-		c0: aa.Sub(bb),
+		c1: c1,
+		c0: aa,
 	}
 }
 
@@ -178,7 +188,8 @@ func (f FQ2) Mul(other *FQ2) *FQ2 {
 func (f *FQ2) MulAssign(other *FQ2) {
 	aa := f.c0.Mul(other.c0)
 	bb := f.c1.Mul(other.c1)
-	o := other.c0.Add(other.c1)
+	o := other.c0.Copy()
+	o.AddAssign(other.c1)
 	f.c1.AddAssign(f.c0)
 	f.c1.MulAssign(o)
 	f.c1.SubAssign(aa)

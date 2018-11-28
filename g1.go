@@ -417,31 +417,43 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 	}
 
 	// H = U2-X1
-	h := u2.Sub(g.x)
+	u2.SubAssign(g.x)
 
 	// HH = H^2
-	hh := h.Square()
+	hh := u2.Square()
 
 	// I = 4*HH
-	i := hh.Double().Double()
+	i := hh.Double()
+	i.DoubleAssign()
 
 	// J = H * I
-	j := h.Mul(i)
+	j := u2.Mul(i)
 
 	// r = 2*(S2-Y1)
-	r := s2.Sub(g.y).Double()
+	s2.SubAssign(g.y)
+	s2.DoubleAssign()
 
 	// v = X1*I
 	v := g.x.Mul(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := r.Square().Sub(j).Sub(v).Sub(v)
+	newX := s2.Square()
+	newX.SubAssign(j)
+	newX.SubAssign(v)
+	newX.SubAssign(v)
 
 	// Y3 = r*(V - X3) - 2*Y1*J
-	newY := v.Sub(newX).Mul(r).Sub(g.y.Mul(j).Double())
+	newY := v.Sub(newX)
+	newY.MulAssign(s2)
+	i0 := g.y.Mul(j)
+	i0.DoubleAssign()
+	newY.SubAssign(i0)
 
 	// Z3 = (Z1+H)^2 - Z1Z1 - HH
-	newZ := g.z.Add(h).Square().Sub(z1z1).Sub(hh)
+	newZ := g.z.Add(u2)
+	newZ.SquareAssign()
+	newZ.SubAssign(z1z1)
+	newZ.SubAssign(hh)
 
 	return NewG1Projective(newX, newY, newZ)
 }
