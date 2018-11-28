@@ -36,6 +36,11 @@ func (f FQ6) MulByNonresidue() *FQ6 {
 	return NewFQ6(f.c2.Copy().MultiplyByNonresidue(), f.c0.Copy(), f.c1.Copy())
 }
 
+// MulByNonresidueAssign multiplies by quadratic nonresidue v.
+func (f FQ6) MulByNonresidueAssign() {
+	f.c2.MultiplyByNonresidueAssign()
+}
+
 // MulBy1 multiplies the FQ6 by an FQ2.
 func (f FQ6) MulBy1(c1 *FQ2) *FQ6 {
 	b := f.c1.Mul(c1)
@@ -90,6 +95,13 @@ func (f FQ6) Double() *FQ6 {
 	)
 }
 
+// DoubleAssign doubles the coefficients of the FQ6 element.
+func (f FQ6) DoubleAssign() {
+	f.c0.DoubleAssign()
+	f.c1.DoubleAssign()
+	f.c2.DoubleAssign()
+}
+
 // Neg negates the coefficients of the FQ6 element.
 func (f FQ6) Neg() *FQ6 {
 	return NewFQ6(
@@ -97,6 +109,13 @@ func (f FQ6) Neg() *FQ6 {
 		f.c1.Neg(),
 		f.c2.Neg(),
 	)
+}
+
+// NegAssign negates the coefficients of the FQ6 element.
+func (f FQ6) NegAssign() {
+	f.c0.NegAssign()
+	f.c1.NegAssign()
+	f.c2.NegAssign()
 }
 
 // Add adds the coefficients of the FQ6 element to another.
@@ -108,6 +127,13 @@ func (f FQ6) Add(other *FQ6) *FQ6 {
 	)
 }
 
+// AddAssign the coefficients of the FQ6 element to another.
+func (f FQ6) AddAssign(other *FQ6) {
+	f.c0.AddAssign(other.c0)
+	f.c1.AddAssign(other.c1)
+	f.c2.AddAssign(other.c2)
+}
+
 // Sub subtracts the coefficients of the FQ6 element from another.
 func (f FQ6) Sub(other *FQ6) *FQ6 {
 	return NewFQ6(
@@ -115,6 +141,13 @@ func (f FQ6) Sub(other *FQ6) *FQ6 {
 		f.c1.Sub(other.c1),
 		f.c2.Sub(other.c2),
 	)
+}
+
+// SubAssign subtracts the coefficients of the FQ6 element from another.
+func (f FQ6) SubAssign(other *FQ6) {
+	f.c0.SubAssign(other.c0)
+	f.c1.SubAssign(other.c1)
+	f.c2.SubAssign(other.c2)
 }
 
 func getFrobExpMinus1Over3(power int64) *big.Int {
@@ -177,6 +210,15 @@ func (f FQ6) FrobeniusMap(power uint8) *FQ6 {
 	)
 }
 
+// FrobeniusMapAssign runs the frobenius map algorithm with a certain power.
+func (f FQ6) FrobeniusMapAssign(power uint8) {
+	f.c0.FrobeniusMapAssign(power)
+	f.c1.FrobeniusMapAssign(power)
+	f.c1.MulAssign(frobeniusCoeffFQ6c1[power%6])
+	f.c2.FrobeniusMapAssign(power)
+	f.c2.MulAssign(frobeniusCoeffFQ6c2[power%6])
+}
+
 // Square squares the FQ6 element.
 func (f FQ6) Square() *FQ6 {
 	s0 := f.c0.Square()
@@ -201,17 +243,65 @@ func (f FQ6) Mul(other *FQ6) *FQ6 {
 	cc := f.c2.Mul(other.c2)
 
 	tmp := f.c1.Add(f.c2)
-	t1 := other.c1.Add(other.c2).Mul(tmp).Sub(bb).Sub(cc).MultiplyByNonresidue().Add(aa)
+	t1 := other.c1.Add(other.c2)
+	t1.MulAssign(tmp)
+	t1.SubAssign(bb)
+	t1.SubAssign(cc)
+	t1.MultiplyByNonresidueAssign()
+	t1.AddAssign(aa)
+
 	tmp = f.c0.Add(f.c2)
-	t3 := other.c0.Add(other.c2).Mul(tmp).Sub(aa).Add(bb).Sub(cc)
+	t3 := other.c0.Add(other.c2)
+	t3.MulAssign(tmp)
+	t3.SubAssign(aa)
+	t3.AddAssign(bb)
+	t3.SubAssign(cc)
 	tmp = f.c0.Add(f.c1)
-	t2 := other.c0.Add(other.c1).Mul(tmp).Sub(aa).Sub(bb).Add(cc.MultiplyByNonresidue())
+	t2 := other.c0.Add(other.c1)
+	t2.MulAssign(tmp)
+	t2.SubAssign(aa)
+	t2.SubAssign(bb)
+	cc.MultiplyByNonresidueAssign()
+	t2.AddAssign(cc)
 
 	return NewFQ6(
 		t1,
 		t2,
 		t3,
 	)
+}
+
+// MulAssign multiplies two FQ6 elements together.
+func (f FQ6) MulAssign(other *FQ6) {
+	aa := f.c0.Mul(other.c0)
+	bb := f.c1.Mul(other.c1)
+	cc := f.c2.Mul(other.c2)
+
+	tmp := f.c1.Add(f.c2)
+	t1 := other.c1.Add(other.c2)
+	t1.MulAssign(tmp)
+	t1.SubAssign(bb)
+	t1.SubAssign(cc)
+	t1.MultiplyByNonresidueAssign()
+	t1.AddAssign(aa)
+
+	tmp = f.c0.Add(f.c2)
+	t3 := other.c0.Add(other.c2)
+	t3.MulAssign(tmp)
+	t3.SubAssign(aa)
+	t3.AddAssign(bb)
+	t3.SubAssign(cc)
+	tmp = f.c0.Add(f.c1)
+	t2 := other.c0.Add(other.c1)
+	t2.MulAssign(tmp)
+	t2.SubAssign(aa)
+	t2.SubAssign(bb)
+	cc.MultiplyByNonresidueAssign()
+	t2.AddAssign(cc)
+
+	f.c0 = t1
+	f.c1 = t2
+	f.c2 = t3
 }
 
 // Inverse finds the inverse of the FQ6 element.

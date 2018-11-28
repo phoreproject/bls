@@ -93,9 +93,20 @@ func (f FQ) Div(other *FQ) *FQ {
 	return f.Mul(otherInverse)
 }
 
+// DivAssign divides one field element by another.
+func (f FQ) DivAssign(other *FQ) {
+	otherInverse := &FQ{n: primeFieldInv(other.n, QFieldModulus)}
+	f.MulAssign(otherInverse)
+}
+
 // Exp exponentiates the field element to the given power.
 func (f FQ) Exp(n *big.Int) *FQ {
 	return &FQ{new(big.Int).Exp(f.n, n, QFieldModulus)}
+}
+
+// ExpAssign exponentiates the field element to the given power.
+func (f *FQ) ExpAssign(n *big.Int) {
+	f.n.Exp(f.n, n, QFieldModulus)
 }
 
 // Equals checks equality of two field elements.
@@ -108,6 +119,12 @@ func (f FQ) Neg() *FQ {
 	return NewFQ(new(big.Int).Neg(f.n))
 }
 
+// NegAssign gets the negative value of the field element mod QFieldModulus.
+func (f *FQ) NegAssign() {
+	f.n.Neg(f.n)
+	f.n.Mod(f.n, QFieldModulus)
+}
+
 func (f FQ) String() string {
 	return fmt.Sprintf("Fq(0x%096x)", f.n)
 }
@@ -117,9 +134,15 @@ func (f FQ) Cmp(other *FQ) int {
 	return f.n.Cmp(other.n)
 }
 
-// Double doubles the
+// Double doubles the element
 func (f FQ) Double() *FQ {
 	return NewFQ(new(big.Int).Lsh(f.n, 1))
+}
+
+// DoubleAssign doubles the element
+func (f *FQ) DoubleAssign() {
+	f.n.Lsh(f.n, 1)
+	f.n.Mod(f.n, QFieldModulus)
 }
 
 // IsZero checks if the field element is zero.
@@ -130,6 +153,11 @@ func (f FQ) IsZero() bool {
 // Square squares a field element.
 func (f FQ) Square() *FQ {
 	return NewFQ(new(big.Int).Mul(f.n, f.n))
+}
+
+// SquareAssign squares a field element.
+func (f *FQ) SquareAssign() {
+	f.n.Mul(f.n, f.n)
 }
 
 // Sqrt calculates the square root of the field element.

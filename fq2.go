@@ -44,10 +44,22 @@ func (f FQ2) MultiplyByNonresidue() *FQ2 {
 	}
 }
 
+// MultiplyByNonresidueAssign multiplies this element by the cubic and quadratic
+// nonresidue 1 + u.
+func (f *FQ2) MultiplyByNonresidueAssign() {
+	oldC0 := f.c0.Copy()
+	f.c0.SubAssign(f.c1)
+	f.c1.AddAssign(oldC0)
+}
+
 // Norm gets the norm of Fq2 as extension field in i over Fq.
-func (f FQ2) Norm() *FQ {
-	t0 := f.c0.Mul(f.c0)
-	return f.c1.Mul(f.c1).Add(t0)
+func (f *FQ2) Norm() *FQ {
+	t0 := f.c0.Copy()
+	t1 := f.c1.Copy()
+	t0.SquareAssign()
+	t1.SquareAssign()
+	t1.AddAssign(t0)
+	return t1
 }
 
 // FQ2Zero gets the zero element of the field.
@@ -71,11 +83,28 @@ func (f FQ2) IsZero() bool {
 func (f FQ2) Square() *FQ2 {
 	ab := f.c0.Mul(f.c1)
 	c0c1 := f.c0.Add(f.c1)
-	c0 := f.c1.Neg().Add(f.c0).Mul(c0c1).Sub(ab)
+	c0 := f.c1.Neg()
+	c0.AddAssign(f.c0)
+	c0.MulAssign(c0c1)
+	c0.SubAssign(ab)
 	return &FQ2{
 		c0: c0.Add(ab),
 		c1: ab.Add(ab),
 	}
+}
+
+// SquareAssign squares the FQ2 element.
+func (f *FQ2) SquareAssign() {
+	ab := f.c0.Mul(f.c1)
+	c0c1 := f.c0.Add(f.c1)
+	c0 := f.c1.Neg()
+	c0.AddAssign(f.c0)
+	c0.MulAssign(c0c1)
+	c0.SubAssign(ab)
+	f.c1 = ab
+	f.c1.AddAssign(ab)
+	c0.AddAssign(ab)
+	f.c0 = c0
 }
 
 // Double doubles an FQ2 element.
@@ -86,12 +115,24 @@ func (f FQ2) Double() *FQ2 {
 	}
 }
 
+// DoubleAssign doubles an FQ2 element.
+func (f *FQ2) DoubleAssign() {
+	f.c0.DoubleAssign()
+	f.c1.DoubleAssign()
+}
+
 // Neg negates a FQ2 element.
 func (f FQ2) Neg() *FQ2 {
 	return &FQ2{
 		c0: f.c0.Neg(),
 		c1: f.c1.Neg(),
 	}
+}
+
+// NegAssign negates a FQ2 element.
+func (f *FQ2) NegAssign() {
+	f.c0.NegAssign()
+	f.c1.NegAssign()
 }
 
 // Add adds two FQ2 elements together.
@@ -102,12 +143,24 @@ func (f FQ2) Add(other *FQ2) *FQ2 {
 	}
 }
 
+// AddAssign adds two FQ2 elements together.
+func (f *FQ2) AddAssign(other *FQ2) {
+	f.c0.AddAssign(other.c0)
+	f.c1.AddAssign(other.c1)
+}
+
 // Sub subtracts one field element from another.
 func (f FQ2) Sub(other *FQ2) *FQ2 {
 	return &FQ2{
 		c0: f.c0.Sub(other.c0),
 		c1: f.c1.Sub(other.c1),
 	}
+}
+
+// SubAssign subtracts one field element from another.
+func (f *FQ2) SubAssign(other *FQ2) {
+	f.c0.SubAssign(other.c0)
+	f.c1.SubAssign(other.c1)
 }
 
 // Mul multiplies two FQ2 elements together.
@@ -119,6 +172,20 @@ func (f FQ2) Mul(other *FQ2) *FQ2 {
 		c1: f.c1.Add(f.c0).Mul(o).Sub(aa).Sub(bb),
 		c0: aa.Sub(bb),
 	}
+}
+
+// MulAssign multiplies two FQ2 elements together.
+func (f *FQ2) MulAssign(other *FQ2) {
+	aa := f.c0.Mul(other.c0)
+	bb := f.c1.Mul(other.c1)
+	o := other.c0.Add(other.c1)
+	f.c1.AddAssign(f.c0)
+	f.c1.MulAssign(o)
+	f.c1.SubAssign(aa)
+	f.c1.SubAssign(bb)
+
+	f.c0 = aa
+	f.c0.SubAssign(bb)
 }
 
 // Inverse finds the inverse of the field element.
@@ -133,6 +200,20 @@ func (f FQ2) Inverse() *FQ2 {
 	}
 }
 
+// InverseAssign finds the inverse of the field element.
+func (f *FQ2) InverseAssign() bool {
+	inv := f.c0.Square()
+	inv.AddAssign(f.c1.Square())
+	inv.Inverse()
+	if inv == nil {
+		return false
+	}
+	f.c0.MulAssign(inv)
+	f.c1.MulAssign(inv)
+	f.c1.NegAssign()
+	return true
+}
+
 var frobeniusCoeffFQ2c11 = NewFQ(bigOne).Neg().Exp(qMinus1Over2)
 
 var frobeniusCoeffFQ2c1 = [2]*FQ{
@@ -144,6 +225,12 @@ var frobeniusCoeffFQ2c1 = [2]*FQ{
 // coefficient.
 func (f FQ2) FrobeniusMap(power uint8) *FQ2 {
 	return NewFQ2(f.c0, f.c1.Mul(frobeniusCoeffFQ2c1[power%2]))
+}
+
+// FrobeniusMapAssign multiplies the element by the Frobenius automorphism
+// coefficient.
+func (f FQ2) FrobeniusMapAssign(power uint8) {
+	f.c1.MulAssign(frobeniusCoeffFQ2c1[power%2])
 }
 
 // Legendre gets the legendre symbol of the FQ2 element.
@@ -163,6 +250,25 @@ func (f FQ2) Exp(n *big.Int) *FQ2 {
 		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo))
 	} else {
 		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo)).Mul(&f)
+	}
+}
+
+// ExpAssign raises the element ot a specific power.
+func (f *FQ2) ExpAssign(n *big.Int) {
+	if n.Cmp(bigZero) == 0 {
+		f = FQ2One.Copy()
+	} else if n.Cmp(bigOne) == 0 {
+		return
+	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigZero) == 0 {
+		f.SquareAssign()
+		n.Div(n, bigTwo)
+		f.ExpAssign(n)
+	} else {
+		f0 := f.Copy()
+		f.MulAssign(f)
+		n.Div(n, bigTwo)
+		f.ExpAssign(n)
+		f.Mul(f0)
 	}
 }
 

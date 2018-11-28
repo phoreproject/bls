@@ -166,6 +166,22 @@ func (f FQ12) Mul(other *FQ12) *FQ12 {
 	)
 }
 
+// MulAssign multiplies two FQ12 elements together.
+func (f FQ12) MulAssign(other *FQ12) {
+	aa := f.c0.Mul(other.c0)
+	bb := f.c1.Mul(other.c1)
+	o := other.c0.Add(other.c1)
+
+	f.c0 = bb.Copy()
+	f.c0.MulByNonresidueAssign()
+	f.c0.AddAssign(aa)
+
+	f.c1.AddAssign(f.c0)
+	f.c1.MulAssign(o)
+	f.c1.SubAssign(aa)
+	f.c1.SubAssign(bb)
+}
+
 // Inverse finds the inverse of an FQ12
 func (f FQ12) Inverse() *FQ12 {
 	c1s := f.c1.Square().MulByNonresidue()
