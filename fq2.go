@@ -2,6 +2,7 @@ package bls
 
 import (
 	"fmt"
+	"hash"
 	"io"
 	"math/big"
 )
@@ -346,4 +347,29 @@ func RandFQ2(reader io.Reader) (*FQ2, error) {
 		i0,
 		i1,
 	), nil
+}
+
+// Parity checks if the point is greater than the point negated.
+func (f FQ2) Parity() bool {
+	neg := f.Neg()
+	return f.Cmp(neg) > 0
+}
+
+// MulBits multiplies the number by a big number.
+func (f FQ2) MulBits(b *big.Int) *FQ2 {
+	res := FQ2Zero
+	for i := 0; i < b.BitLen(); i++ {
+		res.DoubleAssign()
+		if b.Bit(b.BitLen()-1-i) == 1 {
+			res.AddAssign(&f)
+		}
+	}
+	return res
+}
+
+// HashFQ2 calculates a new FQ2 value based on a hash.
+func HashFQ2(hasher hash.Hash) *FQ2 {
+	digest := hasher.Sum(nil)
+	newB := new(big.Int).SetBytes(digest)
+	return FQ2One.MulBits(newB)
 }

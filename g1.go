@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 // G1Affine is an affine point on the G1 curve.
@@ -54,6 +56,13 @@ func (g G1Affine) Neg() *G1Affine {
 		return NewG1Affine(g.x, g.y.Neg())
 	}
 	return g.Copy()
+}
+
+// NegAssign negates the point.
+func (g G1Affine) NegAssign() {
+	if !g.IsZero() {
+		g.y.NegAssign()
+	}
 }
 
 // ToProjective converts an affine point to a projective one.
@@ -499,4 +508,65 @@ func RandG1(r io.Reader) (*G1Projective, error) {
 			return p1, nil
 		}
 	}
+}
+
+// SWEncodeG1 implements the Shallue-van de Woestijne encoding.
+func SWEncodeG1(t *FQ) *G1Affine {
+	if t.IsZero() {
+		return G1AffineZero.Copy()
+	}
+
+	parity := t.Parity()
+
+	w := t.Square()
+	w.AddAssign(NewFQ(BCoeff))
+	w.AddAssign(FQOne)
+
+	if w.IsZero() {
+		ret := G1AffineOne.Copy()
+		if parity {
+			ret.Neg()
+		}
+		return ret
+	}
+
+	w = w.Inverse()
+	w.MulAssign(NewFQ(swencSqrtNegThree))
+	w.MulAssign(t)
+
+	x1 := w.Mul(t)
+	x1.NegAssign()
+	x1.AddAssign(NewFQ(swencSqrtNegThreeMinusOneDivTwo))
+	if p := GetG1PointFromX(x1, parity); p != nil {
+		return p
+	}
+
+	x2 := x1.Neg()
+	x2.SubAssign(FQOne)
+	if p := GetG1PointFromX(x2, parity); p != nil {
+		return p
+	}
+
+	x3 := w.Square()
+	x3 = x3.Inverse()
+	x3.AddAssign(FQOne)
+	return GetG1PointFromX(x3, parity)
+}
+
+// HashG1 converts a message to a point on the G2 curve.
+func HashG1(msg []byte) *G1Projective {
+	hasher0, _ := blake2b.New(64, nil)
+	hasher0.Write(msg)
+	hasher0.Write([]byte("G2_0"))
+	hasher1, _ := blake2b.New(64, nil)
+	hasher0.Write(msg)
+	hasher1.Write([]byte("G2_1"))
+	t0 := HashFQ(hasher0)
+	t0Affine := SWEncodeG1(t0)
+	t1 := HashFQ(hasher1)
+	t1Affine := SWEncodeG1(t1)
+
+	res := t0Affine.ToProjective()
+	res = res.AddAffine(t1Affine)
+	return res.ToAffine().ScaleByCofactor()
 }

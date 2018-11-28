@@ -3,6 +3,7 @@ package bls
 import (
 	"crypto/rand"
 	"fmt"
+	"hash"
 	"io"
 	"math/big"
 )
@@ -240,6 +241,31 @@ func (f FQ) Inverse() *FQ {
 		return b
 	}
 	return c
+}
+
+// Parity checks if the point is greater than the point negated.
+func (f FQ) Parity() bool {
+	neg := f.Neg()
+	return f.Cmp(neg) > 0
+}
+
+// MulBits multiplies the number by a big number.
+func (f FQ) MulBits(b *big.Int) *FQ {
+	res := FQZero
+	for i := 0; i < b.BitLen(); i++ {
+		res.DoubleAssign()
+		if b.Bit(b.BitLen()-1-i) == 1 {
+			res.AddAssign(&f)
+		}
+	}
+	return res
+}
+
+// HashFQ calculates a new FQ2 value based on a hash.
+func HashFQ(hasher hash.Hash) *FQ {
+	digest := hasher.Sum(nil)
+	newB := new(big.Int).SetBytes(digest)
+	return FQOne.MulBits(newB)
 }
 
 var qMinus1Over2, _ = new(big.Int).SetString("2001204777610833696708894912867952078278441409969503942666029068062015825245418932221343814564507832018947136279893", 10)

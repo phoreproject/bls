@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 // G2Affine is an affine point on the G2 curve.
@@ -64,6 +66,13 @@ func (g G2Affine) Neg() *G2Affine {
 		return NewG2Affine(g.x, g.y.Neg())
 	}
 	return g.Copy()
+}
+
+// NegAssign negates the point.
+func (g G2Affine) NegAssign() {
+	if !g.IsZero() {
+		g.y.NegAssign()
+	}
 }
 
 // ToProjective converts an affine point to a projective one.
@@ -640,4 +649,70 @@ func RandG2(r io.Reader) (*G2Projective, error) {
 			return p1, nil
 		}
 	}
+}
+
+var swencSqrtNegThree, _ = new(big.Int).SetString("1586958781458431025242759403266842894121773480562120986020912974854563298150952611241517463240701", 10)
+var swencSqrtNegThreeMinusOneDivTwo, _ = new(big.Int).SetString("793479390729215512621379701633421447060886740281060493010456487427281649075476305620758731620350", 10)
+var swencSqrtNegThreeFQ2 = NewFQ2(NewFQ(swencSqrtNegThree), FQZero)
+var swencSqrtNegThreeMinusOneDivTwoFQ2 = NewFQ2(NewFQ(swencSqrtNegThreeMinusOneDivTwo), FQZero)
+
+// SWEncodeG2 implements the Shallue-van de Woestijne encoding.
+func SWEncodeG2(t *FQ2) *G2Affine {
+	if t.IsZero() {
+		return G2AffineZero.Copy()
+	}
+
+	parity := t.Parity()
+
+	w := t.Square()
+	w.AddAssign(BCoeffFQ2)
+	w.AddAssign(FQ2One)
+
+	if w.IsZero() {
+		ret := G2AffineOne.Copy()
+		if parity {
+			ret.NegAssign()
+		}
+		return ret
+	}
+
+	w.InverseAssign()
+	w.MulAssign(swencSqrtNegThreeFQ2)
+	w.MulAssign(t)
+
+	x1 := w.Mul(t)
+	x1.NegAssign()
+	x1.AddAssign(swencSqrtNegThreeMinusOneDivTwoFQ2)
+	if p := GetG2PointFromX(x1, parity); p != nil {
+		return p
+	}
+
+	x2 := x1.Neg()
+	x2.SubAssign(FQ2One)
+	if p := GetG2PointFromX(x2, parity); p != nil {
+		return p
+	}
+
+	x3 := w.Square()
+	x3.InverseAssign()
+	x3.AddAssign(FQ2One)
+	return GetG2PointFromX(x3, parity)
+}
+
+// HashG2 converts a message to a point on the G2 curve.
+func HashG2(msg []byte) *G2Projective {
+	hasher0, _ := blake2b.New(64, nil)
+	hasher0.Write(msg)
+	hasher0.Write([]byte("G2_0"))
+	hasher1, _ := blake2b.New(64, nil)
+	hasher0.Write(msg)
+	hasher1.Write([]byte("G2_1"))
+	t0 := HashFQ2(hasher0)
+	t0Affine := SWEncodeG2(t0)
+	t1 := HashFQ2(hasher1)
+	t1Affine := SWEncodeG2(t1)
+
+	res := t0Affine.ToProjective()
+	res = res.AddAffine(t1Affine)
+	return res.ToAffine().ScaleByCofactor()
 }
