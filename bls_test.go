@@ -1,7 +1,6 @@
 package bls_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -10,9 +9,7 @@ import (
 func TestBasicAcceptance(t *testing.T) {
 	r := NewXORShift(1)
 	priv, _ := bls.RandKey(r)
-	fmt.Println(priv)
 	pub := bls.PrivToPub(priv)
-	fmt.Println(pub)
 	msg := []byte("Hello world!")
 	sig := bls.Sign(msg, priv)
 	if !bls.Verify(msg, pub, sig) {
