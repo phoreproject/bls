@@ -29,7 +29,8 @@ func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 	high := new(big.Int).Set(n)
 	for low.Cmp(bigOne) > 0 {
 		r := new(big.Int).Div(high, low)
-		nm := new(big.Int).Sub(hm, new(big.Int).Mul(lm, r))
+		lm.Mul(lm, r)
+		nm := new(big.Int).Sub(hm, lm)
 		new := new(big.Int).Sub(high, new(big.Int).Mul(low, r))
 		lm, low, hm, high = nm, new, lm, low
 	}
@@ -54,6 +55,12 @@ func (f FQ) Add(other *FQ) *FQ {
 	return &FQ{n: out}
 }
 
+// AddAssign multiplies a field element by this one.
+func (f FQ) AddAssign(other *FQ) {
+	f.n.Add(f.n, other.n)
+	f.n.Mod(f.n, QFieldModulus)
+}
+
 // Mul multiplies two field elements together.
 func (f FQ) Mul(other *FQ) *FQ {
 	out := new(big.Int).Mul(f.n, other.n)
@@ -61,11 +68,23 @@ func (f FQ) Mul(other *FQ) *FQ {
 	return &FQ{n: out}
 }
 
+// MulAssign multiplies a field element by this one.
+func (f FQ) MulAssign(other *FQ) {
+	f.n.Mul(f.n, other.n)
+	f.n.Mod(f.n, QFieldModulus)
+}
+
 // Sub subtracts one field element from the other.
 func (f FQ) Sub(other *FQ) *FQ {
 	out := new(big.Int).Sub(f.n, other.n)
 	out.Mod(out, QFieldModulus)
 	return &FQ{n: out}
+}
+
+// SubAssign subtracts a field element from this one.
+func (f FQ) SubAssign(other *FQ) {
+	f.n.Sub(f.n, other.n)
+	f.n.Mod(f.n, QFieldModulus)
 }
 
 // Div divides one field element by another.
@@ -76,15 +95,7 @@ func (f FQ) Div(other *FQ) *FQ {
 
 // Exp exponentiates the field element to the given power.
 func (f FQ) Exp(n *big.Int) *FQ {
-	if n.Cmp(bigZero) == 0 {
-		return &FQ{n: new(big.Int).Set(bigOne)}
-	} else if n.Cmp(bigOne) == 0 {
-		return f.Copy()
-	} else if new(big.Int).Mod(n, bigTwo).Cmp(bigZero) == 0 {
-		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo))
-	} else {
-		return f.Mul(&f).Exp(new(big.Int).Div(n, bigTwo)).Mul(&f)
-	}
+	return &FQ{new(big.Int).Exp(f.n, n, QFieldModulus)}
 }
 
 // Equals checks equality of two field elements.
@@ -172,10 +183,10 @@ func (f FQ) Inverse() *FQ {
 
 		if u.Cmp(v) >= 0 {
 			u.Sub(u, v)
-			b = b.Sub(c)
+			b.SubAssign(c)
 		} else {
 			v.Sub(v, u)
-			c = c.Sub(b)
+			c.SubAssign(b)
 		}
 	}
 	if u.Cmp(bigOne) == 0 {

@@ -32,6 +32,12 @@ func (f FR) Add(other *FR) *FR {
 	return &FR{n: out}
 }
 
+// AddAssign adds two field elements together.
+func (f FR) AddAssign(other *FR) {
+	f.n.Add(f.n, other.n)
+	f.n.Mod(f.n, RFieldModulus)
+}
+
 // Mul multiplies two field elements together.
 func (f FR) Mul(other *FR) *FR {
 	out := new(big.Int).Mul(f.n, other.n)
@@ -39,11 +45,23 @@ func (f FR) Mul(other *FR) *FR {
 	return &FR{n: out}
 }
 
+// MulAssign multiplies one field element by the other.
+func (f FR) MulAssign(other *FR) {
+	f.n.Mul(f.n, other.n)
+	f.n.Mod(f.n, RFieldModulus)
+}
+
 // Sub subtracts one field element from the other.
 func (f FR) Sub(other *FR) *FR {
 	out := new(big.Int).Sub(f.n, other.n)
 	out.Mod(out, RFieldModulus)
 	return &FR{n: out}
+}
+
+// SubAssign subtracts one field element from the other.
+func (f FR) SubAssign(other *FR) {
+	f.n.Sub(f.n, other.n)
+	f.n.Mod(f.n, RFieldModulus)
 }
 
 // Div divides one field element by another.
@@ -146,10 +164,10 @@ func (f FR) Inverse() *FR {
 
 		if u.Cmp(v) >= 0 {
 			u.Sub(u, v)
-			b = b.Sub(c)
+			b.SubAssign(c)
 		} else {
 			v.Sub(v, u)
-			c = c.Sub(b)
+			c.SubAssign(b)
 		}
 	}
 	if u.Cmp(bigOne) == 0 {

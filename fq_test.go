@@ -32,6 +32,32 @@ func BenchmarkFQAdd(b *testing.B) {
 	}
 }
 
+func BenchmarkFQAddAssign(b *testing.B) {
+	type addData struct {
+		f1 *bls.FQ
+		f2 *bls.FQ
+	}
+
+	r := NewXORShift(1)
+	inData := [g1MulAssignSamples]addData{}
+	for i := 0; i < g1MulAssignSamples; i++ {
+		f1, _ := bls.RandFQ(r)
+		f2, _ := bls.RandFQ(r)
+		inData[i] = addData{
+			f1: f1,
+			f2: f2,
+		}
+	}
+
+	b.ResetTimer()
+
+	count := 0
+	for i := 0; i < b.N; i++ {
+		inData[count].f1.AddAssign(inData[count].f2)
+		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
 func BenchmarkFQSub(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ
@@ -54,6 +80,32 @@ func BenchmarkFQSub(b *testing.B) {
 	count := 0
 	for i := 0; i < b.N; i++ {
 		inData[count].f1.Sub(inData[count].f2)
+		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
+func BenchmarkFQSubAssign(b *testing.B) {
+	type addData struct {
+		f1 *bls.FQ
+		f2 *bls.FQ
+	}
+
+	r := NewXORShift(1)
+	inData := [g1MulAssignSamples]addData{}
+	for i := 0; i < g1MulAssignSamples; i++ {
+		f1, _ := bls.RandFQ(r)
+		f2, _ := bls.RandFQ(r)
+		inData[i] = addData{
+			f1: f1,
+			f2: f2,
+		}
+	}
+
+	b.ResetTimer()
+
+	count := 0
+	for i := 0; i < b.N; i++ {
+		inData[count].f1.SubAssign(inData[count].f2)
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
