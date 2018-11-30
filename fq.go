@@ -31,11 +31,13 @@ func primeFieldInv(a *big.Int, n *big.Int) *big.Int {
 	for low.Cmp(bigOne) > 0 {
 		r := new(big.Int).Div(high, low)
 		lm.Mul(lm, r)
-		nm := new(big.Int).Sub(hm, lm)
-		new := new(big.Int).Sub(high, new(big.Int).Mul(low, r))
-		lm, low, hm, high = nm, new, lm, low
+		hm.Sub(hm, lm)
+		r.Mul(r, low)
+		high.Sub(high, r)
+		lm, low, hm, high = hm, high, lm, low
 	}
-	return new(big.Int).Mod(lm, n)
+	lm.Mod(lm, n)
+	return lm
 }
 
 // NewFQ creates a new field element.
@@ -178,7 +180,10 @@ func (f FQ) Square() *FQ {
 // SquareAssign squares a field element.
 func (f *FQ) SquareAssign() {
 	f.n.Mul(f.n, f.n)
+	f.n.Mod(f.n, QFieldModulus)
 }
+
+var negativeOneFQ = NewFQ(negativeOne)
 
 // Sqrt calculates the square root of the field element.
 func (f FQ) Sqrt() *FQ {
@@ -186,14 +191,15 @@ func (f FQ) Sqrt() *FQ {
 	// https://eprint.iacr.org/2012/685.pdf (page 9, algorithm 2)
 
 	a1 := f.Exp(qMinus3Over4)
-	a0 := a1.Square().Mul(&f)
+	a0 := a1.Square()
+	a0.MulAssign(&f)
 
-	if a0.Equals(NewFQ(negativeOne)) {
+	if a0.Equals(negativeOneFQ) {
 		return nil
 	}
-	return a1.Mul(&f)
+	a1.MulAssign(&f)
+	return a1
 }
-
 func isEven(b *big.Int) bool {
 	return b.Bit(0) == 0
 }

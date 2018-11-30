@@ -48,7 +48,7 @@ func (f *FQ12) MulBy014(c0 *FQ2, c1 *FQ2, c4 *FQ2) *FQ12 {
 	outB.AddAssign(aa)
 	return NewFQ12(
 		outB,
-		f.c1.Add(f.c0).MulBy01(c0, o).Sub(aa).Sub(bb),
+		c1Out,
 	)
 }
 
