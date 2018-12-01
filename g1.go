@@ -25,14 +25,14 @@ func NewG1Affine(x *FQ, y *FQ) *G1Affine {
 // G1AffineZero represents the point at infinity on G1.
 var G1AffineZero = &G1Affine{FQZero, FQOne, true}
 
-var g1GeneratorX, _ = new(big.Int).SetString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
-var g1GeneratorY, _ = new(big.Int).SetString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
+var g1GeneratorX, _ = FQReprFromString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
+var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
 
 // BCoeff of the G1 curve.
-var BCoeff = big.NewInt(4)
+var BCoeff = NewFQRepr(4)
 
 // G1AffineOne represents the point at 1 on G1.
-var G1AffineOne = &G1Affine{NewFQ(g1GeneratorX), NewFQ(g1GeneratorY), false}
+var G1AffineOne = &G1Affine{FQReprToFQ(g1GeneratorX.Copy()), FQReprToFQ(g1GeneratorY.Copy()), false}
 
 func (g G1Affine) String() string {
 	if g.infinity {
@@ -51,14 +51,6 @@ func (g G1Affine) IsZero() bool {
 	return g.infinity
 }
 
-// Neg negates the point.
-func (g G1Affine) Neg() *G1Affine {
-	if !g.IsZero() {
-		return NewG1Affine(g.x, g.y.Neg())
-	}
-	return g.Copy()
-}
-
 // NegAssign negates the point.
 func (g G1Affine) NegAssign() {
 	if !g.IsZero() {
@@ -75,13 +67,10 @@ func (g G1Affine) ToProjective() *G1Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G1Affine) Mul(b *big.Int) *G1Projective {
-	bs := b.Bytes()
+func (g G1Affine) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < uint((b.BitLen()+7)/8)*8; i++ {
-		part := i / 8
-		bit := 7 - i%8
-		o := bs[part]&(1<<(bit)) > 0
+	for i := uint(0); i < b.BitLen(); i++ {
+		o := b.Bit(i)
 		res = res.Double()
 		if o {
 			res = res.AddAffine(&g)
@@ -95,8 +84,12 @@ func (g G1Affine) IsOnCurve() bool {
 	if g.infinity {
 		return true
 	}
-	y2 := g.y.Square()
-	x3b := g.x.Square().Mul(g.x).Add(NewFQ(BCoeff))
+	y2 := g.y.Copy()
+	y2.SquareAssign()
+	x3b := g.x.Copy()
+	x3b.SquareAssign()
+	x3b.MulAssign(g.x)
+	x3b.AddAssign(FQReprToFQ(BCoeff))
 
 	return y2.Equals(x3b)
 }
@@ -106,7 +99,10 @@ func (g G1Affine) IsOnCurve() bool {
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
 func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
-	x3b := x.Square().Mul(x).Add(NewFQ(BCoeff))
+	x3b := x.Copy()
+	x3b.SquareAssign()
+	x3b.MulAssign(x)
+	x3b.AddAssign(FQReprToFQ(BCoeff))
 
 	y := x3b.Sqrt()
 
@@ -114,7 +110,8 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 		return nil
 	}
 
-	negY := y.Neg()
+	negY := y.Copy()
+	negY.NegAssign()
 
 	yVal := negY
 	if (y.Cmp(negY) < 0) != greatest {
@@ -123,16 +120,18 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 	return NewG1Affine(x, yVal)
 }
 
-var frChar, _ = new(big.Int).SetString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
+var frChar, _ = FQReprFromString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
 
 // IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
 // field characteristic equals zero.
 func (g G1Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
-	return g.Mul(frChar).IsZero()
+	tmp := g.Copy()
+	tmp.Mul(frChar)
+	return tmp.IsZero()
 }
 
 // G1 cofactor = (x - 1)^2 / 3  = 76329603384216526031706109802092473003
-var g1Cofactor, _ = new(big.Int).SetString("76329603384216526031706109802092473003", 10)
+var g1Cofactor, _ = FQReprFromString("76329603384216526031706109802092473003", 10)
 
 // ScaleByCofactor scales the G1Affine point by the cofactor.
 func (g G1Affine) ScaleByCofactor() *G1Projective {
@@ -185,9 +184,9 @@ func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
 
 	copyBytes[0] &= 0x1f
 
-	x := NewFQ(new(big.Int).SetBytes(copyBytes))
+	x, _ := FQReprFromBytes(copyBytes)
 
-	return GetG1PointFromX(x, greatest), nil
+	return GetG1PointFromX(FQReprToFQ(x), greatest), nil
 }
 
 // CompressG1 compresses a G1 point into an int.
@@ -200,7 +199,8 @@ func CompressG1(affine *G1Affine) *big.Int {
 
 		copy(res[48-len(out0):], out0)
 
-		negY := affine.y.Neg()
+		negY := affine.y.Copy()
+		negY.NegAssign()
 
 		if affine.y.Cmp(negY) > 0 {
 			res[0] |= 1 << 5
@@ -255,16 +255,25 @@ func (g G1Projective) Equal(other *G1Projective) bool {
 		return false
 	}
 
-	z1 := g.z.Square()
-	z2 := other.z.Square()
+	z1 := g.z.Copy()
+	z1.SquareAssign()
+	z2 := other.z.Copy()
+	z2.SquareAssign()
 
-	tmp1 := g.x.Mul(z2)
-	tmp2 := other.x.Mul(z1)
+	tmp1 := g.x.Copy()
+	tmp1.MulAssign(z2)
+	tmp2 := other.x.Copy()
+	tmp2.MulAssign(z1)
 	if !tmp1.Equals(tmp2) {
 		return false
 	}
 
-	return z1.Mul(g.z).Mul(other.y).Equals(z2.Mul(other.z).Mul(g.y))
+	z1.MulAssign(g.z)
+	z1.MulAssign(other.y)
+	z2.MulAssign(other.z)
+	z2.MulAssign(g.y)
+
+	return z1.Equals(z2)
 }
 
 // ToAffine converts a G1Projective point to affine form.
@@ -277,9 +286,15 @@ func (g G1Projective) ToAffine() *G1Affine {
 
 	// nonzero so must have an inverse
 	zInv := g.z.Inverse()
-	zInvSquared := zInv.Square()
+	zInvSquared := zInv.Copy()
+	zInvSquared.SquareAssign()
+	x := g.x.Copy()
+	x.MulAssign(zInvSquared)
+	y := g.y.Copy()
+	y.MulAssign(zInvSquared)
+	y.MulAssign(zInv)
 
-	return NewG1Affine(g.x.Mul(zInvSquared), g.y.Mul(zInvSquared).Mul(zInv))
+	return NewG1Affine(x, y)
 }
 
 // Double performs EC doubling on the point.
@@ -289,41 +304,50 @@ func (g G1Projective) Double() *G1Projective {
 	}
 
 	// A = x1^2
-	a := g.x.Square()
+	a := g.x.Copy()
+	a.SquareAssign()
 
 	// B = y1^2
-	b := g.y.Square()
+	b := g.y.Copy()
+	b.SquareAssign()
 
 	// C = B^2
-	c := b.Square()
+	c := b.Copy()
+	c.SquareAssign()
 
 	// D = 2*((X1+B)^2-A-C)
-	d := g.x.Add(b)
+	d := g.x.Copy()
+	d.AddAssign(b)
 	d.SquareAssign()
 	d.SubAssign(a)
 	d.SubAssign(c)
 	d.DoubleAssign()
 
 	// E = 3*A
-	e := a.Double()
+	e := a.Copy()
+	e.DoubleAssign()
 	e.AddAssign(a)
 
 	// F = E^2
-	f := e.Square()
+	f := e.Copy()
+	f.SquareAssign()
 
 	// z3 = 2*Y1*Z1
-	newZ := g.z.Mul(g.y)
+	newZ := g.z.Copy()
+	newZ.MulAssign(g.y)
 	newZ.DoubleAssign()
 
 	// x3 = F-2*D
-	newX := f.Sub(d)
+	newX := f.Copy()
+	f.SubAssign(d)
 	newX.SubAssign(d)
 
 	c.DoubleAssign()
 	c.DoubleAssign()
 	c.DoubleAssign()
 
-	newY := d.Sub(newX)
+	newY := d.Copy()
+	newY.SubAssign(newX)
 	newY.MulAssign(e)
 	newY.SubAssign(c)
 
@@ -340,23 +364,29 @@ func (g G1Projective) Add(other *G1Projective) *G1Projective {
 	}
 
 	// Z1Z1 = Z1^2
-	z1z1 := g.z.Square()
+	z1z1 := g.z.Copy()
+	z1z1.SquareAssign()
 
 	// Z2Z2 = Z2^2
-	z2z2 := other.z.Square()
+	z2z2 := other.z.Copy()
+	z2z2.SquareAssign()
 
 	// U1 = X1*Z2Z2
-	u1 := g.x.Mul(z2z2)
+	u1 := g.x.Copy()
+	u1.MulAssign(z2z2)
 
 	// U2 = x2*Z1Z1
-	u2 := other.x.Mul(z1z1)
+	u2 := other.x.Copy()
+	u2.MulAssign(z1z1)
 
 	// S1 = Y1*Z2*Z2Z2
-	s1 := g.y.Mul(other.z)
+	s1 := g.y.Copy()
+	s1.MulAssign(other.z)
 	s1.MulAssign(z2z2)
 
 	// S2 = Y2*Z1*Z1Z1
-	s2 := other.y.Mul(g.z)
+	s2 := other.y.Copy()
+	s2.MulAssign(g.z)
 	s2.MulAssign(z1z1)
 
 	if u1.Equals(u2) && s1.Equals(s2) {
@@ -365,14 +395,17 @@ func (g G1Projective) Add(other *G1Projective) *G1Projective {
 	}
 
 	// H = U2-U1
-	h := u2.Sub(u1)
+	h := u2.Copy()
+	h.SubAssign(u1)
 
 	// I = (2*H)^2
-	i := h.Double()
+	i := h.Copy()
+	i.DoubleAssign()
 	i.SquareAssign()
 
 	// J = H * I
-	j := h.Mul(i)
+	j := h.Copy()
+	j.MulAssign(i)
 
 	// r = 2*(S2-S1)
 	s2.SubAssign(s1)
@@ -382,7 +415,8 @@ func (g G1Projective) Add(other *G1Projective) *G1Projective {
 	u1.MulAssign(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := s2.Square()
+	newX := s2.Copy()
+	newX.SquareAssign()
 	newX.SubAssign(j)
 	newX.SubAssign(u1)
 	newX.SubAssign(u1)
@@ -395,7 +429,8 @@ func (g G1Projective) Add(other *G1Projective) *G1Projective {
 	u1.SubAssign(s1)
 
 	// Z3 = ((Z1+Z2)^2 - Z1Z1 - Z2Z2)*H
-	newZ := g.z.Add(other.z)
+	newZ := g.z.Copy()
+	newZ.AddAssign(other.z)
 	newZ.SquareAssign()
 	newZ.SubAssign(z1z1)
 	newZ.SubAssign(z2z2)
@@ -414,13 +449,17 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 	}
 
 	// Z1Z1 = Z1^2
-	z1z1 := g.z.Square()
+	z1z1 := g.z.Copy()
+	z1z1.SquareAssign()
 
 	// U2 = x2*Z1Z1
-	u2 := other.x.Mul(z1z1)
+	u2 := other.x.Copy()
+	u2.MulAssign(z1z1)
 
 	// S2 = Y2*Z1*Z1Z1
-	s2 := other.y.Mul(g.z).Mul(z1z1)
+	s2 := other.y.Copy()
+	s2.MulAssign(g.z)
+	s2.MulAssign(z1z1)
 
 	if g.x.Equals(u2) && g.y.Equals(s2) {
 		// points are equal
@@ -431,37 +470,45 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 	u2.SubAssign(g.x)
 
 	// HH = H^2
-	hh := u2.Square()
+	hh := u2.Copy()
+	hh.SquareAssign()
 
 	// I = 4*HH
-	i := hh.Double()
+	i := hh.Copy()
+	i.DoubleAssign()
 	i.DoubleAssign()
 
 	// J = H * I
-	j := u2.Mul(i)
+	j := u2.Copy()
+	j.MulAssign(i)
 
 	// r = 2*(S2-Y1)
 	s2.SubAssign(g.y)
 	s2.DoubleAssign()
 
 	// v = X1*I
-	v := g.x.Mul(i)
+	v := g.x.Copy()
+	v.MulAssign(i)
 
 	// X3 = r^2 - J - 2*V
-	newX := s2.Square()
+	newX := s2.Copy()
+	newX.SquareAssign()
 	newX.SubAssign(j)
 	newX.SubAssign(v)
 	newX.SubAssign(v)
 
 	// Y3 = r*(V - X3) - 2*Y1*J
-	newY := v.Sub(newX)
+	newY := v.Copy()
+	newY.SubAssign(newX)
 	newY.MulAssign(s2)
-	i0 := g.y.Mul(j)
+	i0 := g.y.Copy()
+	i0.MulAssign(j)
 	i0.DoubleAssign()
 	newY.SubAssign(i0)
 
 	// Z3 = (Z1+H)^2 - Z1Z1 - HH
-	newZ := g.z.Add(u2)
+	newZ := g.z.Copy()
+	newZ.AddAssign(u2)
 	newZ.SquareAssign()
 	newZ.SubAssign(z1z1)
 	newZ.SubAssign(hh)
@@ -470,13 +517,10 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G1Projective) Mul(b *big.Int) *G1Projective {
-	bs := b.Bytes()
+func (g G1Projective) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < uint((b.BitLen()+7)/8)*8; i++ {
-		part := i / 8
-		bit := 7 - i%8
-		o := bs[part]&(1<<(bit)) > 0
+	for i := uint(0); i < uint(b.BitLen())*8; i++ {
+		o := b.Bit(i)
 		res = res.Double()
 		if o {
 			res = res.Add(&g)
@@ -520,36 +564,40 @@ func SWEncodeG1(t *FQ) *G1Affine {
 
 	parity := t.Parity()
 
-	w := t.Square()
-	w.AddAssign(NewFQ(BCoeff))
+	w := t.Copy()
+	w.SquareAssign()
+	w.AddAssign(FQReprToFQ(BCoeff))
 	w.AddAssign(FQOne)
 
 	if w.IsZero() {
 		ret := G1AffineOne.Copy()
 		if parity {
-			ret.Neg()
+			ret.NegAssign()
 		}
 		return ret
 	}
 
 	w = w.Inverse()
-	w.MulAssign(NewFQ(swencSqrtNegThree))
+	w.MulAssign(FQReprToFQ(swencSqrtNegThree))
 	w.MulAssign(t)
 
-	x1 := w.Mul(t)
+	x1 := w.Copy()
+	x1.MulAssign(t)
 	x1.NegAssign()
-	x1.AddAssign(NewFQ(swencSqrtNegThreeMinusOneDivTwo))
+	x1.AddAssign(FQReprToFQ(swencSqrtNegThreeMinusOneDivTwo))
 	if p := GetG1PointFromX(x1, parity); p != nil {
 		return p
 	}
 
-	x2 := x1.Neg()
+	x2 := x1.Copy()
+	x2.NegAssign()
 	x2.SubAssign(FQOne)
 	if p := GetG1PointFromX(x2, parity); p != nil {
 		return p
 	}
 
-	x3 := w.Square()
+	x3 := w.Copy()
+	x3.SquareAssign()
 	x3 = x3.Inverse()
 	x3.AddAssign(FQOne)
 	return GetG1PointFromX(x3, parity)

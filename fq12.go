@@ -3,7 +3,6 @@ package bls
 import (
 	"fmt"
 	"io"
-	"math/big"
 )
 
 // FQ12 is an element of Fq12, represented by c0 + c1 * w.
@@ -24,32 +23,26 @@ func (f *FQ12) String() string {
 	return fmt.Sprintf("Fq12(%s + %s * w)", f.c0, f.c1)
 }
 
-// Conjugate returns the conjugate of the FQ12 element.
-func (f *FQ12) Conjugate() *FQ12 {
-	return NewFQ12(f.c0, f.c1.Neg())
-}
-
 // ConjugateAssign returns the conjugate of the FQ12 element.
 func (f *FQ12) ConjugateAssign() {
 	f.c1.NegAssign()
 }
 
-// MulBy014 multiplies FQ12 element by 3 FQ2 elements.
-func (f *FQ12) MulBy014(c0 *FQ2, c1 *FQ2, c4 *FQ2) *FQ12 {
-	aa := f.c0.MulBy01(c0, c1)
-	bb := f.c1.MulBy1(c4)
-	o := c1.Add(c4)
-	c1Out := f.c1.Copy()
-	c1Out.AddAssign(f.c0)
-	c1Out.MulBy01Assign(c0, o)
-	c1Out.SubAssign(aa)
-	c1Out.SubAssign(bb)
-	outB := bb.MulByNonresidue()
-	outB.AddAssign(aa)
-	return NewFQ12(
-		outB,
-		c1Out,
-	)
+// MulBy014Assign multiplies FQ12 element by 3 FQ2 elements.
+func (f *FQ12) MulBy014Assign(c0 *FQ2, c1 *FQ2, c4 *FQ2) {
+	aa := f.c0.Copy()
+	aa.MulBy01Assign(c0, c1)
+	bb := f.c1.Copy()
+	bb.MulBy1Assign(c4)
+	o := c1.Copy()
+	c1.AddAssign(c4)
+	f.c1.AddAssign(f.c0)
+	f.c1.MulBy01Assign(c0, o)
+	f.c1.SubAssign(aa)
+	f.c1.SubAssign(bb)
+	f.c0 = bb.Copy()
+	f.c0.MulByNonresidueAssign()
+	f.c0.AddAssign(aa)
 }
 
 // FQ12Zero is the zero element of FQ12.
@@ -63,30 +56,28 @@ func (f FQ12) Equals(other *FQ12) bool {
 	return f.c0.Equals(other.c0) && f.c1.Equals(other.c1)
 }
 
-// Double doubles each coefficient in an FQ12 element.
-func (f FQ12) Double() *FQ12 {
-	return NewFQ12(f.c0.Double(), f.c1.Double())
+// DoubleAssign doubles each coefficient in an FQ12 element.
+func (f FQ12) DoubleAssign() {
+	f.c0.DoubleAssign()
+	f.c1.DoubleAssign()
 }
 
-// Neg negates each coefficient in an FQ12 element.
-func (f FQ12) Neg() *FQ12 {
-	return NewFQ12(f.c0.Neg(), f.c1.Neg())
+// NegAssign negates each coefficient in an FQ12 element.
+func (f *FQ12) NegAssign() {
+	f.c1.NegAssign()
+	f.c0.NegAssign()
 }
 
-// Add adds two FQ12 elements together.
-func (f FQ12) Add(other *FQ12) *FQ12 {
-	return NewFQ12(
-		f.c0.Add(other.c0),
-		f.c1.Add(other.c1),
-	)
+// AddAssign adds two FQ12 elements together.
+func (f FQ12) AddAssign(other *FQ12) {
+	f.c0.AddAssign(other.c0)
+	f.c1.AddAssign(other.c1)
 }
 
-// Sub subtracts one FQ12 element from another.
-func (f FQ12) Sub(other *FQ12) *FQ12 {
-	return NewFQ12(
-		f.c0.Sub(other.c0),
-		f.c1.Sub(other.c1),
-	)
+// SubAssign subtracts one FQ12 element from another.
+func (f FQ12) SubAssign(other *FQ12) {
+	f.c0.SubAssign(other.c0)
+	f.c1.SubAssign(other.c1)
 }
 
 // RandFQ12 generates a random FQ12 element.
@@ -108,8 +99,8 @@ func (f FQ12) Copy() *FQ12 {
 }
 
 // Exp raises the element ot a specific power.
-func (f FQ12) Exp(n *big.Int) *FQ12 {
-	nCopy := new(big.Int).Set(n)
+func (f FQ12) Exp(n *FQRepr) *FQ12 {
+	nCopy := n.Copy()
 	res := FQ12One.Copy()
 	fi := f.Copy()
 	for nCopy.Cmp(bigZero) != 0 {
@@ -117,15 +108,19 @@ func (f FQ12) Exp(n *big.Int) *FQ12 {
 			res.MulAssign(fi)
 		}
 		fi.MulAssign(fi)
-		nCopy.Rsh(nCopy, 1)
+		nCopy.Rsh(1)
 	}
 	return res
 }
 
-var bigSix = big.NewInt(6)
+var bigSix = NewFQRepr(6)
 
-func getFrobExpMinus1Over6(power int64) *big.Int {
-	return new(big.Int).Div(new(big.Int).Sub(new(big.Int).Exp(QFieldModulus, big.NewInt(power), nil), bigOne), bigSix)
+func getFrobExpMinus1Over6(power uint64) *FQRepr {
+	out := FQReprToFQ(QFieldModulus.Copy())
+	out = out.Exp(NewFQRepr(power))
+	out.SubAssign(FQOne)
+	out.divAssign(FQReprToFQ(bigSix))
+	return out.n
 }
 
 var frobeniusCoeffFQ12c1 = [12]*FQ2{
@@ -143,19 +138,6 @@ var frobeniusCoeffFQ12c1 = [12]*FQ2{
 	fq2nqr.Exp(getFrobExpMinus1Over6(11)),
 }
 
-// FrobeniusMap calculates the frobenius map of an FQ12 element.
-func (f FQ12) FrobeniusMap(power uint8) *FQ12 {
-	c1 := f.c1.FrobeniusMap(power)
-	return NewFQ12(
-		f.c0.FrobeniusMap(power),
-		NewFQ6(
-			c1.c0.Mul(frobeniusCoeffFQ12c1[power%12]),
-			c1.c1.Mul(frobeniusCoeffFQ12c1[power%12]),
-			c1.c2.Mul(frobeniusCoeffFQ12c1[power%12]),
-		),
-	)
-}
-
 // FrobeniusMapAssign calculates the frobenius map of an FQ12 element.
 func (f *FQ12) FrobeniusMapAssign(power uint8) {
 	f.c0.FrobeniusMapAssign(power)
@@ -165,23 +147,12 @@ func (f *FQ12) FrobeniusMapAssign(power uint8) {
 	f.c1.c2.MulAssign(frobeniusCoeffFQ12c1[power%12])
 }
 
-// Square calculates the square of the FQ12 element.
-func (f FQ12) Square() *FQ12 {
-	ab := f.c0.Mul(f.c1)
-	c0c1 := f.c0.Add(f.c1)
-	c0 := f.c1.MulByNonresidue().Add(f.c0).Mul(c0c1).Sub(ab)
-	c1 := ab.Add(ab)
-	ab = ab.MulByNonresidue()
-	return NewFQ12(
-		c0.Sub(ab),
-		c1,
-	)
-}
-
 // SquareAssign squares the FQ2 element.
 func (f *FQ12) SquareAssign() {
-	ab := f.c0.Mul(f.c1)
-	c0 := f.c1.Neg()
+	ab := f.c0.Copy()
+	ab.MulAssign(f.c1)
+	c0 := f.c1.Copy()
+	f.c1.NegAssign()
 	c0.AddAssign(f.c0)
 	f.c0.AddAssign(f.c1)
 	c0.MulAssign(f.c0)
@@ -190,25 +161,6 @@ func (f *FQ12) SquareAssign() {
 	ab.AddAssign(ab)
 	f.c0 = c0
 	f.c1 = ab
-}
-
-// Mul multiplies two FQ12 elements together.
-func (f FQ12) Mul(other *FQ12) *FQ12 {
-	aa := f.c0.Copy()
-	aa.MulAssign(other.c0)
-	bb := f.c1.Copy()
-	bb.MulAssign(other.c1)
-	o := other.c0.Add(other.c1)
-	out := f.c1.Add(f.c0)
-	out.MulAssign(o)
-	out.SubAssign(aa)
-	out.SubAssign(bb)
-	bb = bb.MulByNonresidue()
-	bb.AddAssign(aa)
-	return NewFQ12(
-		bb,
-		out,
-	)
 }
 
 // MulAssign multiplies two FQ12 elements together.
@@ -220,23 +172,34 @@ func (f *FQ12) MulAssign(other *FQ12) {
 	o := other.c0.Copy()
 	o.AddAssign(other.c1)
 
-	f.c1 = f.c1.Add(f.c0)
+	f.c1 = f.c1.Copy()
+	f.c1.AddAssign(f.c0)
 	f.c1.MulAssign(o)
 	f.c1.SubAssign(aa)
 	f.c1.SubAssign(bb)
-	f.c0 = bb.MulByNonresidue()
+	f.c0 = bb.Copy()
+	f.c0.MulByNonresidueAssign()
 	f.c0.AddAssign(aa)
 }
 
-// Inverse finds the inverse of an FQ12
-func (f FQ12) Inverse() *FQ12 {
-	c1s := f.c1.Square().MulByNonresidue()
-	c0s := f.c0.Square().Sub(c1s)
+// InverseAssign finds the inverse of an FQ12
+func (f FQ12) InverseAssign() bool {
+	c1s := f.c1.Copy()
+	c1s.SquareAssign()
+	c1s.Copy()
+	c1s.MulByNonresidueAssign()
+	c0s := f.c0.Copy()
+	c0s.SquareAssign()
+	c0s.SubAssign(c1s)
 
-	i := c0s.Inverse()
-	if i == nil {
-		return nil
+	i := c0s.Copy()
+
+	if i.InverseAssign() {
+		return false
 	}
 
-	return NewFQ12(i.Mul(f.c0), i.Mul(f.c1).Neg())
+	f.c0.MulAssign(i)
+	f.c1.MulAssign(i)
+	f.c1.NegAssign()
+	return true
 }

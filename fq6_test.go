@@ -15,8 +15,9 @@ func TestFQ6MultiplyByNonresidue(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		b := a.Mul(nqr)
-		a = a.MulByNonresidue()
+		b := a.Copy()
+		b.MulAssign(nqr)
+		a.MulByNonresidueAssign()
 		if !a.Equals(b) {
 			t.Error("FQ6.MulByNonresidue not working properly")
 		}
@@ -33,8 +34,9 @@ func TestFQ6MultiplyBy1(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		b := a.Mul(bls.NewFQ6(bls.FQ2Zero, c1, bls.FQ2Zero))
-		a = a.MulBy1(c1)
+		b := a.Copy()
+		b.MulAssign(bls.NewFQ6(bls.FQ2Zero, c1, bls.FQ2Zero))
+		a.MulBy1Assign(c1)
 
 		if !a.Equals(b) {
 			t.Error("FQ6.MulBy1 not working")
@@ -56,8 +58,9 @@ func TestFQ6MultiplyBy01(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		b := a.Mul(bls.NewFQ6(c0, c1, bls.FQ2Zero))
-		a = a.MulBy01(c0, c1)
+		b := a.Copy()
+		b.MulAssign(bls.NewFQ6(c0, c1, bls.FQ2Zero))
+		a.MulBy01Assign(c0, c1)
 
 		if !a.Equals(b) {
 			t.Error("FQ6.MulBy1 not working")
@@ -65,7 +68,7 @@ func TestFQ6MultiplyBy01(t *testing.T) {
 	}
 }
 
-func BenchmarkFQ6Add(b *testing.B) {
+func BenchmarkFQ6AddAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ6
 		f2 *bls.FQ6
@@ -85,12 +88,12 @@ func BenchmarkFQ6Add(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Add(inData[count].f2)
+		inData[count].f1.AddAssign(inData[count].f2)
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ6Sub(b *testing.B) {
+func BenchmarkFQ6SubAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ6
 		f2 *bls.FQ6
@@ -110,12 +113,12 @@ func BenchmarkFQ6Sub(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Sub(inData[count].f2)
+		inData[count].f1.SubAssign(inData[count].f2)
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ6Mul(b *testing.B) {
+func BenchmarkFQ6MulAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ6
 		f2 *bls.FQ6
@@ -135,12 +138,12 @@ func BenchmarkFQ6Mul(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Mul(inData[count].f2)
+		inData[count].f1.MulAssign(inData[count].f2)
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ6Square(b *testing.B) {
+func BenchmarkFQ6SquareAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ6
 	}
@@ -157,12 +160,12 @@ func BenchmarkFQ6Square(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Square()
+		inData[count].f1.SquareAssign()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ6Inverse(b *testing.B) {
+func BenchmarkFQ6InverseAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ6
 	}
@@ -179,7 +182,7 @@ func BenchmarkFQ6Inverse(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Inverse()
+		inData[count].f1.InverseAssign()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }

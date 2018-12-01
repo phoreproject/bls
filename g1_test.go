@@ -12,12 +12,16 @@ func TestG1Generator(t *testing.T) {
 
 	for {
 		// y^2 = x^3 + b
-		rhs := x.Square().Mul(x).Add(bls.NewFQ(bls.BCoeff))
+		rhs := x.Copy()
+		rhs.SquareAssign()
+		rhs.MulAssign(x)
+		rhs.AddAssign(bls.FQReprToFQ(bls.BCoeff))
 
 		y := rhs.Sqrt()
 
 		if y != nil {
-			negY := y.Neg()
+			negY := y.Copy()
+			negY.NegAssign()
 			pY := negY
 
 			if y.Cmp(negY) < 0 {
@@ -51,7 +55,7 @@ func TestG1Generator(t *testing.T) {
 		}
 
 		i += 1
-		x = x.Add(bls.FQOne)
+		x.AddAssign(bls.FQOne)
 	}
 }
 
@@ -99,7 +103,7 @@ func BenchmarkG1MulAssign(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].g.Mul(inData[count].f.ToBig())
+		inData[count].g.Mul(inData[count].f.ToRepr().ToFQ())
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
