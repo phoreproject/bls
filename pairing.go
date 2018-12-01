@@ -1,9 +1,5 @@
 package bls
 
-import (
-	"math/big"
-)
-
 // MillerLoopItem are the inputs to the miller loop.
 type MillerLoopItem struct {
 	P *G1Affine
@@ -29,7 +25,7 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 		}
 	}
 
-	ell := func(f *FQ12, coeffs [3]*FQ2, p *G1Affine) *FQ12 {
+	ell := func(f *FQ12, coeffs [3]*FQ2, p *G1Affine) {
 
 		c0 := coeffs[0]
 		c1 := coeffs[1]
@@ -39,43 +35,41 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 		c1.c0.MulAssign(p.x)
 		c1.c1.MulAssign(p.x)
 
-		return f.MulBy014(coeffs[2], c1, c0)
+		f.MulBy014Assign(coeffs[2], c1, c0)
 	}
 
 	f := FQ12One.Copy()
 
 	foundOne := false
-	blsXRsh1 := new(big.Int).Rsh(blsX, 1)
-	bs := blsXRsh1.Bytes()
-	for i := uint(0); i < uint(len(bs)*8); i++ {
-		segment := i / 8
-		bit := 7 - i%8
-		set := bs[segment]&(1<<bit) > 0
+	blsXRsh1 := blsX.Copy()
+	blsXRsh1.Rsh(1)
+	for i := uint(0); i < blsXRsh1.BitLen(); i++ {
+		set := blsXRsh1.Bit(i)
 		if !foundOne {
 			foundOne = set
 			continue
 		}
 
 		for i, pair := range pairs {
-			f = ell(f, pair.q[pair.qIndex], pair.p.Copy())
+			ell(f, pair.q[pair.qIndex], pair.p.Copy())
 			pairs[i].qIndex++
 		}
 		if set {
 			for i, pair := range pairs {
-				f = ell(f, pair.q[pair.qIndex], pair.p.Copy())
+				ell(f, pair.q[pair.qIndex], pair.p.Copy())
 				pairs[i].qIndex++
 			}
 		}
 
-		f = f.Square()
+		f.SquareAssign()
 	}
 	for i, pair := range pairs {
-		f = ell(f, pair.q[pair.qIndex], pair.p.Copy())
+		ell(f, pair.q[pair.qIndex], pair.p.Copy())
 		pairs[i].qIndex++
 	}
 
 	if blsIsNegative {
-		f = f.Conjugate()
+		f.ConjugateAssign()
 	}
 	return f
 }
@@ -83,17 +77,20 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 // FinalExponentiation performs the final exponentiation on the
 // FQ12 element.
 func FinalExponentiation(r *FQ12) *FQ12 {
-	f1 := r.Conjugate()
-	f2 := r.Inverse()
+	f1 := r.Copy()
+	f1.ConjugateAssign()
+	f2 := r.Copy()
+	f2.InverseAssign()
 	if f1 == nil {
 		return nil
 	}
-	r = f1.Mul(f2)
+	r = f1.Copy()
+	r.MulAssign(f2)
 	f2 = r.Copy()
 	r.FrobeniusMapAssign(2)
 	r.MulAssign(f2)
 
-	ExpByX := func(f *FQ12, x *big.Int) *FQ12 {
+	ExpByX := func(f *FQ12, x *FQRepr) *FQ12 {
 		newf := f.Exp(x)
 		if blsIsNegative {
 			newf.ConjugateAssign()
@@ -101,15 +98,18 @@ func FinalExponentiation(r *FQ12) *FQ12 {
 		return newf
 	}
 
-	x := new(big.Int).Set(blsX)
+	x := blsX.Copy()
 
-	y0 := r.Square()
+	y0 := r.Copy()
+	y0.SquareAssign()
 	y1 := ExpByX(y0, x)
-	x.Rsh(x, 1)
+	x.Rsh(1)
 	y2 := ExpByX(y1, x)
-	x.Lsh(x, 1)
-	y3 := r.Conjugate()
-	y1 = y1.Mul(y3)
+	x.Lsh(1)
+	y3 := r.Copy()
+	y3.ConjugateAssign()
+	y1 = y1.Copy()
+	y1.MulAssign(y3)
 	y1.ConjugateAssign()
 	y1.MulAssign(y2)
 	y2 = ExpByX(y1, x)

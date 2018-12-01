@@ -28,7 +28,7 @@ func BenchmarkG2MulAssign(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].g.Mul(inData[count].f.ToBig())
+		inData[count].g.Mul(inData[count].f.ToRepr().ToFQ())
 		count = (count + 1) % g1MulAssignSamples
 	}
 }

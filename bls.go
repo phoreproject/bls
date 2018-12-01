@@ -60,10 +60,10 @@ func (p PublicKey) SerializeBig() [193]byte {
 	affine := p.p.ToAffine()
 	out := [193]byte{}
 	infinity := affine.infinity
-	copy(out[1:49], affine.x.c0.n.Bytes())
-	copy(out[49:97], affine.x.c1.n.Bytes())
-	copy(out[97:145], affine.y.c0.n.Bytes())
-	copy(out[145:193], affine.y.c1.n.Bytes())
+	copy(out[1:49], affine.x.c0.n.ToBig().Bytes())
+	copy(out[49:97], affine.x.c1.n.ToBig().Bytes())
+	copy(out[97:145], affine.y.c0.n.ToBig().Bytes())
+	copy(out[145:193], affine.y.c1.n.ToBig().Bytes())
 
 	if infinity {
 		out[0] = 1
@@ -79,18 +79,24 @@ func DeserializePublicKeyBig(bigPublicKey [193]byte) *PublicKey {
 		g.infinity = true
 		return &PublicKey{p: g.ToProjective()}
 	}
-	g.x = &FQ2{
-		c0: &FQ{n: new(big.Int)},
-		c1: &FQ{n: new(big.Int)},
-	}
-	g.y = &FQ2{
-		c0: &FQ{n: new(big.Int)},
-		c1: &FQ{n: new(big.Int)},
-	}
-	g.x.c0.n.SetBytes(bigPublicKey[1:49])
-	g.x.c1.n.SetBytes(bigPublicKey[49:97])
-	g.y.c0.n.SetBytes(bigPublicKey[97:145])
-	g.y.c1.n.SetBytes(bigPublicKey[145:193])
+	g.x = &FQ2{}
+	g.y = &FQ2{}
+	var xC0Bytes [48]byte
+	var xC1Bytes [48]byte
+	var yC0Bytes [48]byte
+	var yC1Bytes [48]byte
+	copy(xC0Bytes[:], bigPublicKey[1:49])
+	copy(xC1Bytes[:], bigPublicKey[49:97])
+	copy(yC0Bytes[:], bigPublicKey[97:145])
+	copy(yC1Bytes[:], bigPublicKey[145:193])
+	xC0 := FQReprFromBytes(xC0Bytes)
+	xC1 := FQReprFromBytes(xC1Bytes)
+	yC0 := FQReprFromBytes(yC0Bytes)
+	yC1 := FQReprFromBytes(yC1Bytes)
+	g.x.c0 = &FQ{n: xC0}
+	g.x.c1 = &FQ{n: xC1}
+	g.y.c0 = &FQ{n: yC0}
+	g.y.c1 = &FQ{n: yC1}
 	return &PublicKey{p: g.ToProjective()}
 }
 
@@ -131,14 +137,14 @@ func DeserializeSecretKey(b []byte) *SecretKey {
 }
 
 // Sign signs a message with a secret key.
-func Sign(message []byte, key *SecretKey, domain uint64) *Signature {
-	h := HashG1(message, domain).Mul(key.f.n)
+func Sign(message []byte, key *SecretKey) *Signature {
+	h := HashG1(message).MulFR(key.f.n)
 	return &Signature{s: h}
 }
 
 // PrivToPub converts the private key into a public key.
 func PrivToPub(k *SecretKey) *PublicKey {
-	return &PublicKey{p: G2AffineOne.Mul(k.f.n)}
+	return &PublicKey{p: G2AffineOne.MulFR(k.f.n)}
 }
 
 // RandKey generates a random secret key.
@@ -151,10 +157,10 @@ func RandKey(r io.Reader) (*SecretKey, error) {
 	return s, nil
 }
 
-// KeyFromBig returns a new key based on a big int in
+// KeyFromFQRepr returns a new key based on a FQRepr in
 // FR.
-func KeyFromBig(i *big.Int) *SecretKey {
-	return &SecretKey{f: NewFR(i)}
+func KeyFromFQRepr(i *FRRepr) *SecretKey {
+	return &SecretKey{f: FRReprToFR(i)}
 }
 
 // Verify verifies a signature against a message and a public key.

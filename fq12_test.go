@@ -25,11 +25,12 @@ func TestFQ12MulBy014(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		b := a.Mul(bls.NewFQ12(
+		b := a.Copy()
+		b.MulAssign(bls.NewFQ12(
 			bls.NewFQ6(c0, c1, bls.FQ2Zero),
 			bls.NewFQ6(bls.FQ2Zero, c5, bls.FQ2Zero),
 		))
-		a = a.MulBy014(c0, c1, c5)
+		a.MulBy014Assign(c0, c1, c5)
 
 		if !a.Equals(b) {
 			t.Error("MulBy014 is broken.")
@@ -37,7 +38,7 @@ func TestFQ12MulBy014(t *testing.T) {
 	}
 }
 
-func BenchmarkFQ12Add(b *testing.B) {
+func BenchmarkFQ12MulAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ12
 		f2 *bls.FQ12
@@ -58,64 +59,12 @@ func BenchmarkFQ12Add(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Add(inData[count].f2)
+		inData[count].f1.MulAssign(inData[count].f2)
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ12Sub(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ12
-		f2 *bls.FQ12
-	}
-
-	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
-	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
-		f2, _ := bls.RandFQ12(r)
-		inData[i] = addData{
-			f1: f1,
-			f2: f2,
-		}
-	}
-
-	b.ResetTimer()
-
-	count := 0
-	for i := 0; i < b.N; i++ {
-		inData[count].f1.Sub(inData[count].f2)
-		count = (count + 1) % g1MulAssignSamples
-	}
-}
-
-func BenchmarkFQ12Mul(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ12
-		f2 *bls.FQ12
-	}
-
-	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
-	for i := 0; i < g1MulAssignSamples; i++ {
-		f1, _ := bls.RandFQ12(r)
-		f2, _ := bls.RandFQ12(r)
-		inData[i] = addData{
-			f1: f1,
-			f2: f2,
-		}
-	}
-
-	b.ResetTimer()
-
-	count := 0
-	for i := 0; i < b.N; i++ {
-		inData[count].f1.Mul(inData[count].f2)
-		count = (count + 1) % g1MulAssignSamples
-	}
-}
-
-func BenchmarkFQ12Square(b *testing.B) {
+func BenchmarkFQ12SquareAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ12
 	}
@@ -133,12 +82,12 @@ func BenchmarkFQ12Square(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Square()
+		inData[count].f1.SquareAssign()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
 
-func BenchmarkFQ12Inverse(b *testing.B) {
+func BenchmarkFQ12InverseAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ12
 	}
@@ -156,7 +105,7 @@ func BenchmarkFQ12Inverse(b *testing.B) {
 
 	count := 0
 	for i := 0; i < b.N; i++ {
-		inData[count].f1.Inverse()
+		inData[count].f1.InverseAssign()
 		count = (count + 1) % g1MulAssignSamples
 	}
 }
