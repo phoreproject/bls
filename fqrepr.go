@@ -98,6 +98,7 @@ func (f *FQRepr) Lsh(n uint) {
 		for i := 0; i < 6; i++ {
 			t, f[i] = f[i], t
 		}
+		n -= 64
 	}
 
 	if n > 0 {
@@ -155,8 +156,8 @@ func (f *FQRepr) Copy() *FQRepr {
 }
 
 // ToString converts the FQRepr to a string.
-func (f FQRepr) ToString() string {
-	return fmt.Sprintf("%x%x%x%x%x%x", f[5], f[4], f[3], f[2], f[1], f[0])
+func (f FQRepr) String() string {
+	return fmt.Sprintf("%016x%016x%016x%016x%016x%016x", f[5], f[4], f[3], f[2], f[1], f[0])
 }
 
 // BitLen counts the number of bits the number is.
@@ -201,12 +202,17 @@ func FQReprFromString(s string, b uint) (*FQRepr, error) {
 // ToBig gets the big.Int representation of the FQRepr.
 func (f FQRepr) ToBig() *big.Int {
 	out := big.NewInt(0)
-	for i := 0; i < 5; i++ {
+	for i := 5; i >= 0; i-- {
 		out.Add(out, new(big.Int).SetUint64(f[i]))
-		out.Lsh(out, 64)
+		if i != 0 {
+			out.Lsh(out, 64)
+		}
 	}
 	return out
 }
+
+var bigIntZero = big.NewInt(0)
+var oneLsh64MinusOne = new(big.Int).SetUint64(0xffffffffffffffff)
 
 // FQReprFromBigInt create a FQRepr from a big.Int.
 func FQReprFromBigInt(out *big.Int) (*FQRepr, error) {
@@ -215,9 +221,11 @@ func FQReprFromBigInt(out *big.Int) (*FQRepr, error) {
 	}
 
 	newf := NewFQRepr(0)
-	for out.BitLen() > 0 {
-		newf.AddNoCarry(NewFQRepr(out.Uint64()))
-		newf.Lsh(64)
+	i := 0
+	for out.Cmp(bigIntZero) != 0 {
+		o := new(big.Int).And(out, oneLsh64MinusOne)
+		newf[i] = o.Uint64()
+		i++
 		out.Rsh(out, 64)
 	}
 

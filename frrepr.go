@@ -97,6 +97,7 @@ func (f *FRRepr) Lsh(n uint) {
 		for i := 0; i < 3; i++ {
 			t, f[i] = f[i], t
 		}
+		n -= 64
 	}
 
 	if n > 0 {
@@ -114,7 +115,7 @@ func (f *FRRepr) Lsh(n uint) {
 // carry.
 func (f *FRRepr) AddNoCarry(g *FRRepr) {
 	carry := uint64(0)
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 3; i++ {
 		f[i] = AddWithCarry(f[i], g[i], &carry)
 	}
 }
@@ -155,7 +156,7 @@ func (f *FRRepr) Copy() *FRRepr {
 
 // ToString converts the FRRepr to a string.
 func (f FRRepr) ToString() string {
-	return fmt.Sprintf("%x%x%x%x", f[3], f[2], f[1], f[0])
+	return fmt.Sprintf("%016x%016x%016x%016x", f[3], f[2], f[1], f[0])
 }
 
 // BitLen counts the number of bits the number is.
