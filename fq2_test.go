@@ -71,6 +71,7 @@ func TestFQ2Basics(t *testing.T) {
 
 func TestFQ2Squaring(t *testing.T) {
 	a := bls.NewFQ2(bls.FQOne, bls.FQOne)
+	t.Log(a)
 	a.SquareAssign()
 	expected := bls.NewFQ2(bls.FQZero, bls.FQReprToFQ(bigTwo))
 	if !a.Equals(expected) {

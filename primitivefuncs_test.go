@@ -155,16 +155,30 @@ func TestAddWithCarry(t *testing.T) {
 			0,
 			1,
 		},
+		{
+			0,
+			0,
+			0,
+			0,
+			0,
+		},
+		{
+			0,
+			4043378133346814763,
+			0,
+			4043378133346814763,
+			0,
+		},
 	}
 
 	for _, c := range cases {
 		carry := c.carry
 		out := bls.AddWithCarry(c.a, c.b, &carry)
 		if out != c.out {
-			t.Fatalf("%d + %d + %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.carry, out, c.out)
+			t.Errorf("%d + %d + %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.carry, out, c.out)
 		}
 		if carry != c.outCarry {
-			t.Fatalf("%d + %d + %d is giving incorrect carry of %d instead of %d", c.a, c.b, c.carry, carry, c.outCarry)
+			t.Errorf("%d + %d + %d is giving incorrect carry of %d instead of %d", c.a, c.b, c.carry, carry, c.outCarry)
 		}
 	}
 }

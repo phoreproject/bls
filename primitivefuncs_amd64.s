@@ -20,8 +20,10 @@ TEXT ·SubWithBorrow(SB),NOSPLIT,$0
     MOVQ (CX), DX
     MOVQ b+8(FP), BX
     SUBQ BX, AX
+    MOVQ $0, BX
     SETCS BX
     SUBQ DX, AX
+    MOVQ $0, DX
     SETCS DX
     ORQ DX, BX
     MOVQ BX, (CX)
@@ -34,8 +36,10 @@ TEXT ·AddWithCarry(SB),NOSPLIT,$0
     MOVQ (CX), DX
     MOVQ b+8(FP), BX
     ADDQ BX, AX
+    MOVQ $0, BX
     SETCS BX
     ADDQ DX, AX
+    MOVQ $0, DX
     SETCS DX
     ORQ DX, BX
     MOVQ BX, (CX)
