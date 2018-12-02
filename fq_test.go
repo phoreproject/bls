@@ -2,6 +2,7 @@ package bls_test
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -158,7 +159,7 @@ func TestExp(t *testing.T) {
 	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(2))
 
 	for i := 0; i < 1; i++ {
-		n, _ := rand.Int(r, big.NewInt(100))
+		n, _ := rand.Int(r, QFieldModulusBig)
 
 		f, err := bls.FQReprFromBigInt(n)
 		if err != nil {
@@ -170,6 +171,26 @@ func TestExp(t *testing.T) {
 
 		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
 			t.Fatal("exp totals do not match between big int and FQ")
+		}
+	}
+}
+
+func TestSqrt(t *testing.T) {
+	r := NewXORShift(1)
+
+	for i := 0; i < 1; i++ {
+		f, err := bls.RandFQ(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		a := f.Sqrt()
+		a.SquareAssign()
+
+		fmt.Println(f, a)
+
+		if !a.Equals(f) {
+			t.Fatal("sqrt(a)^2 != a")
 		}
 	}
 }

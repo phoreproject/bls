@@ -198,7 +198,7 @@ func (f *FQ) divAssign(other *FQ) {
 func (f *FQ) Exp(n *FQRepr) *FQ {
 	nCopy := n.Copy()
 	fi := f.Copy()
-	fNew := FQReprToFQ(bigOne.Copy())
+	fNew := FQOne.Copy()
 	for nCopy.Cmp(bigZero) != 0 {
 		if !nCopy.IsEven() {
 			fNew.MulAssign(fi)
