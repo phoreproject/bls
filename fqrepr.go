@@ -187,7 +187,7 @@ func FQReprFromBytes(b [48]byte) *FQRepr {
 
 // Bit checks if a bit is set (little-endian)
 func (f FQRepr) Bit(n uint) bool {
-	return f[n/8]&(1<<(n%8)) != 0
+	return f[n/64]&(1<<(n%64)) != 0
 }
 
 // FQReprFromString creates a FQRepr from a string.
