@@ -2,6 +2,8 @@ package bls_test
 
 import (
 	"crypto/rand"
+	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -22,6 +24,155 @@ func TestFQFromString(t *testing.T) {
 		}
 		if f.ToBig().Cmp(n) != 0 {
 			t.Fatalf("big number does not match FQ (expected %x, got %s)", n, f)
+		}
+	}
+}
+
+func TestFQOneZero(t *testing.T) {
+	if bls.FQOne.ToRepr().ToBig().Cmp(big.NewInt(1)) != 0 {
+		t.Errorf("one does not equal 1. (expected: 1, actual: %s)", bls.FQOne.ToRepr().ToBig())
+	}
+	if bls.FQZero.ToRepr().ToBig().Cmp(big.NewInt(0)) != 0 {
+		t.Errorf("one does not equal 0. (expected: 0, actual: %s)", bls.FQZero.ToRepr().ToBig())
+	}
+}
+
+func TestFQCopy(t *testing.T) {
+	r := NewXORShift(1)
+
+	for i := 0; i < TestSamples; i++ {
+		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		fCopy := f.Copy()
+		fCopy.Div2()
+
+		if f.Equals(fCopy) {
+			t.Fatal("copy doesn't work")
+		}
+	}
+}
+
+func TestIsValid(t *testing.T) {
+	f := bigOne.Copy()
+	f.Lsh(383)
+	f.AddNoCarry(bigOne)
+	fmt.Println(f)
+	fmt.Println(bls.QFieldModulus)
+	if bls.FQReprToFQ(f) != nil {
+		t.Fatal("2^383-1 should not be valid")
+	}
+}
+
+var QFieldModulusBig = bls.QFieldModulus.ToBig()
+
+func TestAddAssign(t *testing.T) {
+	r := NewXORShift(1)
+	total := big.NewInt(0)
+	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(0))
+
+	for i := 0; i < TestSamples; i++ {
+		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		totalFQ.AddAssign(bls.FQReprToFQ(f))
+		total.Add(total, n)
+		total.Mod(total, QFieldModulusBig)
+
+		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
+			t.Error("addition totals do not match between big int and FQ")
+		}
+	}
+}
+
+func TestMulAssign(t *testing.T) {
+	r := NewXORShift(1)
+	total := big.NewInt(0)
+	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(0))
+
+	for i := 0; i < TestSamples; i++ {
+		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		totalFQ.MulAssign(bls.FQReprToFQ(f))
+		total.Mul(total, n)
+		total.Mod(total, QFieldModulusBig)
+
+		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
+			t.Error("multiplication totals do not match between big int and FQ")
+		}
+	}
+}
+
+func TestSubAssign(t *testing.T) {
+	r := NewXORShift(1)
+	total := big.NewInt(0)
+	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(0))
+
+	for i := 0; i < TestSamples; i++ {
+		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		totalFQ.SubAssign(bls.FQReprToFQ(f))
+		total.Sub(total, n)
+		total.Mod(total, QFieldModulusBig)
+
+		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
+			t.Error("multiplication totals do not match between big int and FQ")
+		}
+	}
+}
+
+func TestSquare(t *testing.T) {
+	// r := NewXORShift(1)
+	total := big.NewInt(2398928)
+	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(2398928))
+
+	for i := 0; i < TestSamples; i++ {
+		totalFQ.SquareAssign()
+		total.Mul(total, total)
+		total.Mod(total, QFieldModulusBig)
+
+		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
+			t.Fatal("exp totals do not match between big int and FQ")
+		}
+	}
+}
+
+func TestExp(t *testing.T) {
+	r := NewXORShift(1)
+	total := big.NewInt(2)
+	totalFQ := bls.FQReprToFQ(bls.NewFQRepr(2))
+
+	for i := 0; i < 1; i++ {
+		n, _ := rand.Int(r, big.NewInt(100))
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		totalFQ = totalFQ.Exp(f)
+		total.Exp(total, n, QFieldModulusBig)
+
+		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
+			t.Fatal("exp totals do not match between big int and FQ")
 		}
 	}
 }

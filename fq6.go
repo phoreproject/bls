@@ -3,6 +3,7 @@ package bls
 import (
 	"fmt"
 	"io"
+	"math/big"
 )
 
 // FQ6 is an element of FQ6 represented by c0 + c1*v + v2*v**2
@@ -134,19 +135,21 @@ func (f FQ6) SubAssign(other *FQ6) {
 }
 
 func getFrobExpMinus1Over3(power int64) *FQRepr {
-	f := FQReprToFQ(QFieldModulus.Copy())
-	f = f.Exp(NewFQRepr(uint64(power)))
-	f.SubAssign(FQOne)
-	f.divAssign(bigThreeFQ)
-	return f.n
+	out := new(big.Int).Exp(qFieldModulusBig, big.NewInt(power), qFieldModulusBig)
+	out.Sub(out, big.NewInt(1))
+	out.Div(out, big.NewInt(3))
+	out.Mod(out, qFieldModulusBig)
+	o, _ := FQReprFromBigInt(out)
+	return o
 }
 
 func get2FrobExpMinus2Over3(power int64) *FQRepr {
-	f := FQReprToFQ(QFieldModulus.Copy())
-	f = f.Exp(NewFQRepr(uint64(power)))
-	f.SubAssign(bigTwoFQ)
-	f.divAssign(bigThreeFQ)
-	return f.n
+	out := new(big.Int).Exp(qFieldModulusBig, big.NewInt(power), qFieldModulusBig)
+	out.Sub(out, big.NewInt(2))
+	out.Div(out, big.NewInt(3))
+	out.Mod(out, qFieldModulusBig)
+	o, _ := FQReprFromBigInt(out)
+	return o
 }
 
 var bigThree = NewFQRepr(3)
