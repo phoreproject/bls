@@ -279,5 +279,5 @@ func (f FQ2) MulBits(b *big.Int) *FQ2 {
 func HashFQ2(hasher hash.Hash) *FQ2 {
 	digest := hasher.Sum(nil)
 	newB := new(big.Int).SetBytes(digest)
-	return FQ2One.MulBits(newB)
+	return FQ2One.Copy().MulBits(newB)
 }

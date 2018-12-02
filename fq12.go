@@ -3,6 +3,7 @@ package bls
 import (
 	"fmt"
 	"io"
+	"math/big"
 )
 
 // FQ12 is an element of Fq12, represented by c0 + c1 * w.
@@ -115,12 +116,15 @@ func (f FQ12) Exp(n *FQRepr) *FQ12 {
 
 var bigSix = NewFQRepr(6)
 
-func getFrobExpMinus1Over6(power uint64) *FQRepr {
-	out := FQReprToFQ(QFieldModulus.Copy())
-	out = out.Exp(NewFQRepr(power))
-	out.SubAssign(FQOne)
-	out.divAssign(FQReprToFQ(bigSix))
-	return out.n
+var qFieldModulusBig = QFieldModulus.ToBig()
+
+func getFrobExpMinus1Over6(power int64) *FQRepr {
+	out := new(big.Int).Exp(qFieldModulusBig, big.NewInt(power), qFieldModulusBig)
+	out.Sub(out, big.NewInt(1))
+	out.Div(out, big.NewInt(6))
+	out.Mod(out, qFieldModulusBig)
+	o, _ := FQReprFromBigInt(out)
+	return o
 }
 
 var frobeniusCoeffFQ12c1 = [12]*FQ2{

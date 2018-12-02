@@ -137,7 +137,7 @@ func (f *FQRepr) Equals(g *FQRepr) bool {
 
 // Cmp compares two FQRepr's
 func (f *FQRepr) Cmp(g *FQRepr) int {
-	for i := 0; i < 6; i++ {
+	for i := 5; i >= 0; i-- {
 		if f[i] > g[i] {
 			return 1
 		} else if f[i] < g[i] {
@@ -215,10 +215,12 @@ var bigIntZero = big.NewInt(0)
 var oneLsh64MinusOne = new(big.Int).SetUint64(0xffffffffffffffff)
 
 // FQReprFromBigInt create a FQRepr from a big.Int.
-func FQReprFromBigInt(out *big.Int) (*FQRepr, error) {
-	if out.BitLen() > 384 || out.Sign() == -1 {
+func FQReprFromBigInt(n *big.Int) (*FQRepr, error) {
+	if n.BitLen() > 384 || n.Sign() == -1 {
 		return nil, errors.New("invalid input string")
 	}
+
+	out := new(big.Int).Set(n)
 
 	newf := NewFQRepr(0)
 	i := 0
