@@ -519,7 +519,7 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 // Mul performs a EC multiply operation on the point.
 func (g G1Projective) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < uint(b.BitLen())*8; i++ {
+	for i := uint(0); i < uint(b.BitLen()); i++ {
 		o := b.Bit(i)
 		res = res.Double()
 		if o {

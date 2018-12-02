@@ -397,14 +397,22 @@ func (f FQ) MulBits(b *FQRepr) *FQ {
 	return res
 }
 
+// MulBytes multiplies the number by some bytes.
+func (f FQ) MulBytes(b []byte) *FQ {
+	res := FQZero.Copy()
+	for i := uint(0); i < uint(len(b)*8); i++ {
+		res.DoubleAssign()
+		if b[i/8]&(1<<(i%8)) != 0 {
+			res.AddAssign(&f)
+		}
+	}
+	return res
+}
+
 // HashFQ calculates a new FQ2 value based on a hash.
 func HashFQ(hasher hash.Hash) *FQ {
 	digest := hasher.Sum(nil)
-	newB, err := FQReprFromBytes(digest)
-	if err != nil {
-		panic(err)
-	}
-	return FQOne.MulBits(newB)
+	return FQOne.MulBytes(digest)
 }
 
 var qMinus1Over2, _ = FQReprFromString("2001204777610833696708894912867952078278441409969503942666029068062015825245418932221343814564507832018947136279893", 10)
