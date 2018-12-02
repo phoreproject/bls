@@ -33,7 +33,7 @@ func TestFQ12MulBy014(t *testing.T) {
 		a.MulBy014Assign(c0, c1, c5)
 
 		if !a.Equals(b) {
-			t.Error("MulBy014 is broken.")
+			t.Fatal("MulBy014 is broken.")
 		}
 	}
 }

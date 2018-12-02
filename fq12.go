@@ -35,10 +35,10 @@ func (f *FQ12) MulBy014Assign(c0 *FQ2, c1 *FQ2, c4 *FQ2) {
 	aa.MulBy01Assign(c0, c1)
 	bb := f.c1.Copy()
 	bb.MulBy1Assign(c4)
-	o := c1.Copy()
+	o := *c1
 	c1.AddAssign(c4)
 	f.c1.AddAssign(f.c0)
-	f.c1.MulBy01Assign(c0, o)
+	f.c1.MulBy01Assign(c0, &o)
 	f.c1.SubAssign(aa)
 	f.c1.SubAssign(bb)
 	f.c0 = bb.Copy()
