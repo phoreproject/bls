@@ -32,7 +32,7 @@ func (f FQ6) Copy() *FQ6 {
 }
 
 // MulByNonresidueAssign multiplies by quadratic nonresidue v.
-func (f FQ6) MulByNonresidueAssign() {
+func (f *FQ6) MulByNonresidueAssign() {
 	f.c0, f.c1, f.c2 = f.c2, f.c0, f.c1
 	f.c0.MultiplyByNonresidueAssign()
 }
