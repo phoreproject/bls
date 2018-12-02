@@ -2,7 +2,6 @@ package bls_test
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -61,8 +60,6 @@ func TestIsValid(t *testing.T) {
 	f := bigOne.Copy()
 	f.Lsh(383)
 	f.AddNoCarry(bigOne)
-	fmt.Println(f)
-	fmt.Println(bls.QFieldModulus)
 	if bls.FQReprToFQ(f) != nil {
 		t.Fatal("2^383-1 should not be valid")
 	}

@@ -14,7 +14,7 @@ var (
 )
 
 func TestFQ2Ordering(t *testing.T) {
-	a := bls.NewFQ2(bls.FQZero, bls.FQZero)
+	a := bls.NewFQ2(bls.FQZero.Copy(), bls.FQZero.Copy())
 	b := a.Copy()
 
 	if a.Cmp(b) != 0 {
@@ -71,11 +71,9 @@ func TestFQ2Basics(t *testing.T) {
 
 func TestFQ2Squaring(t *testing.T) {
 	a := bls.NewFQ2(bls.FQOne, bls.FQOne)
-	t.Log(a)
 	a.SquareAssign()
 	expected := bls.NewFQ2(bls.FQZero, bls.FQReprToFQ(bigTwo))
 	if !a.Equals(expected) {
-		t.Log(a)
 		t.Error("FQ(1, 1).Square() != FQ(0, 2)")
 	}
 
