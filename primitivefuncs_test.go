@@ -9,14 +9,14 @@ import (
 func BenchmarkMACWithCarry(b *testing.B) {
 	carry := uint64(0)
 	for i := 0; i < b.N; i++ {
-		bls.MACWithCarry(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, 0x1234567812345678, &carry)
+		_, carry = bls.MACWithCarry(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, 0x1234567812345678, carry)
 	}
 }
 
 func BenchmarkSubWithCarry(b *testing.B) {
 	borrow := uint64(0)
 	for i := 0; i < b.N; i++ {
-		bls.SubWithBorrow(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, &borrow)
+		_, borrow = bls.SubWithBorrow(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, borrow)
 	}
 }
 
@@ -88,7 +88,7 @@ func TestSubWithCarry(t *testing.T) {
 
 	for _, c := range cases {
 		borrow := c.borrow
-		out := bls.SubWithBorrow(c.a, c.b, &borrow)
+		out, borrow := bls.SubWithBorrow(c.a, c.b, borrow)
 		if out != c.out {
 			t.Fatalf("%d - %d - %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.borrow, out, c.out)
 		}
@@ -101,7 +101,7 @@ func TestSubWithCarry(t *testing.T) {
 func BenchmarkAddWithCarry(b *testing.B) {
 	borrow := uint64(0)
 	for i := 0; i < b.N; i++ {
-		bls.AddWithCarry(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, &borrow)
+		_, borrow = bls.AddWithCarry(0xFFFFFFFF00000000, 0x00000000FFFFFFFF, borrow)
 	}
 }
 
@@ -173,7 +173,7 @@ func TestAddWithCarry(t *testing.T) {
 
 	for _, c := range cases {
 		carry := c.carry
-		out := bls.AddWithCarry(c.a, c.b, &carry)
+		out, carry := bls.AddWithCarry(c.a, c.b, carry)
 		if out != c.out {
 			t.Errorf("%d + %d + %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.carry, out, c.out)
 		}
@@ -227,8 +227,7 @@ func TestMACWithCarry(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		carry := c.carry
-		out := bls.MACWithCarry(c.a, c.b, c.c, &carry)
+		out, carry := bls.MACWithCarry(c.a, c.b, c.c, c.carry)
 		if out != c.out {
 			t.Fatalf("%d + %d * %d + %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.c, c.carry, out, c.out)
 		}
