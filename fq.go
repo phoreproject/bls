@@ -20,7 +20,7 @@ var bigTwo = NewFQRepr(2)
 var FQZero = FQReprToFQ(bigZero)
 
 // FQOne is the one FQ element
-var FQOne = FQReprToFQ(R)
+var FQOne = &FQ{R}
 var bigTwoFQ = FQReprToFQ(bigTwo)
 
 // QFieldModulus is the modulus of the field.
@@ -340,7 +340,7 @@ func (f FQ) Inverse() *FQ {
 	}
 	u := f.n.Copy()
 	v := QFieldModulus.Copy()
-	b := FQOne.Copy()
+	b := &FQ{R2.Copy()}
 	c := FQZero.Copy()
 
 	for u.Cmp(bigOne) != 0 && v.Cmp(bigOne) != 0 {
