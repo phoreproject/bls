@@ -38,7 +38,7 @@ func (f *FQ6) MulByNonresidueAssign() {
 }
 
 // MulBy1Assign multiplies the FQ6 by an FQ2.
-func (f FQ6) MulBy1Assign(c1 *FQ2) {
+func (f *FQ6) MulBy1Assign(c1 *FQ2) {
 	b := f.c1.Copy()
 	b.MulAssign(c1)
 	tmp := f.c1.Copy()
