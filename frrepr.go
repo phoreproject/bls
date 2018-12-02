@@ -76,7 +76,7 @@ func (f *FRRepr) Div2() {
 // Mul2 multiplies the FRRepr by 2.
 func (f *FRRepr) Mul2() {
 	last := uint64(0)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 4; i++ {
 		tmp := f[i] >> 63
 		f[i] <<= 1
 		f[i] |= last
@@ -94,7 +94,7 @@ func (f *FRRepr) Lsh(n uint) {
 
 	for n >= 64 {
 		t := uint64(0)
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 4; i++ {
 			t, f[i] = f[i], t
 		}
 		n -= 64
@@ -102,7 +102,7 @@ func (f *FRRepr) Lsh(n uint) {
 
 	if n > 0 {
 		t := uint64(0)
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 4; i++ {
 			t2 := f[i] >> (64 - n)
 			f[i] <<= n
 			f[i] |= t
@@ -115,8 +115,8 @@ func (f *FRRepr) Lsh(n uint) {
 // carry.
 func (f *FRRepr) AddNoCarry(g *FRRepr) {
 	carry := uint64(0)
-	for i := 0; i < 3; i++ {
-		f[i] = AddWithCarry(f[i], g[i], &carry)
+	for i := 0; i < 4; i++ {
+		f[i], carry = AddWithCarry(f[i], g[i], carry)
 	}
 }
 
@@ -124,8 +124,8 @@ func (f *FRRepr) AddNoCarry(g *FRRepr) {
 // borrow.
 func (f *FRRepr) SubNoBorrow(g *FRRepr) {
 	borrow := uint64(0)
-	for i := 0; i < 3; i++ {
-		f[i] = SubWithBorrow(f[i], g[i], &borrow)
+	for i := 0; i < 4; i++ {
+		f[i], borrow = SubWithBorrow(f[i], g[i], borrow)
 	}
 }
 
@@ -136,7 +136,7 @@ func (f *FRRepr) Equals(g *FRRepr) bool {
 
 // Cmp compares two FRRepr's
 func (f *FRRepr) Cmp(g *FRRepr) int {
-	for i := 0; i < 3; i++ {
+	for i := 3; i >= 0; i-- {
 		if f[i] > g[i] {
 			return 1
 		} else if f[i] < g[i] {
@@ -150,12 +150,12 @@ func (f *FRRepr) Cmp(g *FRRepr) int {
 func (f *FRRepr) Copy() *FRRepr {
 	var newBytes [4]uint64
 	copy(newBytes[:], f[:])
-	out := FRRepr(newBytes)
-	return &out
+	newf := FRRepr(newBytes)
+	return &newf
 }
 
 // ToString converts the FRRepr to a string.
-func (f FRRepr) ToString() string {
+func (f FRRepr) String() string {
 	return fmt.Sprintf("%016x%016x%016x%016x", f[3], f[2], f[1], f[0])
 }
 
@@ -180,7 +180,7 @@ func FRReprFromBytes(b []byte) (*FRRepr, error) {
 
 // Bit checks if a bit is set (little-endian)
 func (f FRRepr) Bit(n uint) bool {
-	return f[n/8]&(1<<(n%8)) != 0
+	return f[n/64]&(1<<(n%64)) != 0
 }
 
 // FRReprFromString creates a FRRepr from a string.
@@ -195,23 +195,29 @@ func FRReprFromString(s string, b uint) (*FRRepr, error) {
 // ToBig gets the big.Int representation of the FRRepr.
 func (f FRRepr) ToBig() *big.Int {
 	out := big.NewInt(0)
-	for i := 0; i < 3; i++ {
+	for i := 3; i >= 0; i-- {
 		out.Add(out, new(big.Int).SetUint64(f[i]))
-		out.Lsh(out, 64)
+		if i != 0 {
+			out.Lsh(out, 64)
+		}
 	}
 	return out
 }
 
 // FRReprFromBigInt create a FRRepr from a big.Int.
-func FRReprFromBigInt(out *big.Int) (*FRRepr, error) {
-	if out.BitLen() > 256 || out.Sign() == -1 {
+func FRReprFromBigInt(n *big.Int) (*FRRepr, error) {
+	if n.BitLen() > 256 || n.Sign() == -1 {
 		return nil, errors.New("invalid input string")
 	}
 
+	out := new(big.Int).Set(n)
+
 	newf := NewFRRepr(0)
-	for out.BitLen() > 0 {
-		newf.AddNoCarry(NewFRRepr(out.Uint64()))
-		newf.Lsh(64)
+	i := 0
+	for out.Cmp(bigIntZero) != 0 {
+		o := new(big.Int).And(out, oneLsh64MinusOne)
+		newf[i] = o.Uint64()
+		i++
 		out.Rsh(out, 64)
 	}
 

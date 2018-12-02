@@ -71,7 +71,7 @@ func TestRandomMACWithCarry(t *testing.T) {
 	for i := 0; i < TestSamples; i++ {
 		a, _ := rand.Int(r, new(big.Int).SetUint64(0xffffffffffffffff))
 		b, _ := rand.Int(r, new(big.Int).SetUint64(0xffffffffffffffff))
-		current = bls.MACWithCarry(current, a.Uint64(), b.Uint64(), &carry)
+		current, carry = bls.MACWithCarry(current, a.Uint64(), b.Uint64(), carry)
 
 		a.Mul(a, b)
 		currentBig.Add(currentBig, a)
@@ -99,7 +99,7 @@ func TestRandomAddWithCarry(t *testing.T) {
 
 	for i := 0; i < TestSamples; i++ {
 		a, _ := rand.Int(r, new(big.Int).SetUint64(0xffffffffffffffff))
-		current = bls.AddWithCarry(current, a.Uint64(), &carry)
+		current, carry = bls.AddWithCarry(current, a.Uint64(), carry)
 
 		currentBig.Add(currentBig, a)
 		currentBig.Add(currentBig, carryBig)

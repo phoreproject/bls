@@ -117,7 +117,7 @@ func (f *FQRepr) Lsh(n uint) {
 func (f *FQRepr) AddNoCarry(g *FQRepr) {
 	carry := uint64(0)
 	for i := 0; i < 6; i++ {
-		f[i] = AddWithCarry(f[i], g[i], &carry)
+		f[i], carry = AddWithCarry(f[i], g[i], carry)
 	}
 }
 
@@ -126,7 +126,7 @@ func (f *FQRepr) AddNoCarry(g *FQRepr) {
 func (f *FQRepr) SubNoBorrow(g *FQRepr) {
 	borrow := uint64(0)
 	for i := 0; i < 6; i++ {
-		f[i] = SubWithBorrow(f[i], g[i], &borrow)
+		f[i], borrow = SubWithBorrow(f[i], g[i], borrow)
 	}
 }
 
@@ -138,6 +138,9 @@ func (f *FQRepr) Equals(g *FQRepr) bool {
 // Cmp compares two FQRepr's
 func (f *FQRepr) Cmp(g *FQRepr) int {
 	for i := 5; i >= 0; i-- {
+		if f[i] == g[i] {
+			continue
+		}
 		if f[i] > g[i] {
 			return 1
 		} else if f[i] < g[i] {
