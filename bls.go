@@ -33,13 +33,13 @@ type PublicKey struct {
 	p *G2Projective
 }
 
-func (g PublicKey) String() string {
-	return g.p.String()
+func (p PublicKey) String() string {
+	return p.p.String()
 }
 
 // Serialize serializes a public key to bytes.
-func (g PublicKey) Serialize() []byte {
-	return CompressG2(g.p.ToAffine()).Bytes()
+func (p PublicKey) Serialize() []byte {
+	return CompressG2(p.p.ToAffine()).Bytes()
 }
 
 // DeserializePublicKey deserializes a public key from
@@ -58,8 +58,8 @@ type SecretKey struct {
 	f *FR
 }
 
-func (g SecretKey) String() string {
-	return g.f.String()
+func (s SecretKey) String() string {
+	return s.f.String()
 }
 
 // Serialize serializes a secret key to bytes.
@@ -110,7 +110,7 @@ func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
 
 // AggregateSignatures adds up all of the signatures.
 func AggregateSignatures(s []*Signature) *Signature {
-	newSig := &Signature{s: G1ProjectiveZero}
+	newSig := &Signature{s: G1ProjectiveZero.Copy()}
 	for _, sig := range s {
 		newSig.Aggregate(sig)
 	}
@@ -121,6 +121,21 @@ func AggregateSignatures(s []*Signature) *Signature {
 func (s *Signature) Aggregate(other *Signature) {
 	newS := s.s.Add(other.s)
 	s.s = newS
+}
+
+// AggregatePublicKeys adds public keys together.
+func AggregatePublicKeys(p []*PublicKey) *PublicKey {
+	newPub := &PublicKey{p: G2ProjectiveZero.Copy()}
+	for _, pub := range p {
+		newPub.Aggregate(pub)
+	}
+	return newPub
+}
+
+// Aggregate adds two public keys together.
+func (p *PublicKey) Aggregate(other *PublicKey) {
+	newP := p.p.Add(other.p)
+	p.p = newP
 }
 
 // NewAggregateSignature creates a blank aggregate signature.
