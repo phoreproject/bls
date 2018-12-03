@@ -13,6 +13,21 @@ type Signature struct {
 	s *G1Projective
 }
 
+// Serialize serializes a signature in compressed form.
+func (s *Signature) Serialize() []byte {
+	return CompressG1(s.s.ToAffine()).Bytes()
+}
+
+// DeserializeSignature deserializes a signature from bytes.
+func DeserializeSignature(b []byte) (*Signature, error) {
+	a, err := DecompressG1(new(big.Int).SetBytes(b))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Signature{s: a.ToProjective()}, nil
+}
+
 // PublicKey is a public key.
 type PublicKey struct {
 	p *G2Projective
@@ -22,6 +37,22 @@ func (g PublicKey) String() string {
 	return g.p.String()
 }
 
+// Serialize serializes a public key to bytes.
+func (g PublicKey) Serialize() []byte {
+	return CompressG2(g.p.ToAffine()).Bytes()
+}
+
+// DeserializePublicKey deserializes a public key from
+// bytes.
+func DeserializePublicKey(b []byte) (*PublicKey, error) {
+	a, err := DecompressG2(new(big.Int).SetBytes(b))
+	if err != nil {
+		return nil, err
+	}
+
+	return &PublicKey{p: a.ToProjective()}, nil
+}
+
 // SecretKey represents a BLS private key.
 type SecretKey struct {
 	f *FR
@@ -29,6 +60,17 @@ type SecretKey struct {
 
 func (g SecretKey) String() string {
 	return g.f.String()
+}
+
+// Serialize serializes a secret key to bytes.
+func (s SecretKey) Serialize() []byte {
+	return s.f.ToBig().Bytes()
+}
+
+// DeserializeSecretKey deserializes a secret key from
+// bytes.
+func DeserializeSecretKey(b []byte) *SecretKey {
+	return &SecretKey{NewFR(new(big.Int).SetBytes(b))}
 }
 
 // Sign signs a message with a secret key.
