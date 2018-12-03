@@ -148,6 +148,11 @@ func NewAggregateSignature() *Signature {
 	return &Signature{s: G1ProjectiveZero.Copy()}
 }
 
+// NewAggregatePubkey creates a blank public key.
+func NewAggregatePubkey() *PublicKey {
+	return &PublicKey{p: G2ProjectiveZero.Copy()}
+}
+
 // implement `Interface` in sort package.
 type sortableByteArray [][]byte
 
