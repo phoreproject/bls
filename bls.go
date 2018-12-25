@@ -28,6 +28,11 @@ func DeserializeSignature(b []byte) (*Signature, error) {
 	return &Signature{s: a.ToProjective()}, nil
 }
 
+// Copy returns a copy of the signature.
+func (s *Signature) Copy() *Signature {
+	return &Signature{s.s.Copy()}
+}
+
 // PublicKey is a public key.
 type PublicKey struct {
 	p *G2Projective
