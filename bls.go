@@ -47,6 +47,11 @@ func (p PublicKey) Serialize() []byte {
 	return CompressG2(p.p.ToAffine()).Bytes()
 }
 
+// Equals checks if two public keys are equal
+func (p PublicKey) Equals(other PublicKey) bool {
+	return p.p.Equal(other.p)
+}
+
 // DeserializePublicKey deserializes a public key from
 // bytes.
 func DeserializePublicKey(b []byte) (*PublicKey, error) {
