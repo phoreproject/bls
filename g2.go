@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -111,7 +112,7 @@ func (g G2Affine) IsOnCurve() bool {
 }
 
 // G2 cofactor = (x^8 - 4 x^7 + 5 x^6) - (4 x^4 + 6 x^3 - 4 x^2 - 4 x + 13) // 9
-var g2Cofactor, _ = new(big.Int).SetString("5d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddfa628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5", 16)
+var g2Cofactor, _ = new(big.Int).SetString("305502333931268344200999753193121504214466019254188142667664032982267604182971884026507427359259977847832272839041616661285803823378372096355777062779109", 10)
 
 // ScaleByCofactor scales the G2Affine point by the cofactor.
 func (g G2Affine) ScaleByCofactor() *G2Projective {
@@ -197,7 +198,7 @@ func CompressG2(affine *G2Affine) *big.Int {
 		res[0] |= 1 << 6
 	} else {
 		out0 := new(big.Int).Set(affine.x.c0.n).Bytes()
-		out1 := new(big.Int).Set(affine.x.c0.n).Bytes()
+		out1 := new(big.Int).Set(affine.x.c1.n).Bytes()
 		copy(res[:48], out0)
 		copy(res[48:], out1)
 
@@ -699,19 +700,35 @@ func SWEncodeG2(t *FQ2) *G2Affine {
 }
 
 // HashG2 converts a message to a point on the G2 curve.
-func HashG2(msg []byte) *G2Projective {
-	hasher0, _ := blake2b.New(64, nil)
-	hasher0.Write(msg)
-	hasher0.Write([]byte("G2_0"))
-	hasher1, _ := blake2b.New(64, nil)
-	hasher0.Write(msg)
-	hasher1.Write([]byte("G2_1"))
-	t0 := HashFQ2(hasher0)
-	t0Affine := SWEncodeG2(t0)
-	t1 := HashFQ2(hasher1)
-	t1Affine := SWEncodeG2(t1)
+func HashG2(msg []byte, domain uint64) *G2Projective {
+	domainBytes := [8]byte{}
+	binary.BigEndian.PutUint64(domainBytes[:], domain)
 
-	res := t0Affine.ToProjective()
-	res = res.AddAffine(t1Affine)
-	return res.ToAffine().ScaleByCofactor()
+	hasher0, _ := blake2b.New(64, nil)
+	hasher0.Write(domainBytes[:])
+	hasher0.Write([]byte("G2_0"))
+	hasher0.Write(msg)
+	hasher1, _ := blake2b.New(64, nil)
+	hasher1.Write(domainBytes[:])
+	hasher1.Write([]byte("G2_1"))
+	hasher1.Write(msg)
+
+	xRe := HashFQ(hasher0)
+	xIm := HashFQ(hasher1)
+
+	xCoordinate := NewFQ2(xRe, xIm)
+
+	for {
+		yCoordinateSquared := xCoordinate.Copy()
+		yCoordinateSquared.Square()
+		yCoordinateSquared.Mul(yCoordinateSquared)
+
+		yCoordinateSquared.AddAssign(BCoeffFQ2)
+
+		yCoordinate := yCoordinateSquared.Sqrt()
+		if yCoordinate != nil {
+			return NewG2Affine(xCoordinate, yCoordinate).ScaleByCofactor()
+		}
+		xCoordinate.AddAssign(FQ2One)
+	}
 }

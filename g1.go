@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -554,13 +555,18 @@ func SWEncodeG1(t *FQ) *G1Affine {
 }
 
 // HashG1 converts a message to a point on the G2 curve.
-func HashG1(msg []byte) *G1Projective {
+func HashG1(msg []byte, domain uint64) *G1Projective {
+	domainBytes := [8]byte{}
+	binary.BigEndian.PutUint64(domainBytes[:], domain)
+
 	hasher0, _ := blake2b.New(64, nil)
 	hasher0.Write(msg)
-	hasher0.Write([]byte("G2_0"))
+	hasher0.Write([]byte("G1_0"))
+	hasher0.Write(domainBytes[:])
 	hasher1, _ := blake2b.New(64, nil)
 	hasher1.Write(msg)
-	hasher1.Write([]byte("G2_1"))
+	hasher1.Write([]byte("G1_1"))
+	hasher1.Write(domainBytes[:])
 	t0 := HashFQ(hasher0)
 	t0Affine := SWEncodeG1(t0)
 	t1 := HashFQ(hasher1)

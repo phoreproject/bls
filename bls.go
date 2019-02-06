@@ -84,8 +84,8 @@ func DeserializeSecretKey(b []byte) *SecretKey {
 }
 
 // Sign signs a message with a secret key.
-func Sign(message []byte, key *SecretKey) *Signature {
-	h := HashG1(message).Mul(key.f.n)
+func Sign(message []byte, key *SecretKey, domain uint64) *Signature {
+	h := HashG1(message, domain).Mul(key.f.n)
 	return &Signature{s: h}
 }
 
@@ -111,8 +111,8 @@ func KeyFromBig(i *big.Int) *SecretKey {
 }
 
 // Verify verifies a signature against a message and a public key.
-func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
-	h := HashG1(m)
+func Verify(m []byte, pub *PublicKey, sig *Signature, domain uint64) bool {
+	h := HashG1(m, domain)
 	lhs := Pairing(sig.s, G2ProjectiveOne)
 	rhs := Pairing(h, pub.p)
 	return lhs.Equals(rhs)
@@ -194,7 +194,7 @@ func sortByteArrays(src [][]byte) [][]byte {
 }
 
 // VerifyAggregate verifies each public key against each message.
-func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
+func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte, domain uint64) bool {
 	if len(pubKeys) != len(msgs) {
 		return false
 	}
@@ -214,7 +214,7 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
 	lhs := Pairing(s.s, G2ProjectiveOne)
 	rhs := FQ12One.Copy()
 	for i := range pubKeys {
-		h := HashG1(msgs[i])
+		h := HashG1(msgs[i], domain)
 		rhs.MulAssign(Pairing(h, pubKeys[i].p))
 	}
 	return lhs.Equals(rhs)
@@ -223,8 +223,8 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
 // VerifyAggregateCommon verifies each public key against a message.
 // This is vulnerable to rogue public-key attack. Each user must
 // provide a proof-of-knowledge of the public key.
-func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte) bool {
-	h := HashG1(msg)
+func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte, domain uint64) bool {
+	h := HashG1(msg, domain)
 	lhs := Pairing(s.s, G2ProjectiveOne)
 	rhs := FQ12One.Copy()
 	for _, p := range pubKeys {
