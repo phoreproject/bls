@@ -165,7 +165,7 @@ func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
 
 	copyBytes := copy.Bytes()
 
-	if copyBytes[0]&(1<<7) == 0 {
+	if len(copyBytes) == 0 || copyBytes[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
 	}
 
