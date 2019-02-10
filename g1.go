@@ -196,8 +196,9 @@ func CompressG1(affine *G1Affine) *big.Int {
 	if affine.IsZero() {
 		res[0] |= 1 << 6
 	} else {
-		out0 := new(big.Int).Set(affine.x.n).Bytes()
-		copy(res[:], out0)
+		out0 := affine.x.n.Bytes()
+
+		copy(res[48-len(out0):], out0)
 
 		negY := affine.y.Neg()
 
