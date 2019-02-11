@@ -246,3 +246,21 @@ func TestPubkeySerializeDeserialize(t *testing.T) {
 		t.Fatal("message did not verify after serialization/deserialization of pubkey")
 	}
 }
+
+func TestPubkeySerializeDeserializeBig(t *testing.T) {
+	r := NewXORShift(1)
+	priv, _ := bls.RandKey(r)
+	pub := bls.PrivToPub(priv)
+	msg := []byte(fmt.Sprintf(">16 character identical message"))
+	sig := bls.Sign(msg, priv, 0)
+
+	if !bls.Verify(msg, pub, sig, 0) {
+		t.Fatal("message did not verify before serialization/deserialization of uncompressed pubkey")
+	}
+
+	pubSer := pub.SerializeBig()
+	pubDeser := bls.DeserializePublicKeyBig(pubSer)
+	if !bls.Verify(msg, pubDeser, sig, 0) {
+		t.Fatal("message did not verify after serialization/deserialization of uncompressed pubkey")
+	}
+}
