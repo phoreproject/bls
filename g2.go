@@ -146,6 +146,31 @@ func GetG2PointFromX(x *FQ2, greatest bool) *G2Affine {
 	return NewG2Affine(x, yVal)
 }
 
+// SerializeBytes returns the serialized bytes for the points represented.
+func (g *G2Affine) SerializeBytes() []byte {
+	out := [192]byte{}
+
+	copy(out[0:48], g.x.c0.n.Bytes())
+	copy(out[48:96], g.x.c1.n.Bytes())
+	copy(out[96:144], g.y.c0.n.Bytes())
+	copy(out[144:192], g.y.c1.n.Bytes())
+
+	return out[:]
+}
+
+// SetRawBytes sets the coords given the serialized bytes.
+func (g *G2Affine) SetRawBytes(uncompressed []byte) {
+	g.x = &FQ2{
+		c0: &FQ{n: new(big.Int).SetBytes(uncompressed[0:48])},
+		c1: &FQ{n: new(big.Int).SetBytes(uncompressed[48:96])},
+	}
+	g.y = &FQ2{
+		c0: &FQ{n: new(big.Int).SetBytes(uncompressed[96:144])},
+		c1: &FQ{n: new(big.Int).SetBytes(uncompressed[144:192])},
+	}
+	return
+}
+
 // DecompressG2 decompresses a G2 point from a big int and checks
 // if it is in the correct subgroup.
 func DecompressG2(b *big.Int) (*G2Affine, error) {

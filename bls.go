@@ -56,41 +56,33 @@ func concatAppend(slices [][]byte) []byte {
 }
 
 // SerializeBig serializes a public key uncompressed.
-func (p PublicKey) SerializeBig() [193]byte {
+func (p PublicKey) SerializeBig() []byte {
 	affine := p.p.ToAffine()
-	out := [193]byte{}
+	out := [192]byte{}
 	infinity := affine.infinity
-	copy(out[1:49], affine.x.c0.n.Bytes())
-	copy(out[49:97], affine.x.c1.n.Bytes())
-	copy(out[97:145], affine.y.c0.n.Bytes())
-	copy(out[145:193], affine.y.c1.n.Bytes())
 
 	if infinity {
-		out[0] = 1
+		out[0] = (1 << 6)
+		return out[:]
 	}
 
-	return out
+	copy(out[:], affine.SerializeBytes())
+
+	return out[:]
 }
 
 // DeserializePublicKeyBig deserializes a public key uncompressed.
-func DeserializePublicKeyBig(bigPublicKey [193]byte) *PublicKey {
+func DeserializePublicKeyBig(uncompressed []byte) *PublicKey {
 	g := G2Affine{}
-	if bigPublicKey[0] == 1 {
+
+	if uncompressed[0] == (1 << 6) {
 		g.infinity = true
 		return &PublicKey{p: g.ToProjective()}
 	}
-	g.x = &FQ2{
-		c0: &FQ{n: new(big.Int)},
-		c1: &FQ{n: new(big.Int)},
-	}
-	g.y = &FQ2{
-		c0: &FQ{n: new(big.Int)},
-		c1: &FQ{n: new(big.Int)},
-	}
-	g.x.c0.n.SetBytes(bigPublicKey[1:49])
-	g.x.c1.n.SetBytes(bigPublicKey[49:97])
-	g.y.c0.n.SetBytes(bigPublicKey[97:145])
-	g.y.c1.n.SetBytes(bigPublicKey[145:193])
+
+	// Set points given raw bytes for coordinates
+	g.SetRawBytes(uncompressed)
+
 	return &PublicKey{p: g.ToProjective()}
 }
 

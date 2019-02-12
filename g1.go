@@ -144,6 +144,27 @@ func (g G1Affine) Equals(other *G1Affine) bool {
 	return (g.infinity == other.infinity) || (g.x.Equals(other.x) && g.y.Equals(other.y))
 }
 
+// SerializeBytes returns the serialized bytes for the point represented.
+func (g *G1Affine) SerializeBytes() []byte {
+	out := [96]byte{}
+
+	copy(out[0:48], g.x.n.Bytes())
+	copy(out[48:96], g.y.n.Bytes())
+
+	return out[:]
+}
+
+// SetRawBytes sets the coords given the serialized bytes.
+func (g *G1Affine) SetRawBytes(uncompressed []byte) {
+	g.x = &FQ{
+		n: new(big.Int).SetBytes(uncompressed[0:48]),
+	}
+	g.y = &FQ{
+		n: new(big.Int).SetBytes(uncompressed[48:96]),
+	}
+	return
+}
+
 // DecompressG1 decompresses the big int into an affine point and checks
 // if it is in the correct prime group.
 func DecompressG1(b *big.Int) (*G1Affine, error) {
