@@ -2,4 +2,4 @@
 
 Pure GO bls library.
 
-Implements the BN128 curve.
+Implements the BLS12-381 curve.
