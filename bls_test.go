@@ -247,6 +247,29 @@ func TestPubkeySerializeDeserialize(t *testing.T) {
 	}
 }
 
+func TestSecretkeySerializeDeserialize(t *testing.T) {
+	r := NewXORShift(3)
+	priv, _ := bls.RandKey(r)
+	privSer := priv.Serialize()
+	privNew := bls.DeserializeSecretKey(privSer)
+	pub := bls.PrivToPub(priv)
+	msg := []byte(fmt.Sprintf(">16 character identical message"))
+	sig := bls.Sign(msg, privNew, 0)
+
+	if !bls.Verify(msg, pub, sig, 0) {
+		t.Fatal("message did not verify before serialization/deserialization of secret")
+	}
+
+	pubSer := pub.Serialize()
+	pubDeser, err := bls.DeserializePublicKey(pubSer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bls.Verify(msg, pubDeser, sig, 0) {
+		t.Fatal("message did not verify after serialization/deserialization of secret")
+	}
+}
+
 func TestPubkeySerializeDeserializeBig(t *testing.T) {
 	r := NewXORShift(1)
 	priv, _ := bls.RandKey(r)

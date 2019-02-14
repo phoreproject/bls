@@ -121,13 +121,13 @@ func (s SecretKey) String() string {
 
 // Serialize serializes a secret key to bytes.
 func (s SecretKey) Serialize() []byte {
-	return s.f.ToBig().Bytes()
+	return s.f.n.Bytes()
 }
 
 // DeserializeSecretKey deserializes a secret key from
 // bytes.
 func DeserializeSecretKey(b []byte) *SecretKey {
-	return &SecretKey{NewFR(new(big.Int).SetBytes(b))}
+	return &SecretKey{&FR{new(big.Int).SetBytes(b)}}
 }
 
 // Sign signs a message with a secret key.
