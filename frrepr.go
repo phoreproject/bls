@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -174,8 +175,22 @@ func (f FRRepr) BitLen() uint {
 }
 
 // FRReprFromBytes gets a new FRRepr from big-endian bytes.
-func FRReprFromBytes(b []byte) (*FRRepr, error) {
-	return FRReprFromBigInt(new(big.Int).SetBytes(b))
+func FRReprFromBytes(b [32]byte) *FRRepr {
+	m0 := binary.BigEndian.Uint64(b[0:8])
+	m1 := binary.BigEndian.Uint64(b[8:16])
+	m2 := binary.BigEndian.Uint64(b[16:24])
+	m3 := binary.BigEndian.Uint64(b[24:32])
+	return &FRRepr{m0, m1, m2, m3}
+}
+
+// Bytes gets the bytes used for an FRRepr.
+func (f FRRepr) Bytes() [32]byte {
+	var out [32]byte
+	binary.BigEndian.PutUint64(out[0:8], f[0])
+	binary.BigEndian.PutUint64(out[8:16], f[1])
+	binary.BigEndian.PutUint64(out[16:24], f[2])
+	binary.BigEndian.PutUint64(out[24:32], f[3])
+	return out
 }
 
 // Bit checks if a bit is set (little-endian)

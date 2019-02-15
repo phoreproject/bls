@@ -188,6 +188,18 @@ func FQReprFromBytes(b [48]byte) *FQRepr {
 	return &FQRepr{m0, m1, m2, m3, m4, m5}
 }
 
+// Bytes gets the bytes used for an FQRepr.
+func (f FQRepr) Bytes() [48]byte {
+	var out [48]byte
+	binary.BigEndian.PutUint64(out[0:8], f[0])
+	binary.BigEndian.PutUint64(out[8:16], f[1])
+	binary.BigEndian.PutUint64(out[16:24], f[2])
+	binary.BigEndian.PutUint64(out[24:32], f[3])
+	binary.BigEndian.PutUint64(out[32:40], f[4])
+	binary.BigEndian.PutUint64(out[40:48], f[5])
+	return out
+}
+
 // Bit checks if a bit is set (little-endian)
 func (f FQRepr) Bit(n uint) bool {
 	return f[n/64]&(1<<(n%64)) != 0
