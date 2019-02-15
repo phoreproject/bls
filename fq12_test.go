@@ -38,6 +38,19 @@ func TestFQ12MulBy014(t *testing.T) {
 	}
 }
 
+func TestFQ12Squaring(t *testing.T) {
+	x := NewXORShift(2)
+	a, _ := bls.RandFQ12(x)
+
+	b := a.Copy()
+	a.SquareAssign()
+	b.MulAssign(b)
+
+	if !a.Equals(b) {
+		t.Fatal("squaring didn't work")
+	}
+}
+
 func BenchmarkFQ12MulAssign(b *testing.B) {
 	type addData struct {
 		f1 *bls.FQ12

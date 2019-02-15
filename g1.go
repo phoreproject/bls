@@ -52,7 +52,7 @@ func (g G1Affine) IsZero() bool {
 }
 
 // NegAssign negates the point.
-func (g G1Affine) NegAssign() {
+func (g *G1Affine) NegAssign() {
 	if !g.IsZero() {
 		g.y.NegAssign()
 	}
@@ -69,8 +69,21 @@ func (g G1Affine) ToProjective() *G1Projective {
 // Mul performs a EC multiply operation on the point.
 func (g G1Affine) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
-	for i := uint(0); i < b.BitLen(); i++ {
-		o := b.Bit(i)
+	for i := uint(0); uint(i) < b.BitLen(); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
+		res = res.Double()
+		if o {
+			res = res.AddAffine(&g)
+		}
+	}
+	return res
+}
+
+// MulFR performs a EC multiply operation on the point.
+func (g G1Affine) MulFR(b *FRRepr) *G1Projective {
+	res := G1ProjectiveZero.Copy()
+	for i := uint(0); uint(i) < b.BitLen(); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
 		if o {
 			res = res.AddAffine(&g)
@@ -120,14 +133,14 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 	return NewG1Affine(x, yVal)
 }
 
-var frChar, _ = FQReprFromString("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16)
+var frChar, _ = FRReprFromString("52435875175126190479447740508185965837690552500527637822603658699938581184513", 10)
 
 // IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
 // field characteristic equals zero.
 func (g G1Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
 	tmp := g.Copy()
-	tmp.Mul(frChar)
-	return tmp.IsZero()
+	tmp.MulFR(frChar)
+	return tmp.MulFR(frChar).IsZero()
 }
 
 // G1 cofactor = (x - 1)^2 / 3  = 76329603384216526031706109802092473003
@@ -140,7 +153,7 @@ func (g G1Affine) ScaleByCofactor() *G1Projective {
 
 // Equals checks if two affine points are equal.
 func (g G1Affine) Equals(other *G1Affine) bool {
-	return (g.infinity == other.infinity) || (g.x.Equals(other.x) && g.y.Equals(other.y))
+	return (g.infinity == other.infinity && g.infinity == true) || (g.x.Equals(other.x) && g.y.Equals(other.y))
 }
 
 // DecompressG1 decompresses the big int into an affine point and checks
@@ -339,7 +352,7 @@ func (g G1Projective) Double() *G1Projective {
 
 	// x3 = F-2*D
 	newX := f.Copy()
-	f.SubAssign(d)
+	newX.SubAssign(d)
 	newX.SubAssign(d)
 
 	c.DoubleAssign()
@@ -520,7 +533,7 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 func (g G1Projective) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
 	for i := uint(0); i < uint(b.BitLen()); i++ {
-		o := b.Bit(i)
+		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
 		if o {
 			res = res.Add(&g)

@@ -43,8 +43,8 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 	foundOne := false
 	blsXRsh1 := blsX.Copy()
 	blsXRsh1.Rsh(1)
-	for i := uint(0); i < blsXRsh1.BitLen(); i++ {
-		set := blsXRsh1.Bit(i)
+	for q := uint(0); q <= blsXRsh1.BitLen(); q++ {
+		set := blsXRsh1.Bit(blsXRsh1.BitLen() - q)
 		if !foundOne {
 			foundOne = set
 			continue
@@ -80,8 +80,7 @@ func FinalExponentiation(r *FQ12) *FQ12 {
 	f1 := r.Copy()
 	f1.ConjugateAssign()
 	f2 := r.Copy()
-	f2.InverseAssign()
-	if f1 == nil {
+	if !f2.InverseAssign() {
 		return nil
 	}
 	r = f1.Copy()

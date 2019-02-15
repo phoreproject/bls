@@ -63,7 +63,7 @@ func (g G2Affine) IsZero() bool {
 }
 
 // NegAssign negates the point.
-func (g G2Affine) NegAssign() {
+func (g *G2Affine) NegAssign() {
 	if !g.IsZero() {
 		g.y.NegAssign()
 	}
@@ -81,7 +81,20 @@ func (g G2Affine) ToProjective() *G2Projective {
 func (g G2Affine) Mul(b *FQRepr) *G2Projective {
 	res := G2ProjectiveZero.Copy()
 	for i := uint(0); i < b.BitLen(); i++ {
-		o := b.Bit(i)
+		o := b.Bit(b.BitLen() - i - 1)
+		res = res.Double()
+		if o {
+			res = res.AddAffine(&g)
+		}
+	}
+	return res
+}
+
+// MulFR performs a EC multiply operation on the point.
+func (g G2Affine) MulFR(b *FRRepr) *G2Projective {
+	res := G2ProjectiveZero.Copy()
+	for i := uint(0); i < b.BitLen(); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
 		if o {
 			res = res.AddAffine(&g)
@@ -234,7 +247,7 @@ func CompressG2(affine *G2Affine) *big.Int {
 // IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
 // field characteristic equals zero.
 func (g G2Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
-	return g.Mul(frChar).IsZero()
+	return g.MulFR(frChar).IsZero()
 }
 
 // G2Projective is a projective point on the G2 curve.
@@ -552,7 +565,20 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 func (g G2Projective) Mul(b *FQRepr) *G2Projective {
 	res := G2ProjectiveZero.Copy()
 	for i := uint(0); i < uint(b.BitLen()); i++ {
-		o := b.Bit(i)
+		o := b.Bit(b.BitLen() - i - 1)
+		res = res.Double()
+		if o {
+			res = res.Add(&g)
+		}
+	}
+	return res
+}
+
+// MulFR performs a EC multiply operation on the point.
+func (g G2Projective) MulFR(b *FRRepr) *G2Projective {
+	res := G2ProjectiveZero.Copy()
+	for i := uint(0); i < uint(b.BitLen()); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
 		if o {
 			res = res.Add(&g)
@@ -707,8 +733,8 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 	foundOne := false
 	blsXRsh1 := blsX.Copy()
 	blsXRsh1.Rsh(1)
-	for i := uint(0); i < blsXRsh1.BitLen(); i++ {
-		set := blsXRsh1.Bit(i)
+	for i := uint(0); i <= blsXRsh1.BitLen(); i++ {
+		set := blsXRsh1.Bit(blsXRsh1.BitLen() - i)
 		if !foundOne {
 			foundOne = set
 			continue

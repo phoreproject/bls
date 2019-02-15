@@ -17,17 +17,17 @@ var bigOne = NewFQRepr(1)
 var bigTwo = NewFQRepr(2)
 
 // FQZero is the zero FQ element
-var FQZero = FQReprToFQ(bigZero)
+var FQZero = FQReprToFQRaw(bigZero)
 
 // FQOne is the one FQ element
-var FQOne = &FQ{FQR}
+var FQOne = FQReprToFQ(bigOne)
 var bigTwoFQ = FQReprToFQ(bigTwo)
 
 // QFieldModulus is the modulus of the field.
 var QFieldModulus, _ = FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", 10)
 
 // FQR is 2**384 % Q used for moving numbers into Montgomery form.
-var FQR, _ = FQReprFromString("3380320199399472671518931668520476396067793891014375699959770179129436917079669831430077592723774664465579537268733", 10)
+var FQR = &FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}
 
 // FQR2 is R^2 % Q.
 var FQR2, _ = FQReprFromString("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750", 10)
@@ -51,12 +51,18 @@ func (f *FQ) reduceAssign() {
 // FQReprToFQ gets a pointer to a FQ given a pointer
 // to an FQRepr
 func FQReprToFQ(o *FQRepr) *FQ {
-	r := &FQ{n: o}
+	r := &FQ{n: o.Copy()}
 	if r.IsValid() {
 		r.MulAssign(&FQ{FQR2})
 		return r
 	}
 	return nil
+}
+
+// FQReprToFQRaw gets a pointer to a FQ without converting
+// to montgomery form.
+func FQReprToFQRaw(o *FQRepr) *FQ {
+	return &FQ{n: o}
 }
 
 // AddAssign multiplies a field element by this one.
@@ -196,17 +202,22 @@ func (f *FQ) divAssign(other *FQ) {
 
 // Exp raises the element to a specific power.
 func (f *FQ) Exp(n *FQRepr) *FQ {
-	nCopy := n.Copy()
-	fi := f.Copy()
-	fNew := FQOne.Copy()
-	for nCopy.Cmp(bigZero) != 0 {
-		if !nCopy.IsEven() {
-			fNew.MulAssign(fi)
+	iter := NewBitIterator(n[:])
+	res := FQOne.Copy()
+	foundOne := false
+	next, done := iter.Next()
+	for !done {
+		if foundOne {
+			res.SquareAssign()
+		} else {
+			foundOne = next
 		}
-		fi.SquareAssign()
-		nCopy.Rsh(1)
+		if next {
+			res.MulAssign(f)
+		}
+		next, done = iter.Next()
 	}
-	return fNew
+	return res
 }
 
 // Equals checks equality of two field elements.
@@ -224,7 +235,7 @@ func (f *FQ) NegAssign() {
 }
 
 func (f FQ) String() string {
-	return fmt.Sprintf("Fq(0x%s)", f.n)
+	return fmt.Sprintf("Fq(0x%s)", f.ToRepr().String())
 }
 
 // Cmp compares this field element to another.
@@ -301,7 +312,7 @@ func (f FQ) Sqrt() *FQ {
 	// https://eprint.iacr.org/2012/685.pdf (page 9, algorithm 2)
 
 	a1 := f.Exp(qMinus3Over4)
-	a0 := f.Copy()
+	a0 := a1.Copy()
 	a0.SquareAssign()
 	a0.MulAssign(&f)
 
@@ -323,7 +334,7 @@ func (f FQ) Inverse() *FQ {
 	}
 	u := f.n.Copy()
 	v := QFieldModulus.Copy()
-	b := &FQ{FQR2.Copy()}
+	b := FQReprToFQRaw(FQR2.Copy())
 	c := FQZero.Copy()
 
 	for u.Cmp(bigOne) != 0 && v.Cmp(bigOne) != 0 {
@@ -398,7 +409,7 @@ func HashFQ(hasher hash.Hash) *FQ {
 	return FQOne.MulBytes(digest)
 }
 
-var qMinus1Over2, _ = FQReprFromString("2001204777610833696708894912867952078278441409969503942666029068062015825245418932221343814564507832018947136279893", 10)
+var qMinus1Over2 = &FQRepr{0xdcff7fffffffd555, 0xf55ffff58a9ffff, 0xb39869507b587b12, 0xb23ba5c279c2895f, 0x258dd3db21a5d66b, 0xd0088f51cbff34d}
 
 // LegendreSymbol is the legendre symbol of an element.
 type LegendreSymbol uint8
