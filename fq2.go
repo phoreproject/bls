@@ -131,37 +131,29 @@ func (f *FQ2) MulAssign(other *FQ2) {
 
 // InverseAssign finds the inverse of the field element.
 func (f *FQ2) InverseAssign() bool {
-	inv := f.c0.Copy()
-	inv.SquareAssign()
-	c1Squared := f.c1.Copy()
-	c1Squared.SquareAssign()
-	inv.AddAssign(c1Squared)
-	inv = inv.Inverse()
-	if inv == nil {
+	t1 := f.c1.Copy()
+	t1.SquareAssign()
+	t0 := f.c0.Copy()
+	t0.SquareAssign()
+	t0.AddAssign(t1)
+	t := t0.Inverse()
+	if t == nil {
 		return false
 	}
-	f.c0.MulAssign(inv)
-	f.c1.MulAssign(inv)
+	f.c0.MulAssign(t)
+	f.c1.MulAssign(t)
 	f.c1.NegAssign()
 	return true
 }
 
-func getFrobeniusCoeffFQ2c11() *FQ {
-	o := FQOne.Copy()
-	o.NegAssign()
-	return o.Exp(qMinus1Over2)
-}
-
-var frobeniusCoeffFQ2c11 = getFrobeniusCoeffFQ2c11()
-
 var frobeniusCoeffFQ2c1 = [2]*FQ{
 	FQOne,
-	frobeniusCoeffFQ2c11,
+	FQReprToFQRaw(&FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
 }
 
 // FrobeniusMapAssign multiplies the element by the Frobenius automorphism
 // coefficient.
-func (f FQ2) FrobeniusMapAssign(power uint8) {
+func (f *FQ2) FrobeniusMapAssign(power uint8) {
 	f.c1.MulAssign(frobeniusCoeffFQ2c1[power%2])
 }
 
@@ -170,19 +162,24 @@ func (f FQ2) Legendre() LegendreSymbol {
 	return f.Norm().Legendre()
 }
 
-var qMinus3Over4, _ = FQReprFromString("1000602388805416848354447456433976039139220704984751971333014534031007912622709466110671907282253916009473568139946", 10)
+var qMinus3Over4 = &FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}
 
 // Exp raises the element ot a specific power.
-func (f FQ2) Exp(n *FQRepr) *FQ2 {
-	nCopy := n.Copy()
+func (f *FQ2) Exp(n *FQRepr) *FQ2 {
+	iter := NewBitIterator(n[:])
 	res := FQ2One.Copy()
-	fi := f.Copy()
-	for nCopy.Cmp(bigZero) != 0 {
-		if !isEven(nCopy) {
-			res.MulAssign(fi)
+	foundOne := false
+	next, done := iter.Next()
+	for !done {
+		if foundOne {
+			res.SquareAssign()
+		} else {
+			foundOne = next
 		}
-		fi.MulAssign(fi)
-		nCopy.Rsh(1)
+		if next {
+			res.MulAssign(f)
+		}
+		next, done = iter.Next()
 	}
 	return res
 }

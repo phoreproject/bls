@@ -2,7 +2,6 @@ package bls_test
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -178,19 +177,40 @@ func TestExp(t *testing.T) {
 func TestSqrt(t *testing.T) {
 	r := NewXORShift(1)
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 1000; i++ {
 		f, err := bls.RandFQ(r)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		a := f.Sqrt()
+		if a == nil {
+			continue
+		}
 		a.SquareAssign()
-
-		fmt.Println(f, a)
 
 		if !a.Equals(f) {
 			t.Fatal("sqrt(a)^2 != a")
+		}
+	}
+}
+
+func TestInverse(t *testing.T) {
+	// r := NewXORShift(1)
+
+	for i := 0; i < 1; i++ {
+		fRepr, err := bls.FQReprFromString("08aad39fba5b1d27bd5706262b1e2ee6c3da7dff5974ecbb0bee2bd75d4bc10973d8e59fd31f225247a335deb379592c", 16)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		f := bls.FQReprToFQ(fRepr)
+
+		fInv := f.Inverse()
+		f.MulAssign(fInv)
+
+		if !f.Equals(bls.FQOne) {
+			t.Fatal("a*a^-1 != 1")
 		}
 	}
 }

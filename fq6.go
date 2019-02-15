@@ -3,7 +3,6 @@ package bls
 import (
 	"fmt"
 	"io"
-	"math/big"
 )
 
 // FQ6 is an element of FQ6 represented by c0 + c1*v + v2*v**2
@@ -107,49 +106,31 @@ func (f FQ6) IsZero() bool {
 }
 
 // DoubleAssign doubles the coefficients of the FQ6 element.
-func (f FQ6) DoubleAssign() {
+func (f *FQ6) DoubleAssign() {
 	f.c0.DoubleAssign()
 	f.c1.DoubleAssign()
 	f.c2.DoubleAssign()
 }
 
 // NegAssign negates the coefficients of the FQ6 element.
-func (f FQ6) NegAssign() {
+func (f *FQ6) NegAssign() {
 	f.c0.NegAssign()
 	f.c1.NegAssign()
 	f.c2.NegAssign()
 }
 
 // AddAssign the coefficients of the FQ6 element to another.
-func (f FQ6) AddAssign(other *FQ6) {
+func (f *FQ6) AddAssign(other *FQ6) {
 	f.c0.AddAssign(other.c0)
 	f.c1.AddAssign(other.c1)
 	f.c2.AddAssign(other.c2)
 }
 
 // SubAssign subtracts the coefficients of the FQ6 element from another.
-func (f FQ6) SubAssign(other *FQ6) {
+func (f *FQ6) SubAssign(other *FQ6) {
 	f.c0.SubAssign(other.c0)
 	f.c1.SubAssign(other.c1)
 	f.c2.SubAssign(other.c2)
-}
-
-func getFrobExpMinus1Over3(power int64) *FQRepr {
-	out := new(big.Int).Exp(qFieldModulusBig, big.NewInt(power), qFieldModulusBig)
-	out.Sub(out, big.NewInt(1))
-	out.Div(out, big.NewInt(3))
-	out.Mod(out, qFieldModulusBig)
-	o, _ := FQReprFromBigInt(out)
-	return o
-}
-
-func get2FrobExpMinus2Over3(power int64) *FQRepr {
-	out := new(big.Int).Exp(qFieldModulusBig, big.NewInt(power), qFieldModulusBig)
-	out.Sub(out, big.NewInt(2))
-	out.Div(out, big.NewInt(3))
-	out.Mod(out, qFieldModulusBig)
-	o, _ := FQReprFromBigInt(out)
-	return o
 }
 
 var bigThree = NewFQRepr(3)
@@ -164,34 +145,64 @@ var frobeniusCoeffFQ6c1 = [6]*FQ2{
 	// Fq2(u + 1)**(((q^0) - 1) / 3)
 	FQ2One,
 	// Fq2(u + 1)**(((q^1) - 1) / 3)
-	fq2nqr.Exp(getFrobExpMinus1Over3(1)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+	),
 	// Fq2(u + 1)**(((q^2) - 1) / 3)
-	fq2nqr.Exp(getFrobExpMinus1Over3(2)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((q^3) - 1) / 3)
-	fq2nqr.Exp(getFrobExpMinus1Over3(3)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+	),
 	// Fq2(u + 1)**(((q^4) - 1) / 3)
-	fq2nqr.Exp(getFrobExpMinus1Over3(4)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((q^5) - 1) / 3)
-	fq2nqr.Exp(getFrobExpMinus1Over3(5)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+	),
 }
 
 var frobeniusCoeffFQ6c2 = [6]*FQ2{
 	// Fq2(u + 1)**(((2q^0) - 2) / 3)
 	FQ2One,
 	// Fq2(u + 1)**(((2q^1) - 2) / 3)
-	fq2nqr.Exp(get2FrobExpMinus2Over3(1)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x890dc9e4867545c3, 0x2af322533285a5d5, 0x50880866309b7e2c, 0xa20d1b8c7e881024, 0x14e4f04fe2db9068, 0x14e56d3f1564853a}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((2q^2) - 2) / 3)
-	fq2nqr.Exp(get2FrobExpMinus2Over3(2)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((2q^3) - 2) / 3)
-	fq2nqr.Exp(get2FrobExpMinus2Over3(3)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((2q^4) - 2) / 3)
-	fq2nqr.Exp(get2FrobExpMinus2Over3(4)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 	// Fq2(u + 1)**(((2q^5) - 2) / 3)
-	fq2nqr.Exp(get2FrobExpMinus2Over3(5)),
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0xecfb361b798dba3a, 0xc100ddb891865a2c, 0xec08ff1232bda8e, 0xd5c13cc6f1ca4721, 0x47222a47bf7b5c04, 0x110f184e51c5f59}),
+		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+	),
 }
 
 // FrobeniusMapAssign runs the frobenius map algorithm with a certain power.
-func (f FQ6) FrobeniusMapAssign(power uint8) {
+func (f *FQ6) FrobeniusMapAssign(power uint8) {
 	f.c0.FrobeniusMapAssign(power)
 	f.c1.FrobeniusMapAssign(power)
 	f.c1.MulAssign(frobeniusCoeffFQ6c1[power%6])
@@ -200,7 +211,7 @@ func (f FQ6) FrobeniusMapAssign(power uint8) {
 }
 
 // SquareAssign squares the FQ6 element.
-func (f FQ6) SquareAssign() {
+func (f *FQ6) SquareAssign() {
 	s0 := f.c0.Copy()
 	s0.SquareAssign()
 	ab := f.c0.Copy()
@@ -274,7 +285,7 @@ func (f *FQ6) MulAssign(other *FQ6) {
 }
 
 // InverseAssign finds the inverse of the FQ6 element.
-func (f FQ6) InverseAssign() bool {
+func (f *FQ6) InverseAssign() bool {
 	c0 := f.c2.Copy()
 	c0.MultiplyByNonresidueAssign()
 	c0.MulAssign(f.c1)
@@ -296,22 +307,23 @@ func (f FQ6) InverseAssign() bool {
 	c2.SquareAssign()
 	c2.SubAssign(c0c2)
 
-	tmp := f.c2.Copy()
-	tmp.MulAssign(c1)
-	tmp.AddAssign(c1c2)
-	tmp.MultiplyByNonresidueAssign()
-	c0c0 := f.c0.Copy()
-	c0c0.SquareAssign()
-	tmp.AddAssign(c0c0)
-	tmpInverse := tmp.Copy()
-	if !tmpInverse.InverseAssign() {
+	tmp1 := f.c2.Copy()
+	tmp1.MulAssign(c1)
+	tmp2 := f.c1.Copy()
+	tmp2.MulAssign(c2)
+	tmp1.AddAssign(tmp2)
+	tmp1.MultiplyByNonresidueAssign()
+	tmp2 = f.c0.Copy()
+	tmp2.MulAssign(c0)
+	tmp1.AddAssign(tmp2)
+	if !tmp1.InverseAssign() {
 		return false
 	}
-	f.c0 = tmpInverse.Copy()
+	f.c0 = tmp1.Copy()
 	f.c0.MulAssign(c0)
-	f.c1 = tmpInverse.Copy()
+	f.c1 = tmp1.Copy()
 	f.c1.MulAssign(c1)
-	f.c2 = tmpInverse.Copy()
+	f.c2 = tmp1.Copy()
 	f.c2.MulAssign(c2)
 	return true
 }
