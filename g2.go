@@ -186,35 +186,34 @@ func DecompressG2(b *big.Int) (*G2Affine, error) {
 
 // DecompressG2Unchecked decompresses a G2 point from a big int.
 func DecompressG2Unchecked(b *big.Int) (*G2Affine, error) {
-	copy := b.Bytes()
+	c := b.Bytes()
 
-	if copy[0]&(1<<7) == 0 {
+	if c[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
 	}
 
-	if copy[0]&(1<<6) != 0 {
-		copy[0] &= 0x3f
+	if c[0]&(1<<6) != 0 {
+		c[0] &= 0x3f
 
-		for _, b := range copy {
+		for _, b := range c {
 			if b != 0 {
 				return nil, errors.New("unexpected information in infinity point on G2")
 			}
 		}
 		return G2AffineZero.Copy(), nil
 	}
-	greatest := copy[0]&(1<<5) != 0
+	greatest := c[0]&(1<<5) != 0
 
-	copy[0] &= 0x1f
+	c[0] &= 0x1f
 
-	xC0, err := FQReprFromBytes(copy[:48])
-	if err != nil {
-		return nil, err
-	}
+	var xC0Bytes [48]byte
+	var xC1Bytes [48]byte
 
-	xC1, err := FQReprFromBytes(copy[48:])
-	if err != nil {
-		return nil, err
-	}
+	copy(xC0Bytes[:], c[:48])
+	copy(xC1Bytes[:], c[48:])
+
+	xC0 := FQReprFromBytes(xC0Bytes)
+	xC1 := FQReprFromBytes(xC1Bytes)
 
 	x := NewFQ2(FQReprToFQ(xC0), FQReprToFQ(xC1))
 
@@ -856,8 +855,8 @@ func HashG2(msg []byte, domain uint64) *G2Projective {
 
 	for {
 		yCoordinateSquared := xCoordinate.Copy()
-		yCoordinateSquared.Square()
-		yCoordinateSquared.Mul(yCoordinateSquared)
+		yCoordinateSquared.SquareAssign()
+		yCoordinateSquared.MulAssign(yCoordinateSquared)
 
 		yCoordinateSquared.AddAssign(BCoeffFQ2)
 

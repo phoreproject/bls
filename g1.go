@@ -126,6 +126,8 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 	negY := y.Copy()
 	negY.NegAssign()
 
+	fmt.Println(y, negY)
+
 	yVal := negY
 	if (y.Cmp(negY) < 0) != greatest {
 		yVal = y
@@ -173,9 +175,14 @@ func DecompressG1(b *big.Int) (*G1Affine, error) {
 // DecompressG1Unchecked decompresses the big int into an affine point without
 // checking if it's in the correct prime group.
 func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
-	copy := new(big.Int).Set(b)
+	c := new(big.Int).Set(b)
 
-	copyBytes := copy.Bytes()
+	if b.BitLen() > 384 {
+		return nil, errors.New("compressed G1Affine should have 48 bytes")
+	}
+
+	var copyBytes [48]byte
+	copy(copyBytes[:], c.Bytes())
 
 	if len(copyBytes) == 0 || copyBytes[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
@@ -197,20 +204,21 @@ func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
 
 	copyBytes[0] &= 0x1f
 
-	x, _ := FQReprFromBytes(copyBytes)
+	x := FQReprFromBytes(copyBytes)
 
 	return GetG1PointFromX(FQReprToFQ(x), greatest), nil
 }
 
 // CompressG1 compresses a G1 point into an int.
 func CompressG1(affine *G1Affine) *big.Int {
+	fmt.Println(affine)
 	res := [48]byte{}
 	if affine.IsZero() {
 		res[0] |= 1 << 6
 	} else {
-		out0 := affine.x.n.Bytes()
+		out0 := affine.x.ToRepr().Bytes()
 
-		copy(res[48-len(out0):], out0)
+		copy(res[48-len(out0):], out0[:])
 
 		negY := affine.y.Copy()
 		negY.NegAssign()
@@ -533,6 +541,19 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 func (g G1Projective) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
 	for i := uint(0); i < uint(b.BitLen()); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
+		res = res.Double()
+		if o {
+			res = res.Add(&g)
+		}
+	}
+	return res
+}
+
+// MulFR performs a EC multiply operation on the point.
+func (g G1Projective) MulFR(b *FRRepr) *G1Projective {
+	res := G1ProjectiveZero.Copy()
+	for i := uint(0); i < b.BitLen(); i++ {
 		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
 		if o {

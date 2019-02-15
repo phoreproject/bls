@@ -126,19 +126,19 @@ func (s SecretKey) String() string {
 }
 
 // Serialize serializes a secret key to bytes.
-func (s SecretKey) Serialize() []byte {
+func (s SecretKey) Serialize() [32]byte {
 	return s.f.n.Bytes()
 }
 
 // DeserializeSecretKey deserializes a secret key from
 // bytes.
-func DeserializeSecretKey(b []byte) *SecretKey {
-	return &SecretKey{&FR{new(big.Int).SetBytes(b)}}
+func DeserializeSecretKey(b [32]byte) *SecretKey {
+	return &SecretKey{&FR{FRReprFromBytes(b)}}
 }
 
 // Sign signs a message with a secret key.
-func Sign(message []byte, key *SecretKey) *Signature {
-	h := HashG1(message).MulFR(key.f.n)
+func Sign(message []byte, key *SecretKey, domain uint64) *Signature {
+	h := HashG1(message, domain).MulFR(key.f.n)
 	return &Signature{s: h}
 }
 

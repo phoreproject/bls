@@ -115,3 +115,20 @@ func TestRandomAddWithCarry(t *testing.T) {
 		}
 	}
 }
+
+func TestRandomBytesFromBytes(t *testing.T) {
+	r := NewXORShift(200)
+
+	for i := 0; i < TestSamples; i++ {
+		a, _ := bls.RandFQ(r)
+
+		repr := a.ToRepr()
+
+		reprBytes := repr.Bytes()
+		newRepr := bls.FQReprFromBytes(reprBytes)
+
+		if !newRepr.Equals(repr) {
+			t.Fatal("FQRepr serialization/deserialization failed")
+		}
+	}
+}
