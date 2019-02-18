@@ -156,7 +156,7 @@ func (g G1Affine) Equals(other *G1Affine) bool {
 }
 
 // SerializeBytes returns the serialized bytes for the point represented.
-func (g *G1Affine) SerializeBytes() []byte {
+func (g *G1Affine) SerializeBytes() [96]byte {
 	out := [96]byte{}
 
 	xBytes := g.x.ToRepr().Bytes()
@@ -165,11 +165,11 @@ func (g *G1Affine) SerializeBytes() []byte {
 	copy(out[0:48], xBytes[:])
 	copy(out[48:96], yBytes[:])
 
-	return out[:]
+	return out
 }
 
 // SetRawBytes sets the coords given the serialized bytes.
-func (g *G1Affine) SetRawBytes(uncompressed []byte) {
+func (g *G1Affine) SetRawBytes(uncompressed [96]byte) {
 	var xBytes [48]byte
 	var yBytes [48]byte
 	copy(xBytes[:], uncompressed[0:48])
@@ -180,7 +180,6 @@ func (g *G1Affine) SetRawBytes(uncompressed []byte) {
 	g.y = &FQ{
 		n: FQReprFromBytes(yBytes),
 	}
-	return
 }
 
 // DecompressG1 decompresses the big int into an affine point and checks
