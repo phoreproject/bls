@@ -15,7 +15,7 @@ func TestG1Generator(t *testing.T) {
 		rhs := x.Copy()
 		rhs.SquareAssign()
 		rhs.MulAssign(x)
-		rhs.AddAssign(bls.FQReprToFQ(bls.BCoeff))
+		rhs.AddAssign(bls.BCoeff)
 
 		y := rhs.Sqrt()
 

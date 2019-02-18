@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 
 	"golang.org/x/crypto/blake2b"
 )
@@ -29,7 +28,7 @@ var g1GeneratorX, _ = FQReprFromString("3685416753713387016781088315183077757961
 var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
 
 // BCoeff of the G1 curve.
-var BCoeff = NewFQRepr(4)
+var BCoeff = FQReprToFQRaw(&FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
 
 // G1AffineOne represents the point at 1 on G1.
 var G1AffineOne = &G1Affine{FQReprToFQ(g1GeneratorX.Copy()), FQReprToFQ(g1GeneratorY.Copy()), false}
@@ -102,7 +101,7 @@ func (g G1Affine) IsOnCurve() bool {
 	x3b := g.x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(g.x)
-	x3b.AddAssign(FQReprToFQ(BCoeff))
+	x3b.AddAssign(BCoeff)
 
 	return y2.Equals(x3b)
 }
@@ -115,7 +114,7 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 	x3b := x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(x)
-	x3b.AddAssign(FQReprToFQ(BCoeff))
+	x3b.AddAssign(BCoeff)
 
 	y := x3b.Sqrt()
 
@@ -125,8 +124,6 @@ func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
 
 	negY := y.Copy()
 	negY.NegAssign()
-
-	fmt.Println(y, negY)
 
 	yVal := negY
 	if (y.Cmp(negY) < 0) != greatest {
@@ -160,7 +157,7 @@ func (g G1Affine) Equals(other *G1Affine) bool {
 
 // DecompressG1 decompresses the big int into an affine point and checks
 // if it is in the correct prime group.
-func DecompressG1(b *big.Int) (*G1Affine, error) {
+func DecompressG1(b [48]byte) (*G1Affine, error) {
 	affine, err := DecompressG1Unchecked(b)
 	if err != nil {
 		return nil, err
@@ -174,15 +171,9 @@ func DecompressG1(b *big.Int) (*G1Affine, error) {
 
 // DecompressG1Unchecked decompresses the big int into an affine point without
 // checking if it's in the correct prime group.
-func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
-	c := new(big.Int).Set(b)
-
-	if b.BitLen() > 384 {
-		return nil, errors.New("compressed G1Affine should have 48 bytes")
-	}
-
+func DecompressG1Unchecked(b [48]byte) (*G1Affine, error) {
 	var copyBytes [48]byte
-	copy(copyBytes[:], c.Bytes())
+	copy(copyBytes[:], b[:])
 
 	if len(copyBytes) == 0 || copyBytes[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
@@ -210,8 +201,7 @@ func DecompressG1Unchecked(b *big.Int) (*G1Affine, error) {
 }
 
 // CompressG1 compresses a G1 point into an int.
-func CompressG1(affine *G1Affine) *big.Int {
-	fmt.Println(affine)
+func CompressG1(affine *G1Affine) [48]byte {
 	res := [48]byte{}
 	if affine.IsZero() {
 		res[0] |= 1 << 6
@@ -229,7 +219,7 @@ func CompressG1(affine *G1Affine) *big.Int {
 	}
 
 	res[0] |= 1 << 7
-	return new(big.Int).SetBytes(res[:])
+	return res
 }
 
 // G1Projective is a projective point on the G1 curve.
@@ -600,7 +590,7 @@ func SWEncodeG1(t *FQ) *G1Affine {
 
 	w := t.Copy()
 	w.SquareAssign()
-	w.AddAssign(FQReprToFQ(BCoeff))
+	w.AddAssign(BCoeff)
 	w.AddAssign(FQOne)
 
 	if w.IsZero() {

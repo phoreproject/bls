@@ -159,7 +159,7 @@ func (f *FR) NegAssign() {
 }
 
 func (f FR) String() string {
-	return fmt.Sprintf("FR(0x%096x)", f.n)
+	return fmt.Sprintf("FR(0x%s)", f.n.String())
 }
 
 // Cmp compares this field element to another.
