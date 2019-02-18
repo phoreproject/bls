@@ -185,18 +185,18 @@ func FQReprFromBytes(b [48]byte) *FQRepr {
 	m3 := binary.BigEndian.Uint64(b[24:32])
 	m4 := binary.BigEndian.Uint64(b[32:40])
 	m5 := binary.BigEndian.Uint64(b[40:48])
-	return &FQRepr{m0, m1, m2, m3, m4, m5}
+	return &FQRepr{m5, m4, m3, m2, m1, m0}
 }
 
 // Bytes gets the bytes used for an FQRepr.
 func (f FQRepr) Bytes() [48]byte {
 	var out [48]byte
-	binary.BigEndian.PutUint64(out[0:8], f[0])
-	binary.BigEndian.PutUint64(out[8:16], f[1])
-	binary.BigEndian.PutUint64(out[16:24], f[2])
-	binary.BigEndian.PutUint64(out[24:32], f[3])
-	binary.BigEndian.PutUint64(out[32:40], f[4])
-	binary.BigEndian.PutUint64(out[40:48], f[5])
+	binary.BigEndian.PutUint64(out[0:8], f[5])
+	binary.BigEndian.PutUint64(out[8:16], f[4])
+	binary.BigEndian.PutUint64(out[16:24], f[3])
+	binary.BigEndian.PutUint64(out[24:32], f[2])
+	binary.BigEndian.PutUint64(out[32:40], f[1])
+	binary.BigEndian.PutUint64(out[40:48], f[0])
 	return out
 }
 

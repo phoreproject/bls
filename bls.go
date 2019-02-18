@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"log"
-	"math/big"
 	"sort"
 )
 
@@ -14,13 +13,13 @@ type Signature struct {
 }
 
 // Serialize serializes a signature in compressed form.
-func (s *Signature) Serialize() []byte {
-	return CompressG1(s.s.ToAffine()).Bytes()
+func (s *Signature) Serialize() [48]byte {
+	return CompressG1(s.s.ToAffine())
 }
 
 // DeserializeSignature deserializes a signature from bytes.
-func DeserializeSignature(b []byte) (*Signature, error) {
-	a, err := DecompressG1(new(big.Int).SetBytes(b))
+func DeserializeSignature(b [48]byte) (*Signature, error) {
+	a, err := DecompressG1(b)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +42,8 @@ func (p PublicKey) String() string {
 }
 
 // Serialize serializes a public key to bytes.
-func (p PublicKey) Serialize() []byte {
-	return CompressG2(p.p.ToAffine()).Bytes()
+func (p PublicKey) Serialize() [96]byte {
+	return CompressG2(p.p.ToAffine())
 }
 
 func concatAppend(slices [][]byte) []byte {
@@ -107,8 +106,8 @@ func (p PublicKey) Equals(other PublicKey) bool {
 
 // DeserializePublicKey deserializes a public key from
 // bytes.
-func DeserializePublicKey(b []byte) (*PublicKey, error) {
-	a, err := DecompressG2(new(big.Int).SetBytes(b))
+func DeserializePublicKey(b [96]byte) (*PublicKey, error) {
+	a, err := DecompressG2(b)
 	if err != nil {
 		return nil, err
 	}

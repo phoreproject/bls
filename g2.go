@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 
 	"golang.org/x/crypto/blake2b"
 )
@@ -32,7 +31,7 @@ var g2GeneratorYC1, _ = FQReprFromString("92755366549233245574720196577603788075
 var g2GeneratorYC0, _ = FQReprFromString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
 
 // BCoeffFQ2 of the G2 curve.
-var BCoeffFQ2 = NewFQ2(FQReprToFQ(BCoeff), FQReprToFQ(BCoeff))
+var BCoeffFQ2 = NewFQ2(BCoeff, BCoeff)
 
 // G2AffineOne represents the point at 1 on G2.
 var G2AffineOne = &G2Affine{
@@ -172,8 +171,8 @@ func GetG2PointFromX(x *FQ2, greatest bool) *G2Affine {
 
 // DecompressG2 decompresses a G2 point from a big int and checks
 // if it is in the correct subgroup.
-func DecompressG2(b *big.Int) (*G2Affine, error) {
-	affine, err := DecompressG2Unchecked(b)
+func DecompressG2(c [96]byte) (*G2Affine, error) {
+	affine, err := DecompressG2Unchecked(c)
 	if err != nil {
 		return nil, err
 	}
@@ -185,9 +184,7 @@ func DecompressG2(b *big.Int) (*G2Affine, error) {
 }
 
 // DecompressG2Unchecked decompresses a G2 point from a big int.
-func DecompressG2Unchecked(b *big.Int) (*G2Affine, error) {
-	c := b.Bytes()
-
+func DecompressG2Unchecked(c [96]byte) (*G2Affine, error) {
 	if c[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
 	}
@@ -209,8 +206,8 @@ func DecompressG2Unchecked(b *big.Int) (*G2Affine, error) {
 	var xC0Bytes [48]byte
 	var xC1Bytes [48]byte
 
-	copy(xC0Bytes[:], c[:48])
-	copy(xC1Bytes[:], c[48:])
+	copy(xC1Bytes[:], c[:48])
+	copy(xC0Bytes[:], c[48:])
 
 	xC0 := FQReprFromBytes(xC0Bytes)
 	xC1 := FQReprFromBytes(xC1Bytes)
@@ -221,15 +218,15 @@ func DecompressG2Unchecked(b *big.Int) (*G2Affine, error) {
 }
 
 // CompressG2 compresses a G2 point into an int.
-func CompressG2(affine *G2Affine) *big.Int {
+func CompressG2(affine *G2Affine) [96]byte {
 	res := [96]byte{}
 	if affine.IsZero() {
 		res[0] |= 1 << 6
 	} else {
-		out0 := affine.x.c0.n.ToBig().Bytes()
-		out1 := affine.x.c1.n.ToBig().Bytes()
-		copy(res[:48], out0)
-		copy(res[48:], out1)
+		out0 := affine.x.c1.ToRepr().Bytes()
+		out1 := affine.x.c0.ToRepr().Bytes()
+		copy(res[:48], out0[:])
+		copy(res[48:], out1[:])
 
 		negY := affine.y.Copy()
 		negY.NegAssign()
@@ -240,7 +237,8 @@ func CompressG2(affine *G2Affine) *big.Int {
 	}
 
 	res[0] |= 1 << 7
-	return new(big.Int).SetBytes(res[:])
+
+	return res
 }
 
 // IsInCorrectSubgroupAssumingOnCurve checks if the point multiplied by the
