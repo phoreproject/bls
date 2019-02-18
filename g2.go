@@ -169,6 +169,47 @@ func GetG2PointFromX(x *FQ2, greatest bool) *G2Affine {
 	return NewG2Affine(x, yVal)
 }
 
+// SerializeBytes returns the serialized bytes for the points represented.
+func (g *G2Affine) SerializeBytes() [192]byte {
+	out := [192]byte{}
+
+	xC0Bytes := g.x.c0.ToRepr().Bytes()
+	xC1Bytes := g.x.c1.ToRepr().Bytes()
+	yC0Bytes := g.y.c0.ToRepr().Bytes()
+	yC1Bytes := g.y.c1.ToRepr().Bytes()
+
+	copy(out[0:48], xC0Bytes[:])
+	copy(out[48:96], xC1Bytes[:])
+	copy(out[96:144], yC0Bytes[:])
+	copy(out[144:192], yC1Bytes[:])
+
+	return out
+}
+
+// SetRawBytes sets the coords given the serialized bytes.
+func (g *G2Affine) SetRawBytes(uncompressed [192]byte) {
+
+	var xC0Bytes [48]byte
+	var xC1Bytes [48]byte
+	var yC0Bytes [48]byte
+	var yC1Bytes [48]byte
+
+	copy(xC0Bytes[:], uncompressed[0:48])
+	copy(xC1Bytes[:], uncompressed[48:96])
+	copy(yC0Bytes[:], uncompressed[96:144])
+	copy(yC1Bytes[:], uncompressed[144:192])
+
+	g.x = &FQ2{
+		c0: FQReprToFQ(FQReprFromBytes(xC0Bytes)),
+		c1: FQReprToFQ(FQReprFromBytes(xC1Bytes)),
+	}
+	g.y = &FQ2{
+		c0: FQReprToFQ(FQReprFromBytes(yC0Bytes)),
+		c1: FQReprToFQ(FQReprFromBytes(yC1Bytes)),
+	}
+	return
+}
+
 // DecompressG2 decompresses a G2 point from a big int and checks
 // if it is in the correct subgroup.
 func DecompressG2(c [96]byte) (*G2Affine, error) {
