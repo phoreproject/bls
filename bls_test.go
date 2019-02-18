@@ -162,6 +162,38 @@ func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 	}
 }
 
+func TestAggregateSigsSeparate(t *testing.T) {
+	x := NewXORShift(20)
+	priv1, _ := bls.RandKey(x)
+	priv2, _ := bls.RandKey(x)
+	priv3, _ := bls.RandKey(x)
+
+	pub1 := bls.PrivToPub(priv1)
+	pub2 := bls.PrivToPub(priv2)
+	pub3 := bls.PrivToPub(priv3)
+
+	msg := []byte("test 1")
+	sig1 := bls.Sign(msg, priv1, 0)
+	sig2 := bls.Sign(msg, priv2, 0)
+	// sig3 := bls.Sign(msg, priv3, 0)
+
+	aggSigs := bls.AggregateSignatures([]*bls.Signature{sig1, sig2, sig3})
+
+	aggPubs := bls.NewAggregatePubkey()
+	aggPubs.Aggregate(pub1)
+	aggPubs.Aggregate(pub2)
+	// aggPubs.Aggregate(pub3)
+
+	fmt.Println(aggPubs)
+
+	fmt.Println(bls.AggregatePublicKeys([]*bls.PublicKey{pub1, pub2, pub3}))
+
+	valid := bls.Verify(msg, aggPubs, sig1, 0)
+	if !valid {
+		t.Fatal("expected aggregate signature to be valid")
+	}
+}
+
 func BenchmarkBLSAggregateSignature(b *testing.B) {
 	r := NewXORShift(5)
 	priv, _ := bls.RandKey(r)
