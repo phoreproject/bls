@@ -251,7 +251,7 @@ func (f *FQ) DoubleAssign() {
 
 // IsZero checks if the field element is zero.
 func (f FQ) IsZero() bool {
-	return f.n.Cmp(bigZero) == 0
+	return f.n.Equals(bigZero)
 }
 
 // SquareAssign squares a field element.

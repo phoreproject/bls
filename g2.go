@@ -71,7 +71,7 @@ func (g *G2Affine) NegAssign() {
 // ToProjective converts an affine point to a projective one.
 func (g G2Affine) ToProjective() *G2Projective {
 	if g.IsZero() {
-		return G2ProjectiveZero
+		return G2ProjectiveZero.Copy()
 	}
 	return NewG2Projective(g.x, g.y, FQ2One)
 }
@@ -451,7 +451,7 @@ func (g G2Projective) Add(other *G2Projective) *G2Projective {
 
 	// Z2Z2 = Z2^2
 	z2z2 := other.z.Copy()
-	z1z1.SquareAssign()
+	z2z2.SquareAssign()
 
 	// U1 = X1*Z2Z2
 	u1 := g.x.Copy()
@@ -482,12 +482,12 @@ func (g G2Projective) Add(other *G2Projective) *G2Projective {
 
 	// I = (2*H)^2
 	i := h.Copy()
-	h.DoubleAssign()
+	i.DoubleAssign()
 	i.SquareAssign()
 
 	// J = H * I
 	j := h.Copy()
-	h.MulAssign(i)
+	j.MulAssign(i)
 
 	// r = 2*(S2-S1)
 	r := s2.Copy()
