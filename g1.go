@@ -28,7 +28,7 @@ var g1GeneratorX, _ = FQReprFromString("3685416753713387016781088315183077757961
 var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
 
 // BCoeff of the G1 curve.
-var BCoeff = FQReprToFQRaw(FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
+var BCoeff = FQReprToFQRaw(&FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
 
 // G1AffineOne represents the point at 1 on G1.
 var G1AffineOne = &G1Affine{FQReprToFQ(g1GeneratorX.Copy()), FQReprToFQ(g1GeneratorY.Copy()), false}
@@ -66,7 +66,7 @@ func (g G1Affine) ToProjective() *G1Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G1Affine) Mul(b FQRepr) *G1Projective {
+func (g G1Affine) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
 	for i := uint(0); uint(i) < b.BitLen(); i++ {
 		o := b.Bit(b.BitLen() - i - 1)
@@ -555,7 +555,7 @@ func (g G1Projective) AddAffine(other *G1Affine) *G1Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G1Projective) Mul(b FQRepr) *G1Projective {
+func (g G1Projective) Mul(b *FQRepr) *G1Projective {
 	res := G1ProjectiveZero.Copy()
 	for i := uint(0); i < uint(b.BitLen()); i++ {
 		o := b.Bit(b.BitLen() - i - 1)

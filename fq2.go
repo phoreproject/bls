@@ -148,7 +148,7 @@ func (f *FQ2) InverseAssign() bool {
 
 var frobeniusCoeffFQ2c1 = [2]*FQ{
 	FQOne,
-	FQReprToFQRaw(FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
+	FQReprToFQRaw(&FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
 }
 
 // FrobeniusMapAssign multiplies the element by the Frobenius automorphism
@@ -162,10 +162,10 @@ func (f FQ2) Legendre() LegendreSymbol {
 	return f.Norm().Legendre()
 }
 
-var qMinus3Over4 = FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}
+var qMinus3Over4 = &FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}
 
 // Exp raises the element ot a specific power.
-func (f *FQ2) Exp(n FQRepr) *FQ2 {
+func (f *FQ2) Exp(n *FQRepr) *FQ2 {
 	iter := NewBitIterator(n[:])
 	res := FQ2One.Copy()
 	foundOne := false
