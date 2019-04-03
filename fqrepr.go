@@ -32,15 +32,15 @@ func (f FQRepr) IsZero() bool {
 }
 
 // NewFQRepr creates a new number given a uint64.
-func NewFQRepr(n uint64) *FQRepr {
-	return &FQRepr{n, 0, 0, 0, 0, 0}
+func NewFQRepr(n uint64) FQRepr {
+	return FQRepr{n, 0, 0, 0, 0, 0}
 }
 
 // Rsh shifts the FQRepr right by a certain number of bits.
 func (f *FQRepr) Rsh(n uint) {
 	if n >= 64*6 {
 		out := NewFQRepr(0)
-		*f = *out
+		*f = out
 		return
 	}
 
@@ -89,7 +89,7 @@ func (f *FQRepr) Mul2() {
 func (f *FQRepr) Lsh(n uint) {
 	if n >= 64*6 {
 		f0 := NewFQRepr(0)
-		*f = *f0
+		*f = f0
 		return
 	}
 
@@ -114,7 +114,7 @@ func (f *FQRepr) Lsh(n uint) {
 
 // AddNoCarry adds two FQReprs to another and does not handle
 // carry.
-func (f *FQRepr) AddNoCarry(g *FQRepr) {
+func (f *FQRepr) AddNoCarry(g FQRepr) {
 	carry := uint64(0)
 	for i := 0; i < 6; i++ {
 		f[i], carry = AddWithCarry(f[i], g[i], carry)
@@ -123,7 +123,7 @@ func (f *FQRepr) AddNoCarry(g *FQRepr) {
 
 // SubNoBorrow subtracts two FQReprs from another and does not handle
 // borrow.
-func (f *FQRepr) SubNoBorrow(g *FQRepr) {
+func (f *FQRepr) SubNoBorrow(g FQRepr) {
 	borrow := uint64(0)
 	for i := 0; i < 6; i++ {
 		f[i], borrow = SubWithBorrow(f[i], g[i], borrow)
@@ -131,12 +131,12 @@ func (f *FQRepr) SubNoBorrow(g *FQRepr) {
 }
 
 // Equals checks if two FQRepr's are equal.
-func (f *FQRepr) Equals(g *FQRepr) bool {
+func (f *FQRepr) Equals(g FQRepr) bool {
 	return f[0] == g[0] && f[1] == g[1] && f[2] == g[2] && f[3] == g[3] && f[4] == g[4] && f[5] == g[5]
 }
 
 // Cmp compares two FQRepr's
-func (f *FQRepr) Cmp(g *FQRepr) int {
+func (f FQRepr) Cmp(g FQRepr) int {
 	for i := 5; i >= 0; i-- {
 		if f[i] == g[i] {
 			continue
@@ -151,11 +151,8 @@ func (f *FQRepr) Cmp(g *FQRepr) int {
 }
 
 // Copy copies a FQRepr to a new instance and returns it.
-func (f *FQRepr) Copy() *FQRepr {
-	var newBytes [6]uint64
-	copy(newBytes[:], f[:])
-	newf := FQRepr(newBytes)
-	return &newf
+func (f FQRepr) Copy() FQRepr {
+	return f
 }
 
 // ToString converts the FQRepr to a string.
@@ -178,14 +175,14 @@ func (f FQRepr) BitLen() uint {
 }
 
 // FQReprFromBytes gets a new FQRepr from big-endian bytes.
-func FQReprFromBytes(b [48]byte) *FQRepr {
+func FQReprFromBytes(b [48]byte) FQRepr {
 	m0 := binary.BigEndian.Uint64(b[0:8])
 	m1 := binary.BigEndian.Uint64(b[8:16])
 	m2 := binary.BigEndian.Uint64(b[16:24])
 	m3 := binary.BigEndian.Uint64(b[24:32])
 	m4 := binary.BigEndian.Uint64(b[32:40])
 	m5 := binary.BigEndian.Uint64(b[40:48])
-	return &FQRepr{m5, m4, m3, m2, m1, m0}
+	return FQRepr{m5, m4, m3, m2, m1, m0}
 }
 
 // Bytes gets the bytes used for an FQRepr.
@@ -206,10 +203,10 @@ func (f FQRepr) Bit(n uint) bool {
 }
 
 // FQReprFromString creates a FQRepr from a string.
-func FQReprFromString(s string, b uint) (*FQRepr, error) {
+func FQReprFromString(s string, b uint) (FQRepr, error) {
 	out, valid := new(big.Int).SetString(s, int(b))
 	if !valid {
-		return nil, errors.New("FQRepr not valid")
+		return FQRepr{}, errors.New("FQRepr not valid")
 	}
 	return FQReprFromBigInt(out)
 }
@@ -230,9 +227,9 @@ var bigIntZero = big.NewInt(0)
 var oneLsh64MinusOne = new(big.Int).SetUint64(0xffffffffffffffff)
 
 // FQReprFromBigInt create a FQRepr from a big.Int.
-func FQReprFromBigInt(n *big.Int) (*FQRepr, error) {
+func FQReprFromBigInt(n *big.Int) (FQRepr, error) {
 	if n.BitLen() > 384 || n.Sign() == -1 {
-		return nil, errors.New("invalid input string")
+		return FQRepr{}, errors.New("invalid input string")
 	}
 
 	out := new(big.Int).Set(n)
