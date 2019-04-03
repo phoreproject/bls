@@ -93,7 +93,7 @@ func TestSubWithCarry(t *testing.T) {
 			t.Fatalf("%d - %d - %d is giving incorrect answer of %d instead of %d", c.a, c.b, c.borrow, out, c.out)
 		}
 		if borrow != c.outBorrow {
-			t.Fatalf("%d - %d - %d is giving incorrect borrow of %d instead of %d", c.a, c.b, c.borrow, borrow, c.borrow)
+			t.Fatalf("%d - %d - %d is giving incorrect borrow of %d instead of %d", c.a, c.b, c.borrow, borrow, c.outBorrow)
 		}
 	}
 }
