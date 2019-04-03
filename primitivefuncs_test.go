@@ -1,6 +1,8 @@
 package bls_test
 
 import (
+	"crypto/rand"
+	"math/big"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -233,6 +235,52 @@ func TestMACWithCarry(t *testing.T) {
 		}
 		if carry != c.outCarry {
 			t.Fatalf("%d + %d * %d + %d is giving incorrect carry of %d instead of %d", c.a, c.b, c.c, c.carry, carry, c.outCarry)
+		}
+	}
+}
+
+var oneLsh384MinusOne = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 384), big.NewInt(1))
+
+func TestMultiplyFQReprOverflow(t *testing.T) {
+	f0 := bls.FQRepr{4276637899304358534, 4043378133346814763, 8835052805473178628, 2680116066972705497, 18387885609531466875, 90398708109242637}
+	f1 := bls.FQRepr{6568974633585825615, 15677163513955518067, 16490785605261833339, 9784757811163378176, 10803760609847905278, 1860524254683672351}
+
+	expectedLo, _ := new(big.Int).SetString("11236684981931288970748045803123803013547375290961326241645975575468319186166860317135684626985730476857897168732506", 10)
+	expectedHi, _ := new(big.Int).SetString("19474954426416495774628754584220018623553762741680760536161274135926885656938068449644545696043757020826963123558", 10)
+
+	hi, lo := bls.MultiplyFQRepr(f0, f1)
+	loBig := bls.FQRepr(lo).ToBig()
+	hiBig := bls.FQRepr(hi).ToBig()
+
+	if loBig.Cmp(expectedLo) != 0 {
+		t.Fatalf("expected lo bits to equal %x, got: %x", expectedLo, loBig)
+	}
+
+	if hiBig.Cmp(expectedHi) != 0 {
+		t.Fatalf("expected hi bits to equal %x, got: %x", expectedHi, hiBig)
+	}
+}
+
+func TestRandomMultiplyFQRepr(t *testing.T) {
+	r := NewXORShift(1)
+	total := big.NewInt(1)
+	totalFQr := bls.NewFQRepr(1)
+	totalFQ := *totalFQr
+
+	for i := 0; i < 1000000; i++ {
+		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
+
+		f, err := bls.FQReprFromBigInt(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, totalFQ = bls.MultiplyFQRepr(totalFQ, *f)
+		total.Mul(total, n)
+		total.And(total, oneLsh384MinusOne)
+
+		if bls.FQRepr(totalFQ).ToBig().Cmp(total) != 0 {
+			t.Fatal("multiplication totals do not match between big int and FQ")
 		}
 	}
 }

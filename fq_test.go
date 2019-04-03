@@ -131,7 +131,7 @@ func TestSubAssign(t *testing.T) {
 		total.Mod(total, QFieldModulusBig)
 
 		if totalFQ.ToRepr().ToBig().Cmp(total) != 0 {
-			t.Error("multiplication totals do not match between big int and FQ")
+			t.Fatal("subtraction totals do not match between big int and FQ")
 		}
 	}
 }

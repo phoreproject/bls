@@ -138,49 +138,8 @@ func (f *FQ) montReduce(r0 uint64, r1 uint64, r2 uint64, r3 uint64, r4 uint64, r
 
 // MulAssign multiplies a field element by this one.
 func (f FQ) MulAssign(other *FQ) {
-	r0, carry := MACWithCarry(0, f.n[0], other.n[0], 0)
-	r1, carry := MACWithCarry(0, f.n[0], other.n[1], carry)
-	r2, carry := MACWithCarry(0, f.n[0], other.n[2], carry)
-	r3, carry := MACWithCarry(0, f.n[0], other.n[3], carry)
-	r4, carry := MACWithCarry(0, f.n[0], other.n[4], carry)
-	r5, carry := MACWithCarry(0, f.n[0], other.n[5], carry)
-	r6 := carry
-	r1, carry = MACWithCarry(r1, f.n[1], other.n[0], 0)
-	r2, carry = MACWithCarry(r2, f.n[1], other.n[1], carry)
-	r3, carry = MACWithCarry(r3, f.n[1], other.n[2], carry)
-	r4, carry = MACWithCarry(r4, f.n[1], other.n[3], carry)
-	r5, carry = MACWithCarry(r5, f.n[1], other.n[4], carry)
-	r6, carry = MACWithCarry(r6, f.n[1], other.n[5], carry)
-	r7 := carry
-	r2, carry = MACWithCarry(r2, f.n[2], other.n[0], 0)
-	r3, carry = MACWithCarry(r3, f.n[2], other.n[1], carry)
-	r4, carry = MACWithCarry(r4, f.n[2], other.n[2], carry)
-	r5, carry = MACWithCarry(r5, f.n[2], other.n[3], carry)
-	r6, carry = MACWithCarry(r6, f.n[2], other.n[4], carry)
-	r7, carry = MACWithCarry(r7, f.n[2], other.n[5], carry)
-	r8 := carry
-	r3, carry = MACWithCarry(r3, f.n[3], other.n[0], 0)
-	r4, carry = MACWithCarry(r4, f.n[3], other.n[1], carry)
-	r5, carry = MACWithCarry(r5, f.n[3], other.n[2], carry)
-	r6, carry = MACWithCarry(r6, f.n[3], other.n[3], carry)
-	r7, carry = MACWithCarry(r7, f.n[3], other.n[4], carry)
-	r8, carry = MACWithCarry(r8, f.n[3], other.n[5], carry)
-	r9 := carry
-	r4, carry = MACWithCarry(r4, f.n[4], other.n[0], 0)
-	r5, carry = MACWithCarry(r5, f.n[4], other.n[1], carry)
-	r6, carry = MACWithCarry(r6, f.n[4], other.n[2], carry)
-	r7, carry = MACWithCarry(r7, f.n[4], other.n[3], carry)
-	r8, carry = MACWithCarry(r8, f.n[4], other.n[4], carry)
-	r9, carry = MACWithCarry(r9, f.n[4], other.n[5], carry)
-	r10 := carry
-	r5, carry = MACWithCarry(r5, f.n[5], other.n[0], 0)
-	r6, carry = MACWithCarry(r6, f.n[5], other.n[1], carry)
-	r7, carry = MACWithCarry(r7, f.n[5], other.n[2], carry)
-	r8, carry = MACWithCarry(r8, f.n[5], other.n[3], carry)
-	r9, carry = MACWithCarry(r9, f.n[5], other.n[4], carry)
-	r10, carry = MACWithCarry(r10, f.n[5], other.n[5], carry)
-	r11 := carry
-	f.montReduce(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11)
+	hi, lo := MultiplyFQRepr(*f.n, *other.n)
+	f.montReduce(lo[0], lo[1], lo[2], lo[3], lo[4], lo[5], hi[0], hi[1], hi[2], hi[3], hi[4], hi[5])
 }
 
 // SubAssign subtracts a field element from this one.
