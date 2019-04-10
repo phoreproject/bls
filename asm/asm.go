@@ -4,6 +4,7 @@ package main
 
 import (
 	. "github.com/mmcloughlin/avo/build"
+	. "github.com/mmcloughlin/avo/gotypes"
 	. "github.com/mmcloughlin/avo/operand"
 	. "github.com/mmcloughlin/avo/reg"
 )
@@ -20,6 +21,32 @@ func muladdc(loRef, a, b, carry Register) {
 
 	MOVQ(RDX, carry)
 	MOVQ(RAX, loRef)
+}
+
+// muladdc multiplies a and b,
+func muladdcConst(loRef Register, a Op, b Register, carry Register) {
+	MOVQ(a, RAX)
+	MULQ(b)
+
+	ADDQ(loRef, RAX)
+	ADCQ(Imm(0), RDX)
+	ADDQ(carry, RAX)
+	ADCQ(Imm(0), RDX)
+
+	MOVQ(RDX, carry)
+	MOVQ(RAX, loRef)
+}
+
+var QFieldModulus = [6]uint64{0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a}
+
+const montInvFQ = uint64(0x89f3fffcfffcfffd)
+
+func r(i int) Component {
+	if i >= 6 {
+		return Param("hi").Index(i % 6)
+	} else {
+		return Param("lo").Index(i)
+	}
 }
 
 func main() {
@@ -153,6 +180,75 @@ func main() {
 	for i := 0; i < 6; i++ {
 		Commentf("hi[%d] = registers[%d]", i, i+6)
 		Store(registers[i+6], Return("hi").Index(i))
+	}
+	RET()
+
+	Implement("MontReduce")
+
+	Commentf("reg = [0] * 12")
+	regs := AllocLocal(8 * 12)
+	tempReg := GP64()
+	for i := 0; i < 12; i++ {
+		Commentf("temp = r[%d]", i)
+		Load(r(i), tempReg)
+		Commentf("reg[%d] = temp", i)
+		MOVQ(tempReg, regs.Offset(8*i))
+	}
+
+	carryOver := GP64()
+	Comment("carryOver = 0")
+	XORQ(carryOver, carryOver)
+	newCarry = GP64()
+	lastReg := GP64()
+	k := GP64()
+	carry = GP64()
+
+	for i := 0; i < 6; i++ {
+		Commentf("rax = %d", montInvFQ)
+		MOVQ(Imm(montInvFQ), RAX)
+		Commentf("k = reg[%d]", i)
+		MOVQ(regs.Offset(8*i), k)
+		Commentf("rax = (rax * k) & 0xFFFFFFFFFFFFFFFF")
+		MULQ(k)
+		Commentf("k = rax")
+		MOVQ(RAX, k)
+		Commentf("carry = 0")
+		XORQ(carry, carry)
+		j := 0
+		for j < 6 {
+			regValue := GP64()
+			Commentf("carryTemp = ((reg[%d] + QFieldModulus[%d] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF", i+j, j)
+			MOVQ(regs.Offset(8*(i+j)), regValue)
+			muladdcConst(regValue, Imm(QFieldModulus[j]), k, carry)
+			if j != 0 {
+				Commentf("reg[%d] = (reg[%d] + QFieldModulus[%d] * k + carry) & 0xFFFFFFFFFFFFFFFF", i+j, i+j, j)
+				MOVQ(regValue, regs.Offset(8*(i+j)))
+			}
+			Comment("carry = carryTemp")
+			j++
+		}
+
+		// this should calculate lastReg + carryOver + carry
+		Commentf("newCarry = 0")
+		XORQ(newCarry, newCarry)
+		Commentf("lastReg = reg[%d]", i+j)
+		MOVQ(regs.Offset(8*(i+j)), lastReg)
+		Comment("newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF")
+		Comment("lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF")
+		ADDQ(carry, lastReg)
+		ADCQ(Imm(0), newCarry)
+		ADDQ(carryOver, lastReg)
+		ADCQ(Imm(0), newCarry)
+		Commentf("carryOver = newCarry")
+		MOVQ(newCarry, carryOver)
+		Commentf("reg[%d] = lastReg", i+j)
+		MOVQ(lastReg, regs.Offset(8*(i+j)))
+	}
+	tempReg = GP64()
+	for i := 0; i < 6; i++ {
+		MOVQ(regs.Offset(8*(i+6)), tempReg)
+		Commentf("out[%d] = reg[%d]", i, i+6)
+		Store(tempReg, Return("out").Index(i))
 	}
 	RET()
 	Generate()

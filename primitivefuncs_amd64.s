@@ -635,3 +635,832 @@ TEXT ·MultiplyFQRepr(SB), $0-192
 	// hi[5] = registers[11]
 	MOVQ AX, hi_5+136(FP)
 	RET
+
+// func MontReduce(hi [6]uint64, lo [6]uint64) (out [6]uint64)
+TEXT ·MontReduce(SB), $96-144
+	// reg = [0] * 12
+	// temp = r[0]
+	MOVQ lo_0+48(FP), AX
+
+	// reg[0] = temp
+	MOVQ AX, (SP)
+
+	// temp = r[1]
+	MOVQ lo_1+56(FP), AX
+
+	// reg[1] = temp
+	MOVQ AX, 8(SP)
+
+	// temp = r[2]
+	MOVQ lo_2+64(FP), AX
+
+	// reg[2] = temp
+	MOVQ AX, 16(SP)
+
+	// temp = r[3]
+	MOVQ lo_3+72(FP), AX
+
+	// reg[3] = temp
+	MOVQ AX, 24(SP)
+
+	// temp = r[4]
+	MOVQ lo_4+80(FP), AX
+
+	// reg[4] = temp
+	MOVQ AX, 32(SP)
+
+	// temp = r[5]
+	MOVQ lo_5+88(FP), AX
+
+	// reg[5] = temp
+	MOVQ AX, 40(SP)
+
+	// temp = r[6]
+	MOVQ hi_0+0(FP), AX
+
+	// reg[6] = temp
+	MOVQ AX, 48(SP)
+
+	// temp = r[7]
+	MOVQ hi_1+8(FP), AX
+
+	// reg[7] = temp
+	MOVQ AX, 56(SP)
+
+	// temp = r[8]
+	MOVQ hi_2+16(FP), AX
+
+	// reg[8] = temp
+	MOVQ AX, 64(SP)
+
+	// temp = r[9]
+	MOVQ hi_3+24(FP), AX
+
+	// reg[9] = temp
+	MOVQ AX, 72(SP)
+
+	// temp = r[10]
+	MOVQ hi_4+32(FP), AX
+
+	// reg[10] = temp
+	MOVQ AX, 80(SP)
+
+	// temp = r[11]
+	MOVQ hi_5+40(FP), AX
+
+	// reg[11] = temp
+	MOVQ AX, 88(SP)
+
+	// carryOver = 0
+	XORQ CX, CX
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[0]
+	MOVQ (SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[0] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ (SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[1] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 8(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[1] = (reg[1] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 8(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[2] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 16(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[2] = (reg[2] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 16(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[3] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 24(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[3] = (reg[3] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 24(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[4] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 32(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[4] = (reg[4] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 32(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[5] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[5] = (reg[5] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 40(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[6]
+	MOVQ 48(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[6] = lastReg
+	MOVQ AX, 48(SP)
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[1]
+	MOVQ 8(SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[1] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 8(SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[2] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 16(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[2] = (reg[2] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 16(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[3] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 24(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[3] = (reg[3] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 24(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[4] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 32(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[4] = (reg[4] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 32(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[5] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[5] = (reg[5] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 40(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[6] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 48(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[6] = (reg[6] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 48(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[7]
+	MOVQ 56(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[7] = lastReg
+	MOVQ AX, 56(SP)
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[2]
+	MOVQ 16(SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[2] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 16(SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[3] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 24(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[3] = (reg[3] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 24(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[4] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 32(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[4] = (reg[4] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 32(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[5] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[5] = (reg[5] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 40(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[6] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 48(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[6] = (reg[6] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 48(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[7] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 56(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[7] = (reg[7] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 56(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[8]
+	MOVQ 64(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[8] = lastReg
+	MOVQ AX, 64(SP)
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[3]
+	MOVQ 24(SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[3] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 24(SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[4] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 32(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[4] = (reg[4] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 32(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[5] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[5] = (reg[5] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 40(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[6] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 48(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[6] = (reg[6] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 48(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[7] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 56(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[7] = (reg[7] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 56(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[8] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 64(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[8] = (reg[8] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 64(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[9]
+	MOVQ 72(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[9] = lastReg
+	MOVQ AX, 72(SP)
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[4]
+	MOVQ 32(SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[4] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 32(SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[5] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[5] = (reg[5] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 40(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[6] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 48(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[6] = (reg[6] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 48(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[7] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 56(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[7] = (reg[7] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 56(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[8] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 64(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[8] = (reg[8] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 64(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[9] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 72(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[9] = (reg[9] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 72(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[10]
+	MOVQ 80(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[10] = lastReg
+	MOVQ AX, 80(SP)
+
+	// rax = 9940570264628428797
+	MOVQ $0x89f3fffcfffcfffd, AX
+
+	// k = reg[5]
+	MOVQ 40(SP), BP
+
+	// rax = (rax * k) & 0xFFFFFFFFFFFFFFFF
+	MULQ BP
+
+	// k = rax
+	MOVQ AX, BP
+
+	// carry = 0
+	XORQ SI, SI
+
+	// carryTemp = ((reg[5] + QFieldModulus[0] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 40(SP), DI
+	MOVQ $0xb9feffffffffaaab, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// carry = carryTemp
+	// carryTemp = ((reg[6] + QFieldModulus[1] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 48(SP), DI
+	MOVQ $0x1eabfffeb153ffff, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[6] = (reg[6] + QFieldModulus[1] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 48(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[7] + QFieldModulus[2] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 56(SP), DI
+	MOVQ $0x6730d2a0f6b0f624, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[7] = (reg[7] + QFieldModulus[2] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 56(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[8] + QFieldModulus[3] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 64(SP), DI
+	MOVQ $0x64774b84f38512bf, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[8] = (reg[8] + QFieldModulus[3] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 64(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[9] + QFieldModulus[4] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 72(SP), DI
+	MOVQ $0x4b1ba7b6434bacd7, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[9] = (reg[9] + QFieldModulus[4] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 72(SP)
+
+	// carry = carryTemp
+	// carryTemp = ((reg[10] + QFieldModulus[5] * k + carry) >> 64) & 0xFFFFFFFFFFFFFFFF
+	MOVQ 80(SP), DI
+	MOVQ $0x1a0111ea397fe69a, AX
+	MULQ BP
+	ADDQ DI, AX
+	ADCQ $0x00, DX
+	ADDQ SI, AX
+	ADCQ $0x00, DX
+	MOVQ DX, SI
+	MOVQ AX, DI
+
+	// reg[10] = (reg[10] + QFieldModulus[5] * k + carry) & 0xFFFFFFFFFFFFFFFF
+	MOVQ DI, 80(SP)
+
+	// carry = carryTemp
+	// newCarry = 0
+	XORQ BX, BX
+
+	// lastReg = reg[11]
+	MOVQ 88(SP), AX
+
+	// newCarry = ((lastReg + carry + carryOver) >> 64) & 0xFFFFFFFFFFFFFFFF
+	// lastReg = (lastReg + carry + carryOver) & 0xFFFFFFFFFFFFFFFF
+	ADDQ SI, AX
+	ADCQ $0x00, BX
+	ADDQ CX, AX
+	ADCQ $0x00, BX
+
+	// carryOver = newCarry
+	MOVQ BX, CX
+
+	// reg[11] = lastReg
+	MOVQ AX, 88(SP)
+	MOVQ 48(SP), AX
+
+	// out[0] = reg[6]
+	MOVQ AX, out_0+96(FP)
+	MOVQ 56(SP), AX
+
+	// out[1] = reg[7]
+	MOVQ AX, out_1+104(FP)
+	MOVQ 64(SP), AX
+
+	// out[2] = reg[8]
+	MOVQ AX, out_2+112(FP)
+	MOVQ 72(SP), AX
+
+	// out[3] = reg[9]
+	MOVQ AX, out_3+120(FP)
+	MOVQ 80(SP), AX
+
+	// out[4] = reg[10]
+	MOVQ AX, out_4+128(FP)
+	MOVQ 88(SP), AX
+
+	// out[5] = reg[11]
+	MOVQ AX, out_5+136(FP)
+	RET

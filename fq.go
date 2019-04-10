@@ -21,13 +21,9 @@ var FQZero = FQReprToFQRaw(bigZero)
 
 // FQOne is the one FQ element
 var FQOne = FQReprToFQ(bigOne)
-var bigTwoFQ = FQReprToFQ(bigTwo)
 
 // QFieldModulus is the modulus of the field.
 var QFieldModulus, _ = FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", 10)
-
-// FQR is 2**384 % Q used for moving numbers into Montgomery form.
-var FQR = &FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}
 
 // FQR2 is R^2 % Q.
 var FQR2, _ = FQReprFromString("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750", 10)
@@ -71,75 +67,15 @@ func (f *FQ) AddAssign(other *FQ) {
 	f.reduceAssign()
 }
 
-const montInvFQ = uint64(0x89f3fffcfffcfffd)
-
-func (f *FQ) montReduce(r0 uint64, r1 uint64, r2 uint64, r3 uint64, r4 uint64, r5 uint64, r6 uint64, r7 uint64, r8 uint64, r9 uint64, r10 uint64, r11 uint64) {
-	k := r0 * montInvFQ
-	_, carry := MACWithCarry(r0, k, QFieldModulus[0], 0)
-	r1, carry = MACWithCarry(r1, k, QFieldModulus[1], carry)
-	r2, carry = MACWithCarry(r2, k, QFieldModulus[2], carry)
-	r3, carry = MACWithCarry(r3, k, QFieldModulus[3], carry)
-	r4, carry = MACWithCarry(r4, k, QFieldModulus[4], carry)
-	r5, carry = MACWithCarry(r5, k, QFieldModulus[5], carry)
-	r6, carry = AddWithCarry(r6, 0, carry)
-	carry2 := carry
-	k = r1 * montInvFQ
-	_, carry = MACWithCarry(r1, k, QFieldModulus[0], 0)
-	r2, carry = MACWithCarry(r2, k, QFieldModulus[1], carry)
-	r3, carry = MACWithCarry(r3, k, QFieldModulus[2], carry)
-	r4, carry = MACWithCarry(r4, k, QFieldModulus[3], carry)
-	r5, carry = MACWithCarry(r5, k, QFieldModulus[4], carry)
-	r6, carry = MACWithCarry(r6, k, QFieldModulus[5], carry)
-	r7, carry = AddWithCarry(r7, carry2, carry)
-	carry2 = carry
-	k = r2 * montInvFQ
-	_, carry = MACWithCarry(r2, k, QFieldModulus[0], 0)
-	r3, carry = MACWithCarry(r3, k, QFieldModulus[1], carry)
-	r4, carry = MACWithCarry(r4, k, QFieldModulus[2], carry)
-	r5, carry = MACWithCarry(r5, k, QFieldModulus[3], carry)
-	r6, carry = MACWithCarry(r6, k, QFieldModulus[4], carry)
-	r7, carry = MACWithCarry(r7, k, QFieldModulus[5], carry)
-	r8, carry = AddWithCarry(r8, carry2, carry)
-	carry2 = carry
-	k = r3 * montInvFQ
-	_, carry = MACWithCarry(r3, k, QFieldModulus[0], 0)
-	r4, carry = MACWithCarry(r4, k, QFieldModulus[1], carry)
-	r5, carry = MACWithCarry(r5, k, QFieldModulus[2], carry)
-	r6, carry = MACWithCarry(r6, k, QFieldModulus[3], carry)
-	r7, carry = MACWithCarry(r7, k, QFieldModulus[4], carry)
-	r8, carry = MACWithCarry(r8, k, QFieldModulus[5], carry)
-	r9, carry = AddWithCarry(r9, carry2, carry)
-	carry2 = carry
-	k = r4 * montInvFQ
-	_, carry = MACWithCarry(r4, k, QFieldModulus[0], 0)
-	r5, carry = MACWithCarry(r5, k, QFieldModulus[1], carry)
-	r6, carry = MACWithCarry(r6, k, QFieldModulus[2], carry)
-	r7, carry = MACWithCarry(r7, k, QFieldModulus[3], carry)
-	r8, carry = MACWithCarry(r8, k, QFieldModulus[4], carry)
-	r9, carry = MACWithCarry(r9, k, QFieldModulus[5], carry)
-	r10, carry = AddWithCarry(r10, carry2, carry)
-	carry2 = carry
-	k = r5 * montInvFQ
-	_, carry = MACWithCarry(r5, k, QFieldModulus[0], 0)
-	r6, carry = MACWithCarry(r6, k, QFieldModulus[1], carry)
-	r7, carry = MACWithCarry(r7, k, QFieldModulus[2], carry)
-	r8, carry = MACWithCarry(r8, k, QFieldModulus[3], carry)
-	r9, carry = MACWithCarry(r9, k, QFieldModulus[4], carry)
-	r10, carry = MACWithCarry(r10, k, QFieldModulus[5], carry)
-	r11, carry = AddWithCarry(r11, carry2, carry)
-	f.n[0] = r6
-	f.n[1] = r7
-	f.n[2] = r8
-	f.n[3] = r9
-	f.n[4] = r10
-	f.n[5] = r11
+func (f *FQ) montReduce(hi [6]uint64, lo [6]uint64) {
+	*f.n = MontReduce(hi, lo)
 	f.reduceAssign()
 }
 
 // MulAssign multiplies a field element by this one.
 func (f FQ) MulAssign(other *FQ) {
 	hi, lo := MultiplyFQRepr(*f.n, *other.n)
-	f.montReduce(lo[0], lo[1], lo[2], lo[3], lo[4], lo[5], hi[0], hi[1], hi[2], hi[3], hi[4], hi[5])
+	f.montReduce(hi, lo)
 }
 
 // SubAssign subtracts a field element from this one.
@@ -260,7 +196,7 @@ func (f *FQ) SquareAssign() {
 	r9, carry = AddWithCarry(r9, 0, carry)
 	r10, carry = MACWithCarry(r10, f.n[5], f.n[5], carry)
 	r11, carry = AddWithCarry(r11, 0, carry)
-	f.montReduce(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11)
+	f.montReduce([6]uint64{r6, r7, r8, r9, r10, r11}, [6]uint64{r0, r1, r2, r3, r4, r5})
 }
 
 var negativeOneFQ = FQReprToFQ(negativeOne)
@@ -399,20 +335,7 @@ func (f *FQ) Legendre() LegendreSymbol {
 // ToRepr gets the 256-bit representation of the field element.
 func (f *FQ) ToRepr() *FQRepr {
 	out := f.Copy()
-	out.montReduce(
-		f.n[0],
-		f.n[1],
-		f.n[2],
-		f.n[3],
-		f.n[4],
-		f.n[5],
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-	)
+	out.montReduce([6]uint64{0, 0, 0, 0, 0, 0}, [6]uint64{f.n[0], f.n[1], f.n[2], f.n[3], f.n[4], f.n[5]})
 	return out.n
 }
 

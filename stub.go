@@ -6,53 +6,7 @@ package bls
 // MultiplyFQRepr multiplies two FQRepr values together.
 func MultiplyFQRepr(a, b [6]uint64) (hi [6]uint64, lo [6]uint64)
 
-func MultiplyFQReprOld(a, b [6]uint64) (hi [6]uint64, lo [6]uint64) {
-	carry := uint64(0)
-	lo[0], carry = MACWithCarry(0, a[0], b[0], 0)
-	lo[1], carry = MACWithCarry(0, a[0], b[1], carry)
-	lo[2], carry = MACWithCarry(0, a[0], b[2], carry)
-	lo[3], carry = MACWithCarry(0, a[0], b[3], carry)
-	lo[4], carry = MACWithCarry(0, a[0], b[4], carry)
-	lo[5], carry = MACWithCarry(0, a[0], b[5], carry)
-	hi[0] = carry
-	lo[1], carry = MACWithCarry(lo[1], a[1], b[0], 0)
-	lo[2], carry = MACWithCarry(lo[2], a[1], b[1], carry)
-	lo[3], carry = MACWithCarry(lo[3], a[1], b[2], carry)
-	lo[4], carry = MACWithCarry(lo[4], a[1], b[3], carry)
-	lo[5], carry = MACWithCarry(lo[5], a[1], b[4], carry)
-	hi[0], carry = MACWithCarry(hi[0], a[1], b[5], carry)
-	hi[1] = carry
-	lo[2], carry = MACWithCarry(lo[2], a[2], b[0], 0)
-	lo[3], carry = MACWithCarry(lo[3], a[2], b[1], carry)
-	lo[4], carry = MACWithCarry(lo[4], a[2], b[2], carry)
-	lo[5], carry = MACWithCarry(lo[5], a[2], b[3], carry)
-	hi[0], carry = MACWithCarry(hi[0], a[2], b[4], carry)
-	hi[1], carry = MACWithCarry(hi[1], a[2], b[5], carry)
-	hi[2] = carry
-	lo[3], carry = MACWithCarry(lo[3], a[3], b[0], 0)
-	lo[4], carry = MACWithCarry(lo[4], a[3], b[1], carry)
-	lo[5], carry = MACWithCarry(lo[5], a[3], b[2], carry)
-	hi[0], carry = MACWithCarry(hi[0], a[3], b[3], carry)
-	hi[1], carry = MACWithCarry(hi[1], a[3], b[4], carry)
-	hi[2], carry = MACWithCarry(hi[2], a[3], b[5], carry)
-	hi[3] = carry
-	lo[4], carry = MACWithCarry(lo[4], a[4], b[0], 0)
-	lo[5], carry = MACWithCarry(lo[5], a[4], b[1], carry)
-	hi[0], carry = MACWithCarry(hi[0], a[4], b[2], carry)
-	hi[1], carry = MACWithCarry(hi[1], a[4], b[3], carry)
-	hi[2], carry = MACWithCarry(hi[2], a[4], b[4], carry)
-	hi[3], carry = MACWithCarry(hi[3], a[4], b[5], carry)
-	hi[4] = carry
-	lo[5], carry = MACWithCarry(lo[5], a[5], b[0], 0)
-	hi[0], carry = MACWithCarry(hi[0], a[5], b[1], carry)
-	hi[1], carry = MACWithCarry(hi[1], a[5], b[2], carry)
-	hi[2], carry = MACWithCarry(hi[2], a[5], b[3], carry)
-	hi[3], carry = MACWithCarry(hi[3], a[5], b[4], carry)
-	hi[4], carry = MACWithCarry(hi[4], a[5], b[5], carry)
-	hi[5] = carry
-
-	return hi, lo
-}
+func MontReduce(hi, lo [6]uint64) (out [6]uint64)
 
 func AddWithCarry(a, b, carry uint64) (uint64, uint64)
 

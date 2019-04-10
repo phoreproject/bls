@@ -8,9 +8,8 @@ import (
 )
 
 var (
-	bigZero = bls.NewFQRepr(0)
-	bigOne  = bls.NewFQRepr(1)
-	bigTwo  = bls.NewFQRepr(2)
+	bigOne = bls.NewFQRepr(1)
+	bigTwo = bls.NewFQRepr(2)
 )
 
 func TestFQ2Ordering(t *testing.T) {

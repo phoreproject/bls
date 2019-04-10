@@ -8,7 +8,7 @@ import (
 	"math/bits"
 )
 
-//go:generate go run asm.go -out primitivefuncs_amd64.s
+//go:generate go run asm/asm.go -out primitivefuncs_amd64.s
 
 // FQRepr represents a uint384. The least significant bits are first.
 type FQRepr [6]uint64
