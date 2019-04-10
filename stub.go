@@ -8,6 +8,10 @@ func MultiplyFQRepr(a, b [6]uint64) (hi [6]uint64, lo [6]uint64)
 
 func MontReduce(hi, lo [6]uint64) (out [6]uint64)
 
+func AddNoCarry(a, b [6]uint64) [6]uint64
+
+func SubNoBorrow(a, b [6]uint64) [6]uint64
+
 func AddWithCarry(a, b, carry uint64) (uint64, uint64)
 
 func SubWithBorrow(a, b, borrow uint64) (uint64, uint64)

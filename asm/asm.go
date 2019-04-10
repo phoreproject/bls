@@ -251,5 +251,45 @@ func main() {
 		Store(tempReg, Return("out").Index(i))
 	}
 	RET()
+
+	Implement("AddNoCarry")
+	aRegs := make([]Register, 6)
+	bRegs := make([]Register, 6)
+
+	for i := range aRegs {
+		aRegs[i] = Load(Param("a").Index(i), GP64())
+		bRegs[i] = Load(Param("b").Index(i), GP64())
+	}
+
+	ADDQ(aRegs[0], bRegs[0])
+	for i := 1; i < 6; i++ {
+		ADCQ(aRegs[i], bRegs[i])
+	}
+
+	for i := range bRegs {
+		Store(bRegs[i], ReturnIndex(0).Index(i))
+	}
+
+	RET()
+
+	Implement("SubNoBorrow")
+	aRegs = make([]Register, 6)
+	bRegs = make([]Register, 6)
+
+	for i := range aRegs {
+		aRegs[i] = Load(Param("a").Index(i), GP64())
+		bRegs[i] = Load(Param("b").Index(i), GP64())
+	}
+
+	SUBQ(bRegs[0], aRegs[0])
+	for i := 1; i < 6; i++ {
+		SBBQ(bRegs[i], aRegs[i])
+	}
+
+	for i := range bRegs {
+		Store(aRegs[i], ReturnIndex(0).Index(i))
+	}
+
+	RET()
 	Generate()
 }

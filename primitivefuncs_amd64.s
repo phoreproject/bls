@@ -1464,3 +1464,59 @@ TEXT ·MontReduce(SB), $96-144
 	// out[5] = reg[11]
 	MOVQ AX, out_5+136(FP)
 	RET
+
+// func AddNoCarry(a [6]uint64, b [6]uint64) [6]uint64
+TEXT ·AddNoCarry(SB), $0-144
+	MOVQ a_0+0(FP), AX
+	MOVQ b_0+48(FP), CX
+	MOVQ a_1+8(FP), DX
+	MOVQ b_1+56(FP), BX
+	MOVQ a_2+16(FP), BP
+	MOVQ b_2+64(FP), SI
+	MOVQ a_3+24(FP), DI
+	MOVQ b_3+72(FP), R8
+	MOVQ a_4+32(FP), R9
+	MOVQ b_4+80(FP), R10
+	MOVQ a_5+40(FP), R11
+	MOVQ b_5+88(FP), R12
+	ADDQ AX, CX
+	ADCQ DX, BX
+	ADCQ BP, SI
+	ADCQ DI, R8
+	ADCQ R9, R10
+	ADCQ R11, R12
+	MOVQ CX, ret_0+96(FP)
+	MOVQ BX, ret_1+104(FP)
+	MOVQ SI, ret_2+112(FP)
+	MOVQ R8, ret_3+120(FP)
+	MOVQ R10, ret_4+128(FP)
+	MOVQ R12, ret_5+136(FP)
+	RET
+
+// func SubNoBorrow(a [6]uint64, b [6]uint64) [6]uint64
+TEXT ·SubNoBorrow(SB), $0-144
+	MOVQ a_0+0(FP), AX
+	MOVQ b_0+48(FP), CX
+	MOVQ a_1+8(FP), DX
+	MOVQ b_1+56(FP), BX
+	MOVQ a_2+16(FP), BP
+	MOVQ b_2+64(FP), SI
+	MOVQ a_3+24(FP), DI
+	MOVQ b_3+72(FP), R8
+	MOVQ a_4+32(FP), R9
+	MOVQ b_4+80(FP), R10
+	MOVQ a_5+40(FP), R11
+	MOVQ b_5+88(FP), R12
+	SUBQ CX, AX
+	SBBQ BX, DX
+	SBBQ SI, BP
+	SBBQ R8, DI
+	SBBQ R10, R9
+	SBBQ R12, R11
+	MOVQ AX, ret_0+96(FP)
+	MOVQ DX, ret_1+104(FP)
+	MOVQ BP, ret_2+112(FP)
+	MOVQ DI, ret_3+120(FP)
+	MOVQ R9, ret_4+128(FP)
+	MOVQ R11, ret_5+136(FP)
+	RET

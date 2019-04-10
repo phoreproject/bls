@@ -117,19 +117,13 @@ func (f *FQRepr) Lsh(n uint) {
 // AddNoCarry adds two FQReprs to another and does not handle
 // carry.
 func (f *FQRepr) AddNoCarry(g *FQRepr) {
-	carry := uint64(0)
-	for i := 0; i < 6; i++ {
-		f[i], carry = AddWithCarry(f[i], g[i], carry)
-	}
+	*f = AddNoCarry(*f, *g)
 }
 
 // SubNoBorrow subtracts two FQReprs from another and does not handle
 // borrow.
 func (f *FQRepr) SubNoBorrow(g *FQRepr) {
-	borrow := uint64(0)
-	for i := 0; i < 6; i++ {
-		f[i], borrow = SubWithBorrow(f[i], g[i], borrow)
-	}
+	*f = SubNoBorrow(*f, *g)
 }
 
 // Equals checks if two FQRepr's are equal.
