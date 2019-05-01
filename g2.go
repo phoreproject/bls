@@ -12,13 +12,13 @@ import (
 
 // G2Affine is an affine point on the G2 curve.
 type G2Affine struct {
-	x        *FQ2
-	y        *FQ2
+	x        FQ2
+	y        FQ2
 	infinity bool
 }
 
 // NewG2Affine constructs a new G2Affine point.
-func NewG2Affine(x *FQ2, y *FQ2) *G2Affine {
+func NewG2Affine(x FQ2, y FQ2) *G2Affine {
 	return &G2Affine{x: x, y: y, infinity: false}
 }
 
@@ -147,15 +147,15 @@ func (g G2Affine) Equals(other *G2Affine) bool {
 // an x-coordinate. The point is not guaranteed to be in the subgroup.
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
-func GetG2PointFromX(x *FQ2, greatest bool) *G2Affine {
+func GetG2PointFromX(x FQ2, greatest bool) *G2Affine {
 	x3b := x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(x)
 	x3b.AddAssign(BCoeffFQ2)
 
-	y := x3b.Sqrt()
+	y, success := x3b.Sqrt()
 
-	if y == nil {
+	if !success {
 		return nil
 	}
 
@@ -204,11 +204,11 @@ func (g *G2Affine) SetRawBytes(uncompressed [192]byte) error {
 	yc0FQ := FQReprToFQ(FQReprFromBytes(yC0Bytes))
 	yc1FQ := FQReprToFQ(FQReprFromBytes(yC1Bytes))
 
-	g.x = &FQ2{
+	g.x = FQ2{
 		c0: xc0FQ,
 		c1: xc1FQ,
 	}
-	g.y = &FQ2{
+	g.y = FQ2{
 		c0: yc0FQ,
 		c1: yc1FQ,
 	}
@@ -297,13 +297,13 @@ func (g G2Affine) IsInCorrectSubgroupAssumingOnCurve() bool {
 
 // G2Projective is a projective point on the G2 curve.
 type G2Projective struct {
-	x *FQ2
-	y *FQ2
-	z *FQ2
+	x FQ2
+	y FQ2
+	z FQ2
 }
 
 // NewG2Projective creates a new G2Projective point.
-func NewG2Projective(x *FQ2, y *FQ2, z *FQ2) *G2Projective {
+func NewG2Projective(x FQ2, y FQ2, z FQ2) *G2Projective {
 	return &G2Projective{x, y, z}
 }
 
@@ -638,7 +638,7 @@ const blsIsNegative = true
 
 // G2Prepared is a prepared G2 point multiplication by blsX.
 type G2Prepared struct {
-	coeffs   [][3]*FQ2
+	coeffs   [][3]FQ2
 	infinity bool
 }
 
@@ -653,7 +653,7 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 		return &G2Prepared{infinity: true}
 	}
 
-	doublingStep := func(r *G2Projective) (*FQ2, *FQ2, *FQ2) {
+	doublingStep := func(r *G2Projective) (FQ2, FQ2, FQ2) {
 		tmp0 := r.x.Copy()
 		tmp0.SquareAssign()
 		tmp1 := r.y.Copy()
@@ -708,7 +708,7 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 		return tmp0, tmp3, tmp6
 	}
 
-	additionStep := func(r *G2Projective, q *G2Affine) (*FQ2, *FQ2, *FQ2) {
+	additionStep := func(r *G2Projective, q *G2Affine) (FQ2, FQ2, FQ2) {
 		zSquared := r.z.Copy()
 		zSquared.SquareAssign()
 		ySquared := q.y.Copy()
@@ -772,7 +772,7 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 		return t10, t6, t9
 	}
 
-	coeffs := [][3]*FQ2{}
+	var coeffs [][3]FQ2
 	r := q.ToProjective()
 
 	foundOne := false
@@ -787,16 +787,16 @@ func G2AffineToPrepared(q *G2Affine) *G2Prepared {
 
 		o0, o1, o2 := doublingStep(r)
 
-		coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+		coeffs = append(coeffs, [3]FQ2{o0, o1, o2})
 
 		if set {
 			o0, o1, o2 := additionStep(r, q)
-			coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+			coeffs = append(coeffs, [3]FQ2{o0, o1, o2})
 		}
 	}
 	o0, o1, o2 := doublingStep(r)
 
-	coeffs = append(coeffs, [3]*FQ2{o0, o1, o2})
+	coeffs = append(coeffs, [3]FQ2{o0, o1, o2})
 
 	return &G2Prepared{coeffs, false}
 }
@@ -834,7 +834,7 @@ var swencSqrtNegThreeFQ2 = NewFQ2(FQReprToFQ(swencSqrtNegThree), FQZero.Copy())
 var swencSqrtNegThreeMinusOneDivTwoFQ2 = NewFQ2(FQReprToFQ(swencSqrtNegThreeMinusOneDivTwo), FQZero.Copy())
 
 // SWEncodeG2 implements the Shallue-van de Woestijne encoding.
-func SWEncodeG2(t *FQ2) *G2Affine {
+func SWEncodeG2(t FQ2) *G2Affine {
 	if t.IsZero() {
 		return G2AffineZero.Copy()
 	}
@@ -906,8 +906,8 @@ func HashG2(msg []byte, domain uint64) *G2Projective {
 
 		yCoordinateSquared.AddAssign(BCoeffFQ2)
 
-		yCoordinate := yCoordinateSquared.Sqrt()
-		if yCoordinate != nil {
+		yCoordinate, success := yCoordinateSquared.Sqrt()
+		if !success {
 			return NewG2Affine(xCoordinate, yCoordinate).ScaleByCofactor()
 		}
 		xCoordinate.AddAssign(FQ2One)

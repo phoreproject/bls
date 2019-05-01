@@ -8,7 +8,7 @@ type MillerLoopItem struct {
 
 type pairingItem struct {
 	p      *G1Affine
-	q      [][3]*FQ2
+	q      [][3]FQ2
 	qIndex int
 }
 
@@ -25,7 +25,7 @@ func MillerLoop(items []MillerLoopItem) *FQ12 {
 		}
 	}
 
-	ell := func(f *FQ12, coeffs [3]*FQ2, p *G1Affine) {
+	ell := func(f *FQ12, coeffs [3]FQ2, p *G1Affine) {
 
 		c0 := coeffs[0]
 		c1 := coeffs[1]

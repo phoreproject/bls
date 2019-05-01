@@ -29,7 +29,7 @@ func (f *FQ12) ConjugateAssign() {
 }
 
 // MulBy014Assign multiplies FQ12 element by 3 FQ2 elements.
-func (f *FQ12) MulBy014Assign(c0 *FQ2, c1 *FQ2, c4 *FQ2) {
+func (f *FQ12) MulBy014Assign(c0 FQ2, c1 FQ2, c4 FQ2) {
 	aa := f.c0.Copy()
 	aa.MulBy01Assign(c0, c1)
 
@@ -119,7 +119,7 @@ func (f FQ12) Exp(n FQRepr) *FQ12 {
 	return res
 }
 
-var frobeniusCoeffFQ12c1 = [12]*FQ2{
+var frobeniusCoeffFQ12c1 = [12]FQ2{
 	FQ2One,
 	NewFQ2(
 		FQReprToFQRaw(FQRepr{0x7089552b319d465, 0xc6695f92b50a8313, 0x97e83cccd117228f, 0xa35baecab2dc29ee, 0x1ce393ea5daace4d, 0x8f2220fb0fb66eb}),

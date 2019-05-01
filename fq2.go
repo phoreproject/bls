@@ -16,8 +16,8 @@ type FQ2 struct {
 }
 
 // NewFQ2 constructs a new FQ2 element given two FQ elements.
-func NewFQ2(c0 FQ, c1 FQ) *FQ2 {
-	return &FQ2{
+func NewFQ2(c0 FQ, c1 FQ) FQ2 {
+	return FQ2{
 		c0: c0,
 		c1: c1,
 	}
@@ -28,7 +28,7 @@ func (f FQ2) String() string {
 }
 
 // Cmp compares two FQ2 elements.
-func (f FQ2) Cmp(other *FQ2) int {
+func (f FQ2) Cmp(other FQ2) int {
 	cOut := f.c1.Cmp(other.c1)
 	if cOut != 0 {
 		return cOut
@@ -55,13 +55,13 @@ func (f *FQ2) Norm() FQ {
 }
 
 // FQ2Zero gets the zero element of the field.
-var FQ2Zero = &FQ2{
+var FQ2Zero = FQ2{
 	c0: FQZero,
 	c1: FQZero,
 }
 
 // FQ2One gets the one-element of the field.
-var FQ2One = &FQ2{
+var FQ2One = FQ2{
 	c0: FQOne,
 	c1: FQZero,
 }
@@ -101,19 +101,19 @@ func (f *FQ2) NegAssign() {
 }
 
 // AddAssign adds two FQ2 elements together.
-func (f *FQ2) AddAssign(other *FQ2) {
+func (f *FQ2) AddAssign(other FQ2) {
 	f.c0.AddAssign(other.c0)
 	f.c1.AddAssign(other.c1)
 }
 
 // SubAssign subtracts one field element from another.
-func (f *FQ2) SubAssign(other *FQ2) {
+func (f *FQ2) SubAssign(other FQ2) {
 	f.c0.SubAssign(other.c0)
 	f.c1.SubAssign(other.c1)
 }
 
 // MulAssign multiplies two FQ2 elements together.
-func (f *FQ2) MulAssign(other *FQ2) {
+func (f *FQ2) MulAssign(other FQ2) {
 	aa := f.c0.Copy()
 	aa.MulAssign(other.c0)
 	bb := f.c1.Copy()
@@ -167,7 +167,7 @@ func (f FQ2) Legendre() LegendreSymbol {
 var qMinus3Over4 = FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}
 
 // Exp raises the element ot a specific power.
-func (f *FQ2) Exp(n FQRepr) *FQ2 {
+func (f FQ2) Exp(n FQRepr) FQ2 {
 	iter := NewBitIterator(n[:])
 	res := FQ2One.Copy()
 	foundOne := false
@@ -190,64 +190,61 @@ func (f *FQ2) Exp(n FQRepr) *FQ2 {
 var negativeOne, _ = FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559786", 10)
 
 // Equals checks if this FQ2 equals another one.
-func (f FQ2) Equals(other *FQ2) bool {
+func (f FQ2) Equals(other FQ2) bool {
 	return f.Cmp(other) == 0
 }
 
 // Sqrt finds the sqrt of a field element.
-func (f FQ2) Sqrt() *FQ2 {
+func (f FQ2) Sqrt() (FQ2, bool) {
 	// Algorithm 9, https://eprint.iacr.org/2012/685.pdf
 	if f.IsZero() {
-		return FQ2Zero
+		return FQ2Zero, true
 	}
 	a1 := f.Exp(qMinus3Over4)
 	alpha := a1.Copy()
 	alpha.SquareAssign()
-	alpha.MulAssign(&f)
+	alpha.MulAssign(f)
 	a0 := alpha.Copy()
 	a0.FrobeniusMapAssign(1)
 	a0.MulAssign(alpha)
 
-	neg1 := &FQ2{
+	neg1 := FQ2{
 		c0: negativeOneFQ,
 		c1: FQZero,
 	}
 
 	if a0.Equals(neg1) {
-		return nil
+		return FQ2{}, false
 	}
-	a1.MulAssign(&f)
+	a1.MulAssign(f)
 
 	if alpha.Equals(neg1) {
-		a1.MulAssign(&FQ2{
+		a1.MulAssign(FQ2{
 			c0: FQZero,
 			c1: FQOne,
 		})
-		return a1
+		return a1, true
 	}
 	alpha.AddAssign(FQ2One)
 	alpha = alpha.Exp(qMinus1Over2)
 	alpha.MulAssign(a1)
-	return alpha
+	return alpha, true
 }
 
 // Copy returns a copy of the field element.
-func (f *FQ2) Copy() *FQ2 {
-	return &FQ2{
-		c0: f.c0.Copy(),
-		c1: f.c1.Copy(),
-	}
+func (f *FQ2) Copy() FQ2 {
+	return *f
 }
 
 // RandFQ2 generates a random FQ2 element.
-func RandFQ2(reader io.Reader) (*FQ2, error) {
+func RandFQ2(reader io.Reader) (FQ2, error) {
 	i0, err := RandFQ(reader)
 	if err != nil {
-		return nil, err
+		return FQ2{}, err
 	}
 	i1, err := RandFQ(reader)
 	if err != nil {
-		return nil, err
+		return FQ2{}, err
 	}
 	return NewFQ2(
 		i0,
@@ -263,20 +260,20 @@ func (f FQ2) Parity() bool {
 }
 
 // MulBits multiplies the number by a big number.
-func (f FQ2) MulBits(b *big.Int) *FQ2 {
+func (f FQ2) MulBits(b *big.Int) FQ2 {
 	res := FQ2Zero
 	for i := 0; i < b.BitLen(); i++ {
 		res.DoubleAssign()
 		if b.Bit(b.BitLen()-1-i) == 1 {
-			res.AddAssign(&f)
+			res.AddAssign(f)
 		}
 	}
 	return res
 }
 
 // HashFQ2 calculates a new FQ2 value based on a hash.
-func HashFQ2(hasher hash.Hash) *FQ2 {
+func HashFQ2(hasher hash.Hash) FQ2 {
 	digest := hasher.Sum(nil)
 	newB := new(big.Int).SetBytes(digest)
-	return FQ2One.Copy().MulBits(newB)
+	return FQ2One.MulBits(newB)
 }

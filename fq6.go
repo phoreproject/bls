@@ -7,13 +7,13 @@ import (
 
 // FQ6 is an element of FQ6 represented by c0 + c1*v + v2*v**2
 type FQ6 struct {
-	c0 *FQ2
-	c1 *FQ2
-	c2 *FQ2
+	c0 FQ2
+	c1 FQ2
+	c2 FQ2
 }
 
 // NewFQ6 creates a new FQ6 element.
-func NewFQ6(c0 *FQ2, c1 *FQ2, c2 *FQ2) *FQ6 {
+func NewFQ6(c0 FQ2, c1 FQ2, c2 FQ2) *FQ6 {
 	return &FQ6{
 		c0: c0,
 		c1: c1,
@@ -27,7 +27,7 @@ func (f FQ6) String() string {
 
 // Copy creates a copy of the field element.
 func (f FQ6) Copy() *FQ6 {
-	return NewFQ6(f.c0.Copy(), f.c1.Copy(), f.c2.Copy())
+	return NewFQ6(f.c0, f.c1, f.c2)
 }
 
 // MulByNonresidueAssign multiplies by quadratic nonresidue v.
@@ -37,7 +37,7 @@ func (f *FQ6) MulByNonresidueAssign() {
 }
 
 // MulBy1Assign multiplies the FQ6 by an FQ2.
-func (f *FQ6) MulBy1Assign(c1 *FQ2) {
+func (f *FQ6) MulBy1Assign(c1 FQ2) {
 	b := f.c1.Copy()
 	b.MulAssign(c1)
 	tmp := f.c1.Copy()
@@ -57,7 +57,7 @@ func (f *FQ6) MulBy1Assign(c1 *FQ2) {
 }
 
 // MulBy01Assign multiplies by c0 and c1.
-func (f *FQ6) MulBy01Assign(c0 *FQ2, c1 *FQ2) {
+func (f *FQ6) MulBy01Assign(c0 FQ2, c1 FQ2) {
 	a := f.c0.Copy()
 	a.MulAssign(c0)
 	b := f.c1.Copy()
@@ -141,7 +141,7 @@ var fq2nqr = NewFQ2(
 	FQOne,
 )
 
-var frobeniusCoeffFQ6c1 = [6]*FQ2{
+var frobeniusCoeffFQ6c1 = [6]FQ2{
 	// Fq2(u + 1)**(((q^0) - 1) / 3)
 	NewFQ2(
 		FQReprToFQRaw(FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
@@ -174,7 +174,7 @@ var frobeniusCoeffFQ6c1 = [6]*FQ2{
 	),
 }
 
-var frobeniusCoeffFQ6c2 = [6]*FQ2{
+var frobeniusCoeffFQ6c2 = [6]FQ2{
 	// Fq2(u + 1)**(((2q^0) - 2) / 3)
 	NewFQ2(
 		FQReprToFQRaw(FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),

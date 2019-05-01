@@ -231,14 +231,16 @@ func TestFQ2Sqrt(t *testing.T) {
 	o0, _ := bls.FQReprFromString("2610880034315515246135455194558180576521075490930523809216746350127301781195091608845140759868139294094360490170565", 10)
 	o1, _ := bls.FQReprFromString("1361064970384811010963395494397997021963412519774828006120608106648478662746078959841022528364671568910239381710674", 10)
 	o := bls.NewFQ2(bls.FQReprToFQ(o0), bls.FQReprToFQ(o1))
-	if !a.Sqrt().Equals(o) {
+	sqrtA, success := a.Sqrt()
+	if !success || !sqrtA.Equals(o) {
 		t.Error("FQ2 sqrt not working properly")
 	}
 	a0, _ = bls.FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015661931409599199851", 10)
 	a = bls.NewFQ2(bls.FQReprToFQ(a0), bls.FQZero)
 	o1, _ = bls.FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894226663331", 10)
 	o = bls.NewFQ2(bls.FQZero, bls.FQReprToFQ(o1))
-	if !a.Sqrt().Equals(o) {
+	sqrtA, success = a.Sqrt()
+	if !success || !sqrtA.Equals(o) {
 		t.Error("FQ2 sqrt not working properly")
 	}
 }
@@ -480,8 +482,8 @@ func TestFQ2RandomExpansion(t *testing.T) {
 
 func BenchmarkFQ2AddAssign(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ2
-		f2 *bls.FQ2
+		f1 bls.FQ2
+		f2 bls.FQ2
 	}
 
 	r := NewXORShift(1)
@@ -505,17 +507,17 @@ func BenchmarkFQ2AddAssign(b *testing.B) {
 }
 
 func BenchmarkFQ2SubAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ2
-		f2 *bls.FQ2
+	type subData struct {
+		f1 bls.FQ2
+		f2 bls.FQ2
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]subData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ2(r)
 		f2, _ := bls.RandFQ2(r)
-		inData[i] = addData{
+		inData[i] = subData{
 			f1: f1,
 			f2: f2,
 		}
@@ -531,17 +533,17 @@ func BenchmarkFQ2SubAssign(b *testing.B) {
 }
 
 func BenchmarkFQ2MulAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ2
-		f2 *bls.FQ2
+	type mulData struct {
+		f1 bls.FQ2
+		f2 bls.FQ2
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]mulData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ2(r)
 		f2, _ := bls.RandFQ2(r)
-		inData[i] = addData{
+		inData[i] = mulData{
 			f1: f1,
 			f2: f2,
 		}
@@ -556,15 +558,15 @@ func BenchmarkFQ2MulAssign(b *testing.B) {
 }
 
 func BenchmarkFQ2SquareAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ2
+	type squareData struct {
+		f1 bls.FQ2
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]squareData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ2(r)
-		inData[i] = addData{
+		inData[i] = squareData{
 			f1: f1,
 		}
 	}
@@ -578,15 +580,15 @@ func BenchmarkFQ2SquareAssign(b *testing.B) {
 }
 
 func BenchmarkFQ2InverseAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ2
+	type invData struct {
+		f1 bls.FQ2
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]invData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ2(r)
-		inData[i] = addData{
+		inData[i] = invData{
 			f1: f1,
 		}
 	}
