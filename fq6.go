@@ -143,7 +143,10 @@ var fq2nqr = NewFQ2(
 
 var frobeniusCoeffFQ6c1 = [6]*FQ2{
 	// Fq2(u + 1)**(((q^0) - 1) / 3)
-	FQ2One,
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+		FQReprToFQRaw(&FQRepr{0, 0, 0, 0, 0, 0}),
+	),
 	// Fq2(u + 1)**(((q^1) - 1) / 3)
 	NewFQ2(
 		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
@@ -173,7 +176,10 @@ var frobeniusCoeffFQ6c1 = [6]*FQ2{
 
 var frobeniusCoeffFQ6c2 = [6]*FQ2{
 	// Fq2(u + 1)**(((2q^0) - 2) / 3)
-	FQ2One,
+	NewFQ2(
+		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+		FQReprToFQRaw(&FQRepr{0, 0, 0, 0, 0, 0}),
+	),
 	// Fq2(u + 1)**(((2q^1) - 2) / 3)
 	NewFQ2(
 		FQReprToFQRaw(&FQRepr{0x890dc9e4867545c3, 0x2af322533285a5d5, 0x50880866309b7e2c, 0xa20d1b8c7e881024, 0x14e4f04fe2db9068, 0x14e56d3f1564853a}),
@@ -205,8 +211,9 @@ var frobeniusCoeffFQ6c2 = [6]*FQ2{
 func (f *FQ6) FrobeniusMapAssign(power uint8) {
 	f.c0.FrobeniusMapAssign(power)
 	f.c1.FrobeniusMapAssign(power)
-	f.c1.MulAssign(frobeniusCoeffFQ6c1[power%6])
 	f.c2.FrobeniusMapAssign(power)
+
+	f.c1.MulAssign(frobeniusCoeffFQ6c1[power%6])
 	f.c2.MulAssign(frobeniusCoeffFQ6c2[power%6])
 }
 
@@ -326,6 +333,21 @@ func (f *FQ6) InverseAssign() bool {
 	f.c2 = tmp1.Copy()
 	f.c2.MulAssign(c2)
 	return true
+}
+
+// Exp raises the element ot a specific power.
+func (f FQ6) Exp(n *FQRepr) *FQ6 {
+	nCopy := n.Copy()
+	res := FQ6One.Copy()
+	fi := f.Copy()
+	for nCopy.Cmp(bigZero) != 0 {
+		if !isEven(nCopy) {
+			res.MulAssign(fi)
+		}
+		fi.MulAssign(fi)
+		nCopy.Rsh(1)
+	}
+	return res
 }
 
 // RandFQ6 generates a random FQ6 element.

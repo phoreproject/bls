@@ -123,7 +123,7 @@ func (xor *XORShift) Read(b []byte) (int, error) {
 	return len(b), nil
 }
 
-const g1MulAssignSamples = 10
+const g1MulAssignSamples = 200
 
 func BenchmarkG1MulAssign(b *testing.B) {
 	type mulData struct {

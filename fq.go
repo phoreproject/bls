@@ -73,7 +73,7 @@ func (f *FQ) montReduce(hi [6]uint64, lo [6]uint64) {
 }
 
 // MulAssign multiplies a field element by this one.
-func (f FQ) MulAssign(other *FQ) {
+func (f *FQ) MulAssign(other *FQ) {
 	hi, lo := MultiplyFQRepr(*f.n, *other.n)
 	f.montReduce(hi, lo)
 }

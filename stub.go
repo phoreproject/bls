@@ -1,3 +1,5 @@
+// +build amd64
+
 package bls
 
 // This file is for assembly functions that are not able

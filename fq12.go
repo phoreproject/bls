@@ -74,6 +74,11 @@ func (f *FQ12) AddAssign(other *FQ12) {
 	f.c1.AddAssign(other.c1)
 }
 
+// IsZero returns if the FQ12 element is zero.
+func (f *FQ12) IsZero() bool {
+	return f.c0.IsZero() && f.c1.IsZero()
+}
+
 // SubAssign subtracts one FQ12 element from another.
 func (f *FQ12) SubAssign(other *FQ12) {
 	f.c0.SubAssign(other.c0)
