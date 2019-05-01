@@ -56,15 +56,6 @@ func TestFQCopy(t *testing.T) {
 	}
 }
 
-func TestIsValid(t *testing.T) {
-	f := bigOne.Copy()
-	f.Lsh(383)
-	f.AddNoCarry(bigOne)
-	if bls.FQReprToFQ(f) != nil {
-		t.Fatal("2^383-1 should not be valid")
-	}
-}
-
 var QFieldModulusBig = bls.QFieldModulus.ToBig()
 
 func TestAddAssign(t *testing.T) {
@@ -183,8 +174,8 @@ func TestSqrt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a := f.Sqrt()
-		if a == nil {
+		a, success := f.Sqrt()
+		if !success {
 			continue
 		}
 		a.SquareAssign()
@@ -206,7 +197,7 @@ func TestInverse(t *testing.T) {
 
 		f := bls.FQReprToFQ(fRepr)
 
-		fInv := f.Inverse()
+		fInv, _ := f.Inverse()
 		f.MulAssign(fInv)
 
 		if !f.Equals(bls.FQOne) {
@@ -217,8 +208,8 @@ func TestInverse(t *testing.T) {
 
 func BenchmarkFQAddAssign(b *testing.B) {
 	type addData struct {
-		f1 *bls.FQ
-		f2 *bls.FQ
+		f1 bls.FQ
+		f2 bls.FQ
 	}
 
 	r := NewXORShift(1)
@@ -242,17 +233,17 @@ func BenchmarkFQAddAssign(b *testing.B) {
 }
 
 func BenchmarkFQSubAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
-		f2 *bls.FQ
+	type subData struct {
+		f1 bls.FQ
+		f2 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]subData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
 		f2, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = subData{
 			f1: f1,
 			f2: f2,
 		}
@@ -268,17 +259,17 @@ func BenchmarkFQSubAssign(b *testing.B) {
 }
 
 func BenchmarkFQMulAssign(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
-		f2 *bls.FQ
+	type mulData struct {
+		f1 bls.FQ
+		f2 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]mulData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
 		f2, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = mulData{
 			f1: f1,
 			f2: f2,
 		}
@@ -295,15 +286,15 @@ func BenchmarkFQMulAssign(b *testing.B) {
 }
 
 func BenchmarkFQMul2(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
+	type doubleData struct {
+		f1 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]doubleData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = doubleData{
 			f1: f1,
 		}
 	}
@@ -318,15 +309,15 @@ func BenchmarkFQMul2(b *testing.B) {
 }
 
 func BenchmarkFQSquare(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
+	type squareData struct {
+		f1 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]squareData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = squareData{
 			f1: f1,
 		}
 	}
@@ -341,15 +332,15 @@ func BenchmarkFQSquare(b *testing.B) {
 }
 
 func BenchmarkFQInverse(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
+	type invData struct {
+		f1 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]invData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = invData{
 			f1: f1,
 		}
 	}
@@ -364,15 +355,15 @@ func BenchmarkFQInverse(b *testing.B) {
 }
 
 func BenchmarkFQNegate(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
+	type negData struct {
+		f1 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]negData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = negData{
 			f1: f1,
 		}
 	}
@@ -387,15 +378,15 @@ func BenchmarkFQNegate(b *testing.B) {
 }
 
 func BenchmarkFQSqrt(b *testing.B) {
-	type addData struct {
-		f1 *bls.FQ
+	type sqrtData struct {
+		f1 bls.FQ
 	}
 
 	r := NewXORShift(1)
-	inData := [g1MulAssignSamples]addData{}
+	inData := [g1MulAssignSamples]sqrtData{}
 	for i := 0; i < g1MulAssignSamples; i++ {
 		f1, _ := bls.RandFQ(r)
-		inData[i] = addData{
+		inData[i] = sqrtData{
 			f1: f1,
 		}
 	}

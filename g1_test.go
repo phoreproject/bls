@@ -17,9 +17,9 @@ func TestG1Generator(t *testing.T) {
 		rhs.MulAssign(x)
 		rhs.AddAssign(bls.BCoeff)
 
-		y := rhs.Sqrt()
+		y, success := rhs.Sqrt()
 
-		if y != nil {
+		if success {
 			negY := y.Copy()
 			negY.NegAssign()
 			pY := negY

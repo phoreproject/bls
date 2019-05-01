@@ -11,13 +11,13 @@ import (
 
 // G1Affine is an affine point on the G1 curve.
 type G1Affine struct {
-	x        *FQ
-	y        *FQ
+	x        FQ
+	y        FQ
 	infinity bool
 }
 
 // NewG1Affine constructs a new G1Affine point.
-func NewG1Affine(x *FQ, y *FQ) *G1Affine {
+func NewG1Affine(x FQ, y FQ) *G1Affine {
 	return &G1Affine{x: x, y: y, infinity: false}
 }
 
@@ -31,7 +31,7 @@ var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584
 var BCoeff = FQReprToFQRaw(FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
 
 // G1AffineOne represents the point at 1 on G1.
-var G1AffineOne = &G1Affine{FQReprToFQ(g1GeneratorX.Copy()), FQReprToFQ(g1GeneratorY.Copy()), false}
+var G1AffineOne = &G1Affine{FQReprToFQ(g1GeneratorX), FQReprToFQ(g1GeneratorY), false}
 
 func (g G1Affine) String() string {
 	if g.infinity {
@@ -110,15 +110,15 @@ func (g G1Affine) IsOnCurve() bool {
 // an x-coordinate. The point is not guaranteed to be in the subgroup.
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
-func GetG1PointFromX(x *FQ, greatest bool) *G1Affine {
+func GetG1PointFromX(x FQ, greatest bool) *G1Affine {
 	x3b := x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(x)
 	x3b.AddAssign(BCoeff)
 
-	y := x3b.Sqrt()
+	y, success := x3b.Sqrt()
 
-	if y == nil {
+	if !success {
 		return nil
 	}
 
@@ -174,10 +174,10 @@ func (g *G1Affine) SetRawBytes(uncompressed [96]byte) {
 	var yBytes [48]byte
 	copy(xBytes[:], uncompressed[0:48])
 	copy(yBytes[:], uncompressed[48:96])
-	g.x = &FQ{
+	g.x = FQ{
 		n: FQReprFromBytes(xBytes),
 	}
-	g.y = &FQ{
+	g.y = FQ{
 		n: FQReprFromBytes(yBytes),
 	}
 }
@@ -223,8 +223,9 @@ func DecompressG1Unchecked(b [48]byte) (*G1Affine, error) {
 	copyBytes[0] &= 0x1f
 
 	x := FQReprFromBytes(copyBytes)
+	xFQ := FQReprToFQ(x)
 
-	return GetG1PointFromX(FQReprToFQ(x), greatest), nil
+	return GetG1PointFromX(xFQ, greatest), nil
 }
 
 // CompressG1 compresses a G1 point into an int.
@@ -251,13 +252,13 @@ func CompressG1(affine *G1Affine) [48]byte {
 
 // G1Projective is a projective point on the G1 curve.
 type G1Projective struct {
-	x *FQ
-	y *FQ
-	z *FQ
+	x FQ
+	y FQ
+	z FQ
 }
 
 // NewG1Projective creates a new G1Projective point.
-func NewG1Projective(x *FQ, y *FQ, z *FQ) *G1Projective {
+func NewG1Projective(x FQ, y FQ, z FQ) *G1Projective {
 	return &G1Projective{x, y, z}
 }
 
@@ -323,7 +324,7 @@ func (g G1Projective) ToAffine() *G1Affine {
 	}
 
 	// nonzero so must have an inverse
-	zInv := g.z.Inverse()
+	zInv, _ := g.z.Inverse()
 	zInvSquared := zInv.Copy()
 	zInvSquared.SquareAssign()
 	x := g.x.Copy()
@@ -608,7 +609,7 @@ func RandG1(r io.Reader) (*G1Projective, error) {
 }
 
 // SWEncodeG1 implements the Shallue-van de Woestijne encoding.
-func SWEncodeG1(t *FQ) *G1Affine {
+func SWEncodeG1(t FQ) *G1Affine {
 	if t.IsZero() {
 		return G1AffineZero.Copy()
 	}
@@ -628,7 +629,7 @@ func SWEncodeG1(t *FQ) *G1Affine {
 		return ret
 	}
 
-	w = w.Inverse()
+	w, _ = w.Inverse()
 	w.MulAssign(FQReprToFQ(swencSqrtNegThree))
 	w.MulAssign(t)
 
@@ -649,7 +650,7 @@ func SWEncodeG1(t *FQ) *G1Affine {
 
 	x3 := w.Copy()
 	x3.SquareAssign()
-	x3 = x3.Inverse()
+	x3, _ = x3.Inverse()
 	x3.AddAssign(FQOne)
 	return GetG1PointFromX(x3, parity)
 }

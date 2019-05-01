@@ -11,12 +11,12 @@ var oneLsh384MinusOne, _ = FQReprFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(bi
 
 // FQ2 represents an element of Fq2, represented by c0 + c1 * u.
 type FQ2 struct {
-	c0 *FQ
-	c1 *FQ
+	c0 FQ
+	c1 FQ
 }
 
 // NewFQ2 constructs a new FQ2 element given two FQ elements.
-func NewFQ2(c0 *FQ, c1 *FQ) *FQ2 {
+func NewFQ2(c0 FQ, c1 FQ) *FQ2 {
 	return &FQ2{
 		c0: c0,
 		c1: c1,
@@ -45,7 +45,7 @@ func (f *FQ2) MultiplyByNonresidueAssign() {
 }
 
 // Norm gets the norm of Fq2 as extension field in i over Fq.
-func (f *FQ2) Norm() *FQ {
+func (f *FQ2) Norm() FQ {
 	t0 := f.c0.Copy()
 	t1 := f.c1.Copy()
 	t0.SquareAssign()
@@ -136,8 +136,8 @@ func (f *FQ2) InverseAssign() bool {
 	t0 := f.c0.Copy()
 	t0.SquareAssign()
 	t0.AddAssign(t1)
-	t := t0.Inverse()
-	if t == nil {
+	t, success := t0.Inverse()
+	if !success {
 		return false
 	}
 	f.c0.MulAssign(t)
@@ -146,7 +146,7 @@ func (f *FQ2) InverseAssign() bool {
 	return true
 }
 
-var frobeniusCoeffFQ2c1 = [2]*FQ{
+var frobeniusCoeffFQ2c1 = [2]FQ{
 	FQOne,
 	FQReprToFQRaw(FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
 }
@@ -159,7 +159,9 @@ func (f *FQ2) FrobeniusMapAssign(power uint8) {
 
 // Legendre gets the legendre symbol of the FQ2 element.
 func (f FQ2) Legendre() LegendreSymbol {
-	return f.Norm().Legendre()
+	norm := f.Norm()
+
+	return norm.Legendre()
 }
 
 var qMinus3Over4 = FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}

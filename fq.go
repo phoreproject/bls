@@ -29,8 +29,8 @@ var QFieldModulus, _ = FQReprFromString("400240955522166739341778982573590415655
 var FQR2, _ = FQReprFromString("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750", 10)
 
 // Copy creates a copy of the field element.
-func (f *FQ) Copy() *FQ {
-	return &FQ{f.n.Copy()}
+func (f FQ) Copy() FQ {
+	return f
 }
 
 // IsValid checks if the element is valid.
@@ -46,23 +46,23 @@ func (f *FQ) reduceAssign() {
 
 // FQReprToFQ gets a pointer to a FQ given a pointer
 // to an FQRepr
-func FQReprToFQ(o FQRepr) *FQ {
-	r := &FQ{n: o.Copy()}
+func FQReprToFQ(o FQRepr) FQ {
+	r := FQ{n: o}
 	if r.IsValid() {
-		r.MulAssign(&FQ{FQR2})
+		r.MulAssign(FQ{FQR2})
 		return r
 	}
-	return nil
+	return FQ{}
 }
 
 // FQReprToFQRaw gets a pointer to a FQ without converting
 // to montgomery form.
-func FQReprToFQRaw(o FQRepr) *FQ {
-	return &FQ{n: o}
+func FQReprToFQRaw(o FQRepr) FQ {
+	return FQ{n: o}
 }
 
 // AddAssign multiplies a field element by this one.
-func (f *FQ) AddAssign(other *FQ) {
+func (f *FQ) AddAssign(other FQ) {
 	f.n.AddNoCarry(other.n)
 	f.reduceAssign()
 }
@@ -73,13 +73,13 @@ func (f *FQ) montReduce(hi [6]uint64, lo [6]uint64) {
 }
 
 // MulAssign multiplies a field element by this one.
-func (f *FQ) MulAssign(other *FQ) {
+func (f *FQ) MulAssign(other FQ) {
 	hi, lo := MultiplyFQRepr(f.n, other.n)
 	f.montReduce(hi, lo)
 }
 
 // SubAssign subtracts a field element from this one.
-func (f *FQ) SubAssign(other *FQ) {
+func (f *FQ) SubAssign(other FQ) {
 	if other.n.Cmp(f.n) > 0 {
 		f.n.AddNoCarry(QFieldModulus)
 	}
@@ -87,16 +87,15 @@ func (f *FQ) SubAssign(other *FQ) {
 }
 
 // divAssign is a slow divide.
-func (f *FQ) divAssign(other *FQ) {
+func (f *FQ) divAssign(other FQ) {
 	a := f.n.ToBig()
 	a.Div(a, other.n.ToBig())
 	fOut, _ := FQReprFromBigInt(a)
-	fqOut := FQReprToFQ(fOut)
-	*f = *fqOut
+	*f = FQReprToFQ(fOut)
 }
 
 // Exp raises the element to a specific power.
-func (f *FQ) Exp(n FQRepr) *FQ {
+func (f FQ) Exp(n FQRepr) FQ {
 	iter := NewBitIterator(n[:])
 	res := FQOne.Copy()
 	foundOne := false
@@ -116,7 +115,7 @@ func (f *FQ) Exp(n FQRepr) *FQ {
 }
 
 // Equals checks equality of two field elements.
-func (f FQ) Equals(other *FQ) bool {
+func (f FQ) Equals(other FQ) bool {
 	return f.n.Equals(other.n)
 }
 
@@ -134,7 +133,7 @@ func (f FQ) String() string {
 }
 
 // Cmp compares this field element to another.
-func (f FQ) Cmp(other *FQ) int {
+func (f FQ) Cmp(other FQ) int {
 	fr1 := f.ToRepr()
 	return fr1.Cmp(other.ToRepr())
 }
@@ -203,20 +202,20 @@ func (f *FQ) SquareAssign() {
 var negativeOneFQ = FQReprToFQ(negativeOne)
 
 // Sqrt calculates the square root of the field element.
-func (f FQ) Sqrt() *FQ {
+func (f FQ) Sqrt() (FQ, bool) {
 	// Shank's algorithm for q mod 4 = 3
 	// https://eprint.iacr.org/2012/685.pdf (page 9, algorithm 2)
 
 	a1 := f.Exp(qMinus3Over4)
 	a0 := a1.Copy()
 	a0.SquareAssign()
-	a0.MulAssign(&f)
+	a0.MulAssign(f)
 
 	if a0.Equals(negativeOneFQ) {
-		return nil
+		return FQ{}, false
 	}
-	a1.MulAssign(&f)
-	return a1
+	a1.MulAssign(f)
+	return a1, true
 }
 
 func isEven(b FQRepr) bool {
@@ -224,9 +223,9 @@ func isEven(b FQRepr) bool {
 }
 
 // Inverse finds the inverse of the field element.
-func (f FQ) Inverse() *FQ {
+func (f FQ) Inverse() (FQ, bool) {
 	if f.IsZero() {
-		return nil
+		return FQ{}, false
 	}
 	u := f.n.Copy()
 	v := QFieldModulus.Copy()
@@ -263,9 +262,9 @@ func (f FQ) Inverse() *FQ {
 		}
 	}
 	if u.Cmp(bigOne) == 0 {
-		return b
+		return b, true
 	}
-	return c
+	return c, true
 }
 
 // Parity checks if the point is greater than the point negated.
@@ -276,31 +275,31 @@ func (f FQ) Parity() bool {
 }
 
 // MulBits multiplies the number by a big number.
-func (f FQ) MulBits(b *FQRepr) *FQ {
+func (f FQ) MulBits(b *FQRepr) FQ {
 	res := FQZero.Copy()
 	for i := uint(0); i < b.BitLen(); i++ {
 		res.DoubleAssign()
 		if b.Bit(i) {
-			res.AddAssign(&f)
+			res.AddAssign(f)
 		}
 	}
 	return res
 }
 
 // MulBytes multiplies the number by some bytes.
-func (f FQ) MulBytes(b []byte) *FQ {
+func (f FQ) MulBytes(b []byte) FQ {
 	res := FQZero.Copy()
 	for i := uint(0); i < uint(len(b)*8); i++ {
 		res.DoubleAssign()
 		if b[i/8]&(1<<(i%8)) != 0 {
-			res.AddAssign(&f)
+			res.AddAssign(f)
 		}
 	}
 	return res
 }
 
 // HashFQ calculates a new FQ2 value based on a hash.
-func HashFQ(hasher hash.Hash) *FQ {
+func HashFQ(hasher hash.Hash) FQ {
 	digest := hasher.Sum(nil)
 	return FQOne.MulBytes(digest)
 }
@@ -341,11 +340,12 @@ func (f *FQ) ToRepr() FQRepr {
 }
 
 // RandFQ generates a random FQ element.
-func RandFQ(reader io.Reader) (*FQ, error) {
+func RandFQ(reader io.Reader) (FQ, error) {
 	r, err := rand.Int(reader, QFieldModulus.ToBig())
 	if err != nil {
-		return nil, err
+		return FQ{}, err
 	}
 	b, _ := FQReprFromBigInt(r)
-	return FQReprToFQ(b), nil
+	f := FQReprToFQ(b)
+	return f, nil
 }

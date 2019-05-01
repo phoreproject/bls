@@ -187,7 +187,7 @@ func (g *G2Affine) SerializeBytes() [192]byte {
 }
 
 // SetRawBytes sets the coords given the serialized bytes.
-func (g *G2Affine) SetRawBytes(uncompressed [192]byte) {
+func (g *G2Affine) SetRawBytes(uncompressed [192]byte) error {
 
 	var xC0Bytes [48]byte
 	var xC1Bytes [48]byte
@@ -199,15 +199,20 @@ func (g *G2Affine) SetRawBytes(uncompressed [192]byte) {
 	copy(yC0Bytes[:], uncompressed[96:144])
 	copy(yC1Bytes[:], uncompressed[144:192])
 
+	xc0FQ := FQReprToFQ(FQReprFromBytes(xC0Bytes))
+	xc1FQ := FQReprToFQ(FQReprFromBytes(xC1Bytes))
+	yc0FQ := FQReprToFQ(FQReprFromBytes(yC0Bytes))
+	yc1FQ := FQReprToFQ(FQReprFromBytes(yC1Bytes))
+
 	g.x = &FQ2{
-		c0: FQReprToFQ(FQReprFromBytes(xC0Bytes)),
-		c1: FQReprToFQ(FQReprFromBytes(xC1Bytes)),
+		c0: xc0FQ,
+		c1: xc1FQ,
 	}
 	g.y = &FQ2{
-		c0: FQReprToFQ(FQReprFromBytes(yC0Bytes)),
-		c1: FQReprToFQ(FQReprFromBytes(yC1Bytes)),
+		c0: yc0FQ,
+		c1: yc1FQ,
 	}
-	return
+	return nil
 }
 
 // DecompressG2 decompresses a G2 point from a big int and checks
@@ -251,9 +256,11 @@ func DecompressG2Unchecked(c [96]byte) (*G2Affine, error) {
 	copy(xC0Bytes[:], c[48:])
 
 	xC0 := FQReprFromBytes(xC0Bytes)
+	xC0FQ := FQReprToFQ(xC0)
 	xC1 := FQReprFromBytes(xC1Bytes)
+	xC1FQ := FQReprToFQ(xC1)
 
-	x := NewFQ2(FQReprToFQ(xC0), FQReprToFQ(xC1))
+	x := NewFQ2(xC0FQ, xC1FQ)
 
 	return GetG2PointFromX(x, greatest), nil
 }
