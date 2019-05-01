@@ -141,7 +141,7 @@ func TestMontReduce(t *testing.T) {
 
 	out := bls.FQRepr(bls.MontReduce(hi, lo))
 
-	if !out.Equals(&expected) {
+	if !out.Equals(expected) {
 		t.Fatal("mont reduce returning incorrect values")
 	}
 }

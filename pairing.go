@@ -89,7 +89,7 @@ func FinalExponentiation(r *FQ12) *FQ12 {
 	r.FrobeniusMapAssign(2)
 	r.MulAssign(f2)
 
-	ExpByX := func(f *FQ12, x *FQRepr) *FQ12 {
+	ExpByX := func(f *FQ12, x FQRepr) *FQ12 {
 		newf := f.Exp(x)
 		if blsIsNegative {
 			newf.ConjugateAssign()

@@ -240,7 +240,7 @@ func FRReprFromBigInt(n *big.Int) (*FRRepr, error) {
 }
 
 // ToFQ converts an FRRepr to an FQ.
-func (f *FRRepr) ToFQ() *FQRepr {
+func (f *FRRepr) ToFQ() FQRepr {
 	newf := NewFQRepr(f[0])
 	newf[1] = f[1]
 	newf[2] = f[2]

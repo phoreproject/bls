@@ -600,7 +600,7 @@ func (g G2Projective) AddAffine(other *G2Affine) *G2Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G2Projective) Mul(b *FQRepr) *G2Projective {
+func (g G2Projective) Mul(b FQRepr) *G2Projective {
 	res := G2ProjectiveZero.Copy()
 	for i := uint(0); i < uint(b.BitLen()); i++ {
 		o := b.Bit(b.BitLen() - i - 1)

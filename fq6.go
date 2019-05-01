@@ -144,66 +144,66 @@ var fq2nqr = NewFQ2(
 var frobeniusCoeffFQ6c1 = [6]*FQ2{
 	// Fq2(u + 1)**(((q^0) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
-		FQReprToFQRaw(&FQRepr{0, 0, 0, 0, 0, 0}),
+		FQReprToFQRaw(FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+		FQReprToFQRaw(FQRepr{0, 0, 0, 0, 0, 0}),
 	),
 	// Fq2(u + 1)**(((q^1) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
-		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
 	),
 	// Fq2(u + 1)**(((q^2) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((q^3) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
-		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
 	),
 	// Fq2(u + 1)**(((q^4) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((q^5) - 1) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
-		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
 	),
 }
 
 var frobeniusCoeffFQ6c2 = [6]*FQ2{
 	// Fq2(u + 1)**(((2q^0) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
-		FQReprToFQRaw(&FQRepr{0, 0, 0, 0, 0, 0}),
+		FQReprToFQRaw(FQRepr{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}),
+		FQReprToFQRaw(FQRepr{0, 0, 0, 0, 0, 0}),
 	),
 	// Fq2(u + 1)**(((2q^1) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x890dc9e4867545c3, 0x2af322533285a5d5, 0x50880866309b7e2c, 0xa20d1b8c7e881024, 0x14e4f04fe2db9068, 0x14e56d3f1564853a}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x890dc9e4867545c3, 0x2af322533285a5d5, 0x50880866309b7e2c, 0xa20d1b8c7e881024, 0x14e4f04fe2db9068, 0x14e56d3f1564853a}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((2q^2) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0xcd03c9e48671f071, 0x5dab22461fcda5d2, 0x587042afd3851b95, 0x8eb60ebe01bacb9e, 0x3f97d6e83d050d2, 0x18f0206554638741}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((2q^3) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x43f5fffffffcaaae, 0x32b7fff2ed47fffd, 0x7e83a49a2e99d69, 0xeca8f3318332bb7a, 0xef148d1ea0f4c069, 0x40ab3263eff0206}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((2q^4) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0x30f1361b798a64e8, 0xf3b8ddab7ece5a2a, 0x16a8ca3ac61577f7, 0xc26a2ff874fd029b, 0x3636b76660701c6e, 0x51ba4ab241b6160}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 	// Fq2(u + 1)**(((2q^5) - 2) / 3)
 	NewFQ2(
-		FQReprToFQRaw(&FQRepr{0xecfb361b798dba3a, 0xc100ddb891865a2c, 0xec08ff1232bda8e, 0xd5c13cc6f1ca4721, 0x47222a47bf7b5c04, 0x110f184e51c5f59}),
-		FQReprToFQRaw(&FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
+		FQReprToFQRaw(FQRepr{0xecfb361b798dba3a, 0xc100ddb891865a2c, 0xec08ff1232bda8e, 0xd5c13cc6f1ca4721, 0x47222a47bf7b5c04, 0x110f184e51c5f59}),
+		FQReprToFQRaw(FQRepr{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}),
 	),
 }
 

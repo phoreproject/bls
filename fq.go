@@ -9,7 +9,7 @@ import (
 
 // FQ is an element in a field.
 type FQ struct {
-	n *FQRepr
+	n FQRepr
 }
 
 var bigZero = NewFQRepr(0)
@@ -46,7 +46,7 @@ func (f *FQ) reduceAssign() {
 
 // FQReprToFQ gets a pointer to a FQ given a pointer
 // to an FQRepr
-func FQReprToFQ(o *FQRepr) *FQ {
+func FQReprToFQ(o FQRepr) *FQ {
 	r := &FQ{n: o.Copy()}
 	if r.IsValid() {
 		r.MulAssign(&FQ{FQR2})
@@ -57,7 +57,7 @@ func FQReprToFQ(o *FQRepr) *FQ {
 
 // FQReprToFQRaw gets a pointer to a FQ without converting
 // to montgomery form.
-func FQReprToFQRaw(o *FQRepr) *FQ {
+func FQReprToFQRaw(o FQRepr) *FQ {
 	return &FQ{n: o}
 }
 
@@ -68,13 +68,13 @@ func (f *FQ) AddAssign(other *FQ) {
 }
 
 func (f *FQ) montReduce(hi [6]uint64, lo [6]uint64) {
-	*f.n = MontReduce(hi, lo)
+	f.n = MontReduce(hi, lo)
 	f.reduceAssign()
 }
 
 // MulAssign multiplies a field element by this one.
 func (f *FQ) MulAssign(other *FQ) {
-	hi, lo := MultiplyFQRepr(*f.n, *other.n)
+	hi, lo := MultiplyFQRepr(f.n, other.n)
 	f.montReduce(hi, lo)
 }
 
@@ -96,7 +96,7 @@ func (f *FQ) divAssign(other *FQ) {
 }
 
 // Exp raises the element to a specific power.
-func (f *FQ) Exp(n *FQRepr) *FQ {
+func (f *FQ) Exp(n FQRepr) *FQ {
 	iter := NewBitIterator(n[:])
 	res := FQOne.Copy()
 	foundOne := false
@@ -135,7 +135,8 @@ func (f FQ) String() string {
 
 // Cmp compares this field element to another.
 func (f FQ) Cmp(other *FQ) int {
-	return f.ToRepr().Cmp(other.ToRepr())
+	fr1 := f.ToRepr()
+	return fr1.Cmp(other.ToRepr())
 }
 
 // DoubleAssign doubles the element
@@ -218,7 +219,7 @@ func (f FQ) Sqrt() *FQ {
 	return a1
 }
 
-func isEven(b *FQRepr) bool {
+func isEven(b FQRepr) bool {
 	return b.IsEven()
 }
 
@@ -304,7 +305,7 @@ func HashFQ(hasher hash.Hash) *FQ {
 	return FQOne.MulBytes(digest)
 }
 
-var qMinus1Over2 = &FQRepr{0xdcff7fffffffd555, 0xf55ffff58a9ffff, 0xb39869507b587b12, 0xb23ba5c279c2895f, 0x258dd3db21a5d66b, 0xd0088f51cbff34d}
+var qMinus1Over2 = FQRepr{0xdcff7fffffffd555, 0xf55ffff58a9ffff, 0xb39869507b587b12, 0xb23ba5c279c2895f, 0x258dd3db21a5d66b, 0xd0088f51cbff34d}
 
 // LegendreSymbol is the legendre symbol of an element.
 type LegendreSymbol uint8
@@ -333,7 +334,7 @@ func (f *FQ) Legendre() LegendreSymbol {
 }
 
 // ToRepr gets the 256-bit representation of the field element.
-func (f *FQ) ToRepr() *FQRepr {
+func (f *FQ) ToRepr() FQRepr {
 	out := f.Copy()
 	out.montReduce([6]uint64{0, 0, 0, 0, 0, 0}, [6]uint64{f.n[0], f.n[1], f.n[2], f.n[3], f.n[4], f.n[5]})
 	return out.n

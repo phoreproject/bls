@@ -264,8 +264,7 @@ func TestMultiplyFQReprOverflow(t *testing.T) {
 func TestRandomMultiplyFQRepr(t *testing.T) {
 	r := NewXORShift(1)
 	total := big.NewInt(1)
-	totalFQr := bls.NewFQRepr(1)
-	totalFQ := *totalFQr
+	totalFQ := bls.NewFQRepr(1)
 
 	for i := 0; i < 1000000; i++ {
 		n, _ := rand.Int(r, bls.QFieldModulus.ToBig())
@@ -275,7 +274,7 @@ func TestRandomMultiplyFQRepr(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, totalFQ = bls.MultiplyFQRepr(totalFQ, *f)
+		_, totalFQ = bls.MultiplyFQRepr(totalFQ, f)
 		total.Mul(total, n)
 		total.And(total, oneLsh384MinusOne)
 
