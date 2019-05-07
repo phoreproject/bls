@@ -17,6 +17,14 @@ func (s *Signature) Serialize() [48]byte {
 	return CompressG1(s.s.ToAffine())
 }
 
+func (s *Signature) String() string {
+	return s.s.String()
+}
+
+func NewSignatureFromG1(g1 *G1Affine) *Signature {
+	return &Signature{g1.ToProjective()}
+}
+
 // DeserializeSignature deserializes a signature from bytes.
 func DeserializeSignature(b [48]byte) (*Signature, error) {
 	a, err := DecompressG1(b)
@@ -44,6 +52,10 @@ func (p PublicKey) String() string {
 // Serialize serializes a public key to bytes.
 func (p PublicKey) Serialize() [96]byte {
 	return CompressG2(p.p.ToAffine())
+}
+
+func NewPublicKeyFromG1(g2 *G2Affine) *PublicKey {
+	return &PublicKey{g2.ToProjective()}
 }
 
 func concatAppend(slices [][]byte) []byte {
@@ -234,8 +246,14 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte, domain 
 		return false
 	}
 
-	// messages must be distinct
-	msgsSorted := sortByteArrays(msgs)
+	msgsCopy := make([][]byte, len(msgs))
+
+	for i, m := range msgs {
+		msgsCopy[i] = make([]byte, len(m))
+		copy(msgsCopy[i], m)
+	}
+
+	msgsSorted := sortByteArrays(msgsCopy)
 	lastMsg := []byte(nil)
 
 	// check for duplicates
