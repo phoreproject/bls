@@ -9,14 +9,25 @@ package bls
 // MultiplyFQRepr multiplies two FQRepr values together.
 func MultiplyFQRepr(a, b [6]uint64) (hi [6]uint64, lo [6]uint64)
 
+// MontReduce reduces the 768-bit value using montgomery reduction.
 func MontReduce(hi, lo [6]uint64) (out [6]uint64)
 
+// AddNoCarry finds the value of 384-bit a + b and returns the
+// resulting 384-bit value.
 func AddNoCarry(a, b [6]uint64) [6]uint64
 
+// SubNoBorrow finds the value of 384-bit a - b and returns the
+// resulting 384-bit value.
 func SubNoBorrow(a, b [6]uint64) [6]uint64
 
+// AddWithCarry finds the value a + b + carry and returns the
+// full 128-bit value in 2 64-bit integers.
 func AddWithCarry(a, b, carry uint64) (uint64, uint64)
 
+// SubWithBorrow finds the value a - b - borrow and returns the
+// result and the borrow.
 func SubWithBorrow(a, b, borrow uint64) (uint64, uint64)
 
+// MACWithCarry finds the value a + b * c + carry and returns the
+// full 128-bit value in 2 64-bit integers.
 func MACWithCarry(a, b, c, carry uint64) (uint64, uint64)

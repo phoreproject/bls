@@ -159,7 +159,7 @@ func (f *FR) NegAssign() {
 }
 
 func (f FR) String() string {
-	return fmt.Sprintf("FR(0x%s)", f.n.String())
+	return fmt.Sprintf("FR(0x%s)", f.ToRepr().String())
 }
 
 // Cmp compares this field element to another.
@@ -325,6 +325,11 @@ func (f *FR) ToRepr() *FRRepr {
 		0,
 	)
 	return out.n
+}
+
+// Bytes gets the representation of the FR in bytes.
+func (f *FR) Bytes() [32]byte {
+	return f.ToRepr().Bytes()
 }
 
 // RandFR generates a random FR element.

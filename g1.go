@@ -1,12 +1,9 @@
 package bls
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
-
-	"golang.org/x/crypto/blake2b"
 )
 
 // G1Affine is an affine point on the G1 curve.
@@ -24,8 +21,9 @@ func NewG1Affine(x FQ, y FQ) *G1Affine {
 // G1AffineZero represents the point at infinity on G1.
 var G1AffineZero = &G1Affine{FQZero, FQOne, true}
 
-var g1GeneratorX, _ = FQReprFromString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
-var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
+// IETF BLS standard
+var g1GeneratorX, _ = FQReprFromString("17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb", 16)
+var g1GeneratorY, _ = FQReprFromString("8b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1", 16)
 
 // BCoeff of the G1 curve.
 var BCoeff = FQReprToFQRaw(FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
@@ -608,72 +606,104 @@ func RandG1(r io.Reader) (*G1Projective, error) {
 	}
 }
 
-// SWEncodeG1 implements the Shallue-van de Woestijne encoding.
-func SWEncodeG1(t FQ) *G1Affine {
-	if t.IsZero() {
-		return G1AffineZero.Copy()
+var ellPARepr, _ = FQReprFromString("144698a3b8e9433d693a02c96d4982b0ea985383ee66a8d8e8981aefd881ac98936f8da0e0f97f5cf428082d584c1d", 16)
+var ellPBRepr, _ = FQReprFromString("12e2908d11688030018b12e8753eee3b2016c1f0f24f4070a0b9c14fcef35ef55a23215a316ceaa5d1cc48e98e172be0", 16)
+
+var ellPA = FQReprToFQ(ellPARepr)
+var ellPB = FQReprToFQ(ellPBRepr)
+
+// returns -1 if x is larger than -x otherwise 1
+func signFQ(f FQ) FQ {
+	if f.Cmp(FQReprToFQ(qMinus1Over2)) > 0 {
+		return negativeOneFQ
 	}
-
-	parity := t.Parity()
-
-	w := t.Copy()
-	w.SquareAssign()
-	w.AddAssign(BCoeff)
-	w.AddAssign(FQOne)
-
-	if w.IsZero() {
-		ret := G1AffineOne.Copy()
-		if parity {
-			ret.NegAssign()
-		}
-		return ret
-	}
-
-	w, _ = w.Inverse()
-	w.MulAssign(FQReprToFQ(swencSqrtNegThree))
-	w.MulAssign(t)
-
-	x1 := w.Copy()
-	x1.MulAssign(t)
-	x1.NegAssign()
-	x1.AddAssign(FQReprToFQ(swencSqrtNegThreeMinusOneDivTwo))
-	if p := GetG1PointFromX(x1, parity); p != nil {
-		return p
-	}
-
-	x2 := x1.Copy()
-	x2.NegAssign()
-	x2.SubAssign(FQOne)
-	if p := GetG1PointFromX(x2, parity); p != nil {
-		return p
-	}
-
-	x3 := w.Copy()
-	x3.SquareAssign()
-	x3, _ = x3.Inverse()
-	x3.AddAssign(FQOne)
-	return GetG1PointFromX(x3, parity)
+	return FQOne
 }
 
-// HashG1 converts a message to a point on the G2 curve.
-func HashG1(msg []byte, domain uint64) *G1Projective {
-	domainBytes := [8]byte{}
-	binary.BigEndian.PutUint64(domainBytes[:], domain)
+func optimizedSWUMapHelper(t FQ) *G1Affine {
+	numDenCommon := negativeOneFQ.Copy()
+	numDenCommon.SquareAssign()
 
-	hasher0, _ := blake2b.New(64, nil)
-	hasher0.Write(msg)
-	hasher0.Write([]byte("G1_0"))
-	hasher0.Write(domainBytes[:])
-	hasher1, _ := blake2b.New(64, nil)
-	hasher1.Write(msg)
-	hasher1.Write([]byte("G1_1"))
-	hasher1.Write(domainBytes[:])
-	t0 := HashFQ(hasher0)
-	t0Affine := SWEncodeG1(t0)
-	t1 := HashFQ(hasher1)
-	t1Affine := SWEncodeG1(t1)
+	tSquared := t.Copy()
+	tSquared.SquareAssign()
 
-	res := t0Affine.ToProjective()
-	res = res.AddAffine(t1Affine)
-	return res.ToAffine().ScaleByCofactor()
+	t2 := tSquared.Copy()
+	t2.SquareAssign()
+
+	numDenCommon.MulAssign(t2)
+
+	negOneTimesTSquared := negativeOneFQ.Copy()
+	negOneTimesTSquared.MulAssign(tSquared)
+
+	numDenCommon.AddAssign(negOneTimesTSquared)
+
+	var x0 FQ
+	if numDenCommon.Equals(FQZero) {
+		xiA := negativeOneFQ.Copy()
+		xiA.MulAssign(ellPA)
+		x0 = ellPB.Copy()
+		x0.DivAssign(xiA)
+	} else {
+		ellPATimesCommon := ellPA.Copy()
+		ellPATimesCommon.MulAssign(numDenCommon)
+		numDenCommon.AddAssign(FQOne)
+		negEllPB := ellPB.Copy()
+		negEllPB.NegAssign()
+		x0 = negEllPB
+		x0.MulAssign(numDenCommon)
+		x0.DivAssign(ellPATimesCommon)
+	}
+
+	x0Cubed := x0.Copy()
+	x0Cubed.SquareAssign()
+	x0Cubed.MulAssign(x0)
+
+	ellPAX0 := ellPA.Copy()
+	ellPAX0.MulAssign(x0)
+
+	gx0 := x0Cubed
+	gx0.AddAssign(ellPAX0)
+	gx0.AddAssign(ellPB)
+
+	sqrtGX0, found := gx0.Sqrt()
+
+	var x FQ
+	var y FQ
+
+	if found {
+		// g(x0) is square, so return it's sqrt
+		x = x0
+		y = sqrtGX0
+	} else {
+		// g(x0) is not square, so find g(x1) = xi * t^2 * x0
+		x1 := negativeOneFQ.Copy()
+		x1.MulAssign(tSquared)
+		x1.MulAssign(x0)
+
+		ellPAX1 := ellPA.Copy()
+		ellPAX1.MulAssign(x1)
+
+		gx1 := x1.Copy()
+		gx1.SquareAssign()
+		gx1.MulAssign(x1)
+		gx1.AddAssign(ellPAX1)
+		gx1.AddAssign(ellPB)
+
+		sqrtGX1, found := gx1.Sqrt()
+		if !found {
+			panic("this should never happen")
+		}
+
+		x = x1
+		y = sqrtGX1
+	}
+
+	signT := signFQ(t)
+	signYT := signFQ(y)
+
+	signYT.MulAssign(signT)
+
+	y.MulAssign(signYT)
+
+	return NewG1Affine(x, y)
 }

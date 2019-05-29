@@ -86,12 +86,10 @@ func (f *FQ) SubAssign(other FQ) {
 	f.n.SubNoBorrow(other.n)
 }
 
-// divAssign is a slow divide.
-func (f *FQ) divAssign(other FQ) {
-	a := f.n.ToBig()
-	a.Div(a, other.n.ToBig())
-	fOut, _ := FQReprFromBigInt(a)
-	*f = FQReprToFQ(fOut)
+// DivAssign divides the field element by another
+func (f *FQ) DivAssign(other FQ) {
+	otherInv, _ := other.Inverse()
+	f.MulAssign(otherInv)
 }
 
 // Exp raises the element to a specific power.

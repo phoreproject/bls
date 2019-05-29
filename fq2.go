@@ -24,7 +24,7 @@ func NewFQ2(c0 FQ, c1 FQ) FQ2 {
 }
 
 func (f FQ2) String() string {
-	return fmt.Sprintf("Fq2(%s + %s * u)", f.c0.ToRepr(), f.c1.ToRepr())
+	return fmt.Sprintf("Fq2(%s + %s * u)", f.c0, f.c1)
 }
 
 // Cmp compares two FQ2 elements.
@@ -164,7 +164,7 @@ func (f FQ2) Legendre() LegendreSymbol {
 	return norm.Legendre()
 }
 
-var qMinus3Over4 = FQRepr{0xee7fbfffffffeaaa, 0x7aaffffac54ffff, 0xd9cc34a83dac3d89, 0xd91dd2e13ce144af, 0x92c6e9ed90d2eb35, 0x680447a8e5ff9a6}
+var qMinus3Over4 = fqReprFromHexUnchecked("680447a8e5ff9a692c6e9ed90d2eb35d91dd2e13ce144afd9cc34a83dac3d8907aaffffac54ffffee7fbfffffffeaaa")
 
 // Exp raises the element ot a specific power.
 func (f FQ2) Exp(n FQRepr) FQ2 {
@@ -269,6 +269,12 @@ func (f FQ2) MulBits(b *big.Int) FQ2 {
 		}
 	}
 	return res
+}
+
+// DivAssign divides the FQ2 element by another FQ2 element.
+func (f *FQ2) DivAssign(other FQ2) {
+	other.InverseAssign()
+	f.MulAssign(other)
 }
 
 // HashFQ2 calculates a new FQ2 value based on a hash.

@@ -1,33 +1,37 @@
-package bls
+package g2pubs
 
 import (
 	"bytes"
 	"io"
 	"log"
 	"sort"
+
+	"github.com/phoreproject/bls"
 )
 
 // Signature is a message signature.
 type Signature struct {
-	s *G1Projective
+	s *bls.G2Projective
 }
 
 // Serialize serializes a signature in compressed form.
-func (s *Signature) Serialize() [48]byte {
-	return CompressG1(s.s.ToAffine())
+func (s *Signature) Serialize() [96]byte {
+	return bls.CompressG2(s.s.ToAffine())
 }
 
 func (s *Signature) String() string {
 	return s.s.String()
 }
 
-func NewSignatureFromG1(g1 *G1Affine) *Signature {
-	return &Signature{g1.ToProjective()}
+// NewSignatureFromG2 creates a new signature from a G2
+// element.
+func NewSignatureFromG2(g2 *bls.G2Affine) *Signature {
+	return &Signature{g2.ToProjective()}
 }
 
 // DeserializeSignature deserializes a signature from bytes.
-func DeserializeSignature(b [48]byte) (*Signature, error) {
-	a, err := DecompressG1(b)
+func DeserializeSignature(b [96]byte) (*Signature, error) {
+	a, err := bls.DecompressG2(b)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +46,7 @@ func (s *Signature) Copy() *Signature {
 
 // PublicKey is a public key.
 type PublicKey struct {
-	p *G2Projective
+	p *bls.G1Projective
 }
 
 func (p PublicKey) String() string {
@@ -50,12 +54,13 @@ func (p PublicKey) String() string {
 }
 
 // Serialize serializes a public key to bytes.
-func (p PublicKey) Serialize() [96]byte {
-	return CompressG2(p.p.ToAffine())
+func (p PublicKey) Serialize() [48]byte {
+	return bls.CompressG1(p.p.ToAffine())
 }
 
-func NewPublicKeyFromG1(g2 *G2Affine) *PublicKey {
-	return &PublicKey{g2.ToProjective()}
+// NewPublicKeyFromG1 creates a new public key from a G1 element.
+func NewPublicKeyFromG1(g1 *bls.G1Affine) *PublicKey {
+	return &PublicKey{g1.ToProjective()}
 }
 
 func concatAppend(slices [][]byte) []byte {
@@ -67,10 +72,10 @@ func concatAppend(slices [][]byte) []byte {
 }
 
 // SerializeBig serializes a public key uncompressed.
-func (p PublicKey) SerializeBig() [192]byte {
+func (p PublicKey) SerializeBig() [96]byte {
 	affine := p.p.ToAffine()
-	out := [192]byte{}
-	infinity := affine.infinity
+	out := [96]byte{}
+	infinity := affine.IsZero()
 
 	if infinity {
 		out[0] = (1 << 6)
@@ -81,13 +86,14 @@ func (p PublicKey) SerializeBig() [192]byte {
 }
 
 // DeserializePublicKeyBig deserializes a public key uncompressed.
-func DeserializePublicKeyBig(uncompressed [192]byte) *PublicKey {
-	g := G2Affine{}
+func DeserializePublicKeyBig(uncompressed [96]byte) *PublicKey {
 
 	if uncompressed[0] == (1 << 6) {
-		g.infinity = true
+		g := bls.G1AffineZero.Copy()
 		return &PublicKey{p: g.ToProjective()}
 	}
+	g := bls.G1Affine{}
+
 	// Set points given raw bytes for coordinates
 	g.SetRawBytes(uncompressed)
 
@@ -101,8 +107,8 @@ func (p PublicKey) Equals(other PublicKey) bool {
 
 // DeserializePublicKey deserializes a public key from
 // bytes.
-func DeserializePublicKey(b [96]byte) (*PublicKey, error) {
-	a, err := DecompressG2(b)
+func DeserializePublicKey(b [48]byte) (*PublicKey, error) {
+	a, err := bls.DecompressG1(b)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +118,12 @@ func DeserializePublicKey(b [96]byte) (*PublicKey, error) {
 
 // SecretKey represents a BLS private key.
 type SecretKey struct {
-	f *FR
+	f *bls.FR
+}
+
+// GetFRElement gets the underlying FR element.
+func (s SecretKey) GetFRElement() *bls.FR {
+	return s.f
 }
 
 func (s SecretKey) String() string {
@@ -121,29 +132,35 @@ func (s SecretKey) String() string {
 
 // Serialize serializes a secret key to bytes.
 func (s SecretKey) Serialize() [32]byte {
-	return s.f.n.Bytes()
+	return s.f.Bytes()
 }
 
 // DeserializeSecretKey deserializes a secret key from
 // bytes.
 func DeserializeSecretKey(b [32]byte) *SecretKey {
-	return &SecretKey{&FR{FRReprFromBytes(b)}}
+	return &SecretKey{bls.FRReprToFR(bls.FRReprFromBytes(b))}
+}
+
+// DeriveSecretKey derives a secret key from
+// bytes.
+func DeriveSecretKey(b [32]byte) *SecretKey {
+	return &SecretKey{bls.HashSecretKey(b)}
 }
 
 // Sign signs a message with a secret key.
-func Sign(message []byte, key *SecretKey, domain uint64) *Signature {
-	h := HashG1(message, domain).MulFR(key.f.n)
+func Sign(message []byte, key *SecretKey) *Signature {
+	h := bls.HashG2(message).MulFR(key.f.ToRepr())
 	return &Signature{s: h}
 }
 
 // PrivToPub converts the private key into a public key.
 func PrivToPub(k *SecretKey) *PublicKey {
-	return &PublicKey{p: G2AffineOne.MulFR(k.f.n)}
+	return &PublicKey{p: bls.G1AffineOne.MulFR(k.f.ToRepr())}
 }
 
 // RandKey generates a random secret key.
 func RandKey(r io.Reader) (*SecretKey, error) {
-	k, err := RandFR(r)
+	k, err := bls.RandFR(r)
 	if err != nil {
 		return nil, err
 	}
@@ -153,21 +170,21 @@ func RandKey(r io.Reader) (*SecretKey, error) {
 
 // KeyFromFQRepr returns a new key based on a FQRepr in
 // FR.
-func KeyFromFQRepr(i *FRRepr) *SecretKey {
-	return &SecretKey{f: FRReprToFR(i)}
+func KeyFromFQRepr(i *bls.FRRepr) *SecretKey {
+	return &SecretKey{f: bls.FRReprToFR(i)}
 }
 
 // Verify verifies a signature against a message and a public key.
-func Verify(m []byte, pub *PublicKey, sig *Signature, domain uint64) bool {
-	h := HashG1(m, domain)
-	lhs := Pairing(sig.s, G2ProjectiveOne)
-	rhs := Pairing(h, pub.p)
+func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
+	h := bls.HashG2(m)
+	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
+	rhs := bls.Pairing(pub.p, h.ToProjective())
 	return lhs.Equals(rhs)
 }
 
 // AggregateSignatures adds up all of the signatures.
 func AggregateSignatures(s []*Signature) *Signature {
-	newSig := &Signature{s: G1ProjectiveZero.Copy()}
+	newSig := &Signature{s: bls.G2ProjectiveZero.Copy()}
 	for _, sig := range s {
 		newSig.Aggregate(sig)
 	}
@@ -182,7 +199,7 @@ func (s *Signature) Aggregate(other *Signature) {
 
 // AggregatePublicKeys adds public keys together.
 func AggregatePublicKeys(p []*PublicKey) *PublicKey {
-	newPub := &PublicKey{p: G2ProjectiveZero.Copy()}
+	newPub := &PublicKey{p: bls.G1ProjectiveZero.Copy()}
 	for _, pub := range p {
 		newPub.Aggregate(pub)
 	}
@@ -202,12 +219,12 @@ func (p *PublicKey) Copy() *PublicKey {
 
 // NewAggregateSignature creates a blank aggregate signature.
 func NewAggregateSignature() *Signature {
-	return &Signature{s: G1ProjectiveZero.Copy()}
+	return &Signature{s: bls.G2ProjectiveZero.Copy()}
 }
 
 // NewAggregatePubkey creates a blank public key.
 func NewAggregatePubkey() *PublicKey {
-	return &PublicKey{p: G2ProjectiveZero.Copy()}
+	return &PublicKey{p: bls.G1ProjectiveZero.Copy()}
 }
 
 // implement `Interface` in sort package.
@@ -241,7 +258,7 @@ func sortByteArrays(src [][]byte) [][]byte {
 }
 
 // VerifyAggregate verifies each public key against each message.
-func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte, domain uint64) bool {
+func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
 	if len(pubKeys) != len(msgs) {
 		return false
 	}
@@ -264,11 +281,11 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte, domain 
 		lastMsg = m
 	}
 
-	lhs := Pairing(s.s, G2ProjectiveOne)
-	rhs := FQ12One.Copy()
+	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
+	rhs := bls.FQ12One.Copy()
 	for i := range pubKeys {
-		h := HashG1(msgs[i], domain)
-		rhs.MulAssign(Pairing(h, pubKeys[i].p))
+		h := bls.HashG2(msgs[i])
+		rhs.MulAssign(bls.Pairing(pubKeys[i].p, h.ToProjective()))
 	}
 	return lhs.Equals(rhs)
 }
@@ -276,12 +293,12 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte, domain 
 // VerifyAggregateCommon verifies each public key against a message.
 // This is vulnerable to rogue public-key attack. Each user must
 // provide a proof-of-knowledge of the public key.
-func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte, domain uint64) bool {
-	h := HashG1(msg, domain)
-	lhs := Pairing(s.s, G2ProjectiveOne)
-	rhs := FQ12One.Copy()
+func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte) bool {
+	h := bls.HashG2(msg)
+	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
+	rhs := bls.FQ12One.Copy()
 	for _, p := range pubKeys {
-		rhs.MulAssign(Pairing(h, p.p))
+		rhs.MulAssign(bls.Pairing(p.p, h.ToProjective()))
 	}
 	return lhs.Equals(rhs)
 }

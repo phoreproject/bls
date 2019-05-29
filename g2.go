@@ -1,13 +1,10 @@
 package bls
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
-
-	"golang.org/x/crypto/blake2b"
 )
 
 // G2Affine is an affine point on the G2 curve.
@@ -25,10 +22,10 @@ func NewG2Affine(x FQ2, y FQ2) *G2Affine {
 // G2AffineZero represents the point at infinity on G2.
 var G2AffineZero = &G2Affine{FQ2Zero, FQ2One, true}
 
-var g2GeneratorXC1, _ = FQReprFromString("3059144344244213709971259814753781636986470325476647558659373206291635324768958432433509563104347017837885763365758", 10)
-var g2GeneratorXC0, _ = FQReprFromString("352701069587466618187139116011060144890029952792775240219908644239793785735715026873347600343865175952761926303160", 10)
-var g2GeneratorYC1, _ = FQReprFromString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
-var g2GeneratorYC0, _ = FQReprFromString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
+var g2GeneratorXC1, _ = FQReprFromString("13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e", 16)
+var g2GeneratorXC0, _ = FQReprFromString("24aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8", 16)
+var g2GeneratorYC1, _ = FQReprFromString("606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be", 16)
+var g2GeneratorYC0, _ = FQReprFromString("ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801", 16)
 
 // BCoeffFQ2 of the G2 curve.
 var BCoeffFQ2 = NewFQ2(BCoeff, BCoeff)
@@ -77,7 +74,7 @@ func (g G2Affine) ToProjective() *G2Projective {
 }
 
 // Mul performs a EC multiply operation on the point.
-func (g G2Affine) Mul(b *FQRepr) *G2Projective {
+func (g G2Affine) Mul(b FQRepr) *G2Projective {
 	res := G2ProjectiveZero.Copy()
 	for i := uint(0); i < b.BitLen(); i++ {
 		o := b.Bit(b.BitLen() - i - 1)
@@ -331,7 +328,7 @@ func (g G2Projective) IsZero() bool {
 }
 
 // Equal checks if two projective points are equal.
-func (g G2Projective) Equal(other *G2Projective) bool {
+func (g G2Projective) Equals(other *G2Projective) bool {
 	if g.IsZero() {
 		return other.IsZero()
 	}
@@ -880,36 +877,152 @@ func SWEncodeG2(t FQ2) *G2Affine {
 	return GetG2PointFromX(x3, parity)
 }
 
-// HashG2 converts a message to a point on the G2 curve.
-func HashG2(msg []byte, domain uint64) *G2Projective {
-	domainBytes := [8]byte{}
-	binary.BigEndian.PutUint64(domainBytes[:], domain)
+var ell2pA = NewFQ2(
+	FQReprToFQ(NewFQRepr(0)),
+	FQReprToFQ(NewFQRepr(240)),
+)
 
-	hasher0, _ := blake2b.New(64, nil)
-	hasher0.Write(domainBytes[:])
-	hasher0.Write([]byte("G2_0"))
-	hasher0.Write(msg)
-	hasher1, _ := blake2b.New(64, nil)
-	hasher1.Write(domainBytes[:])
-	hasher1.Write([]byte("G2_1"))
-	hasher1.Write(msg)
+var ell2pB = NewFQ2(
+	FQReprToFQ(NewFQRepr(1012)),
+	FQReprToFQ(NewFQRepr(1012)),
+)
 
-	xRe := HashFQ(hasher0)
-	xIm := HashFQ(hasher1)
+var qSquaredPlus7Over16 = fqReprFromHexUnchecked("1380cd6fab1fecf3b854bdc8b278c1a18b5978a3b6a3ce0f8d649df8b904b89b1700ffff04feffffcb7f3fffffffc000")
 
-	xCoordinate := NewFQ2(xRe, xIm)
+var rv1 = FQReprToFQ(fqReprFromHexUnchecked("6af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09"))
+var qMinusRV1 = FQReprToFQ(fqReprFromHexUnchecked("135203e60180a68ee2e9c448d77a2cd91c3dedd930b1cf60ef396489f61eb45e304466cf3e67fa0af1ee7b04121bdea2"))
 
-	for {
-		yCoordinateSquared := xCoordinate.Copy()
-		yCoordinateSquared.SquareAssign()
-		yCoordinateSquared.MulAssign(yCoordinateSquared)
+var rootsOfUnity = []FQ2{
+	NewFQ2(FQOne, FQZero),
+	NewFQ2(FQZero, FQOne),
+	NewFQ2(rv1, rv1),
+	NewFQ2(rv1, qMinusRV1),
+}
 
-		yCoordinateSquared.AddAssign(BCoeffFQ2)
+var ev1 = FQReprToFQ(fqReprFromHexUnchecked("2c4a7244a026bd3e305cc456ad9e235ed85f8b53954258ec8186bb3d4eccef7c4ee7b8d4b9e063a6c88d0aa3e03ba01"))
+var ev2 = FQReprToFQ(fqReprFromHexUnchecked("85fa8cd9105715e641892a0f9a4bb2912b58b8d32f26594c60679cc7973076dc6638358daf3514d6426a813ae01f51a"))
+var qMinusEv2 = FQReprToFQ(fqReprFromHexUnchecked("11a1691ca87a753be703151549a6f1ae51c1bff7c092ad2aa12a58d47d3deeb658487ca5d660aeb255d857ec51fdb591"))
+var etas = []FQ2{
+	NewFQ2(ev1, FQZero),
+	NewFQ2(FQZero, ev1),
+	NewFQ2(ev2, ev2),
+	NewFQ2(ev2, qMinusEv2),
+}
 
-		yCoordinate, success := yCoordinateSquared.Sqrt()
-		if !success {
-			return NewG2Affine(xCoordinate, yCoordinate).ScaleByCofactor()
-		}
-		xCoordinate.AddAssign(FQ2One)
+// returns -1 if x is larger than -x otherwise 1
+func signFQ2(f FQ2) int {
+	thresh := FQReprToFQ(qMinus1Over2)
+	if f.c1.Cmp(thresh) > 0 {
+		return -1
 	}
+	if f.c1.Cmp(FQZero) > 0 {
+		return 1
+	}
+	if f.c0.Cmp(thresh) > 0 {
+		return -1
+	}
+	if f.c0.Cmp(FQZero) > 0 {
+		return 1
+	}
+	return 1
+}
+
+func OptimizedSWU2MapHelper(t FQ2) *G2Affine {
+	numDenCommon := fq2nqr.Copy()
+	numDenCommon.SquareAssign()
+
+	tSquared := t.Copy()
+	tSquared.SquareAssign()
+
+	t4 := tSquared.Copy()
+	t4.SquareAssign()
+
+	numDenCommon.MulAssign(t4)
+
+	negOneTimesTSquared := fq2nqr.Copy()
+	negOneTimesTSquared.MulAssign(tSquared)
+
+	numDenCommon.AddAssign(negOneTimesTSquared)
+
+	var x0 FQ2
+	if numDenCommon.Equals(FQ2Zero) {
+		xiA := fq2nqr.Copy()
+		xiA.MulAssign(ell2pA)
+		x0 = ell2pB.Copy()
+		x0.DivAssign(xiA)
+	} else {
+		ell2paTimesCommon := ell2pA.Copy()
+		ell2paTimesCommon.MulAssign(numDenCommon)
+		negEll2pb := ell2pB.Copy()
+		negEll2pb.NegAssign()
+		numDenCommon.AddAssign(FQ2One)
+		negEll2pb.MulAssign(numDenCommon)
+		x0 = negEll2pb
+		x0.DivAssign(ell2paTimesCommon)
+	}
+
+	x0Cubed := x0.Copy()
+	x0Cubed.SquareAssign()
+	x0Cubed.MulAssign(x0)
+
+	ellPAX0 := ell2pA.Copy()
+	ellPAX0.MulAssign(x0)
+
+	gx0 := x0Cubed
+	gx0.AddAssign(ellPAX0)
+	gx0.AddAssign(ell2pB)
+
+	sqrtGX0, found := gx0.Sqrt()
+	if found {
+		y0Squared := sqrtGX0.Copy()
+		y0Squared.SquareAssign()
+
+		if y0Squared.Equals(gx0) {
+			signT := signFQ2(t)
+			signYT := signFQ2(sqrtGX0)
+
+			if signT != signYT {
+				sqrtGX0.InverseAssign()
+			}
+
+			// g(x0) = y^2 as required
+			return NewG2Affine(x0, sqrtGX0)
+		}
+	}
+
+	tCubed := tSquared.Copy()
+	tCubed.MulAssign(t)
+
+	t6 := tCubed.Copy()
+	t6.SquareAssign()
+
+	x1 := fq2nqr.Copy()
+	x1.MulAssign(tSquared)
+	x1.MulAssign(x0)
+
+	gx1 := fq2nqr.Copy()
+	gx1.SquareAssign()
+	gx1.MulAssign(fq2nqr)
+	gx1.MulAssign(t6)
+	gx1.MulAssign(gx0)
+
+	y1, found := gx1.Sqrt()
+	if !found {
+		panic("This should never happen!")
+	}
+
+	y12 := y1.Copy()
+	y12.SquareAssign()
+	if y12.Equals(gx1) {
+		signT := signFQ2(t)
+		signYT := signFQ2(y1)
+
+		if signT != signYT {
+			y1.NegAssign()
+		}
+
+		return NewG2Affine(x1, y1)
+	}
+
+	return nil
 }

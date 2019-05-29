@@ -215,6 +215,16 @@ func FQReprFromString(s string, b uint) (FQRepr, error) {
 	return FQReprFromBigInt(out)
 }
 
+func fqReprFromHexUnchecked(s string) FQRepr {
+	out, _ := new(big.Int).SetString(s, 16)
+	return fqReprFromBigIntUnchecked(out)
+}
+
+func fqReprFromStringUnchecked(s string, b uint) FQRepr {
+	out, _ := new(big.Int).SetString(s, int(b))
+	return fqReprFromBigIntUnchecked(out)
+}
+
 // ToBig gets the big.Int representation of the FQRepr.
 func (f FQRepr) ToBig() *big.Int {
 	out := big.NewInt(0)
@@ -248,4 +258,20 @@ func FQReprFromBigInt(n *big.Int) (FQRepr, error) {
 	}
 
 	return newf, nil
+}
+
+// FQReprFromBigInt create a FQRepr from a big.Int.
+func fqReprFromBigIntUnchecked(n *big.Int) FQRepr {
+	out := new(big.Int).Set(n)
+
+	newf := NewFQRepr(0)
+	i := 0
+	for out.Cmp(bigIntZero) != 0 {
+		o := new(big.Int).And(out, oneLsh64MinusOne)
+		newf[i] = o.Uint64()
+		i++
+		out.Rsh(out, 64)
+	}
+
+	return newf
 }
