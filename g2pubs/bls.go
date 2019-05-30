@@ -71,35 +71,6 @@ func concatAppend(slices [][]byte) []byte {
 	return tmp
 }
 
-// SerializeBig serializes a public key uncompressed.
-func (p PublicKey) SerializeBig() [192]byte {
-	affine := p.p.ToAffine()
-	out := [192]byte{}
-	infinity := affine.IsZero()
-
-	if infinity {
-		out[0] = (1 << 6)
-		return out
-	}
-
-	return affine.SerializeBytes()
-}
-
-// DeserializePublicKeyBig deserializes a public key uncompressed.
-func DeserializePublicKeyBig(uncompressed [192]byte) *PublicKey {
-
-	if uncompressed[0] == (1 << 6) {
-		g := bls.G2AffineZero.Copy()
-		return &PublicKey{p: g.ToProjective()}
-	}
-	g := bls.G2Affine{}
-
-	// Set points given raw bytes for coordinates
-	g.SetRawBytes(uncompressed)
-
-	return &PublicKey{p: g.ToProjective()}
-}
-
 // Equals checks if two public keys are equal
 func (p PublicKey) Equals(other PublicKey) bool {
 	return p.p.Equals(other.p)

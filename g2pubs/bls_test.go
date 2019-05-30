@@ -319,24 +319,6 @@ func TestSecretkeySerializeDeserialize(t *testing.T) {
 	}
 }
 
-func TestPubkeySerializeDeserializeBig(t *testing.T) {
-	r := NewXORShift(1)
-	priv, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(priv)
-	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
-
-	if !g2pubs.Verify(msg, pub, sig) {
-		t.Fatal("message did not verify before serialization/deserialization of uncompressed pubkey")
-	}
-
-	pubSer := pub.SerializeBig()
-	pubDeser := g2pubs.DeserializePublicKeyBig(pubSer)
-	if !g2pubs.Verify(msg, pubDeser, sig) {
-		t.Fatal("message did not verify after serialization/deserialization of uncompressed pubkey")
-	}
-}
-
 func TestDeriveSecretKey(t *testing.T) {
 	var secKeyIn [32]byte
 	copy(secKeyIn[:], []byte("11223344556677889900112233445566"))

@@ -406,5 +406,6 @@ func HashG2(msg []byte) *G2Affine {
 	cipherSuiteAndMessage := append([]byte{cipherSuite}, msg...)
 	t1 := hp2(cipherSuiteAndMessage, 0)
 	t2 := hp2(cipherSuiteAndMessage, 1)
-	return optimizedSWUMap2(&t1, &t2)
+	h := optimizedSWUMap2(&t1, &t2)
+	return h
 }

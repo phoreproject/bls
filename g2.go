@@ -982,7 +982,7 @@ func OptimizedSWU2MapHelper(t FQ2) *G2Affine {
 			signYT := signFQ2(sqrtGX0)
 
 			if signT != signYT {
-				sqrtGX0.InverseAssign()
+				sqrtGX0.NegAssign()
 			}
 
 			// g(x0) = y^2 as required

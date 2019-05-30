@@ -1,4 +1,4 @@
-package g2pubs_test
+package g1pubs_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/phoreproject/bls"
-	"github.com/phoreproject/bls/g2pubs"
+	"github.com/phoreproject/bls/g1pubs"
 )
 
 type XORShift struct {
@@ -31,12 +31,12 @@ func (xor *XORShift) Read(b []byte) (int, error) {
 
 func SignVerify(loopCount int) error {
 	r := NewXORShift(1)
-	for i := 0; i < loopCount; i++ {
-		priv, _ := g2pubs.RandKey(r)
-		pub := g2pubs.PrivToPub(priv)
+	for i := 0; i < 1; i++ {
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
 		msg := []byte(fmt.Sprintf("Hello world! 16 characters %d", i))
-		sig := g2pubs.Sign(msg, priv)
-		if !g2pubs.Verify(msg, pub, sig) {
+		sig := g1pubs.Sign(msg, priv)
+		if !g1pubs.Verify(msg, pub, sig) {
 			return errors.New("sig did not verify")
 		}
 	}
@@ -45,17 +45,17 @@ func SignVerify(loopCount int) error {
 
 func SignVerifyAggregateCommonMessage(loopCount int) error {
 	r := NewXORShift(2)
-	pubkeys := make([]*g2pubs.PublicKey, 0, 1000)
-	sigs := make([]*g2pubs.Signature, 0, 1000)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
+	sigs := make([]*g1pubs.Signature, 0, 1000)
 	msg := []byte(">16 character identical message")
 	for i := 0; i < loopCount; i++ {
-		priv, _ := g2pubs.RandKey(r)
-		pub := g2pubs.PrivToPub(priv)
-		sig := g2pubs.Sign(msg, priv)
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
+		sig := g1pubs.Sign(msg, priv)
 		pubkeys = append(pubkeys, pub)
 		sigs = append(sigs, sig)
 		if i < 10 || i > (loopCount-5) {
-			newSig := g2pubs.AggregateSignatures(sigs)
+			newSig := g1pubs.AggregateSignatures(sigs)
 			if !newSig.VerifyAggregateCommon(pubkeys, msg) {
 				return errors.New("sig did not verify")
 			}
@@ -67,19 +67,19 @@ func SignVerifyAggregateCommonMessage(loopCount int) error {
 func SignVerifyAggregateCommonMessageMissingSig(loopCount int) error {
 	r := NewXORShift(3)
 	skippedSig := loopCount / 2
-	pubkeys := make([]*g2pubs.PublicKey, 0, 1000)
-	sigs := make([]*g2pubs.Signature, 0, 1000)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
+	sigs := make([]*g1pubs.Signature, 0, 1000)
 	msg := []byte(">16 character identical message")
 	for i := 0; i < loopCount; i++ {
-		priv, _ := g2pubs.RandKey(r)
-		pub := g2pubs.PrivToPub(priv)
-		sig := g2pubs.Sign(msg, priv)
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
+		sig := g1pubs.Sign(msg, priv)
 		pubkeys = append(pubkeys, pub)
 		if i != skippedSig {
 			sigs = append(sigs, sig)
 		}
 		if i < 10 || i > (loopCount-5) {
-			newSig := g2pubs.AggregateSignatures(sigs)
+			newSig := g1pubs.AggregateSignatures(sigs)
 			if newSig.VerifyAggregateCommon(pubkeys, msg) != (i < skippedSig) {
 				return errors.New("sig did not verify")
 			}
@@ -90,20 +90,20 @@ func SignVerifyAggregateCommonMessageMissingSig(loopCount int) error {
 
 func AggregateSignatures(loopCount int) error {
 	r := NewXORShift(4)
-	pubkeys := make([]*g2pubs.PublicKey, 0, 1000)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
 	msgs := make([][]byte, 0, 1000)
-	sigs := make([]*g2pubs.Signature, 0, 1000)
+	sigs := make([]*g1pubs.Signature, 0, 1000)
 	for i := 0; i < loopCount; i++ {
-		priv, _ := g2pubs.RandKey(r)
-		pub := g2pubs.PrivToPub(priv)
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
 		msg := []byte(fmt.Sprintf(">16 character identical message %d", i))
-		sig := g2pubs.Sign(msg, priv)
+		sig := g1pubs.Sign(msg, priv)
 		pubkeys = append(pubkeys, pub)
 		msgs = append(msgs, msg)
 		sigs = append(sigs, sig)
 
 		if i < 10 || i > (loopCount-5) {
-			newSig := g2pubs.AggregateSignatures(sigs)
+			newSig := g1pubs.AggregateSignatures(sigs)
 			if !newSig.VerifyAggregate(pubkeys, msgs) {
 				return errors.New("sig did not verify")
 			}
@@ -143,14 +143,14 @@ func TestSignAggregateSigs(t *testing.T) {
 func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 	r := NewXORShift(5)
 
-	pubkeys := make([]*g2pubs.PublicKey, 0, 1000)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
 	msgs := make([][]byte, 0, 1000)
-	sigs := g2pubs.NewAggregateSignature()
+	sigs := g1pubs.NewAggregateSignature()
 
-	key, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(key)
+	key, _ := g1pubs.RandKey(r)
+	pub := g1pubs.PrivToPub(key)
 	message := []byte(">16 char first message")
-	sig := g2pubs.Sign(message, key)
+	sig := g1pubs.Sign(message, key)
 	pubkeys = append(pubkeys, pub)
 	msgs = append(msgs, message)
 	sigs.Aggregate(sig)
@@ -159,10 +159,10 @@ func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 		t.Fatal("signature does not verify")
 	}
 
-	key2, _ := g2pubs.RandKey(r)
-	pub2 := g2pubs.PrivToPub(key2)
+	key2, _ := g1pubs.RandKey(r)
+	pub2 := g1pubs.PrivToPub(key2)
 	message2 := []byte(">16 char second message")
-	sig2 := g2pubs.Sign(message2, key2)
+	sig2 := g1pubs.Sign(message2, key2)
 	pubkeys = append(pubkeys, pub2)
 	msgs = append(msgs, message2)
 	sigs.Aggregate(sig2)
@@ -171,9 +171,9 @@ func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 		t.Fatal("signature does not verify")
 	}
 
-	key3, _ := g2pubs.RandKey(r)
-	pub3 := g2pubs.PrivToPub(key3)
-	sig3 := g2pubs.Sign(message2, key3)
+	key3, _ := g1pubs.RandKey(r)
+	pub3 := g1pubs.PrivToPub(key3)
+	sig3 := g1pubs.Sign(message2, key3)
 	pubkeys = append(pubkeys, pub3)
 	msgs = append(msgs, message2)
 	sigs.Aggregate(sig3)
@@ -185,27 +185,27 @@ func TestAggregateSignaturesDuplicatedMessages(t *testing.T) {
 
 func TestAggregateSigsSeparate(t *testing.T) {
 	x := NewXORShift(20)
-	priv1, _ := g2pubs.RandKey(x)
-	priv2, _ := g2pubs.RandKey(x)
-	priv3, _ := g2pubs.RandKey(x)
+	priv1, _ := g1pubs.RandKey(x)
+	priv2, _ := g1pubs.RandKey(x)
+	priv3, _ := g1pubs.RandKey(x)
 
-	pub1 := g2pubs.PrivToPub(priv1)
-	pub2 := g2pubs.PrivToPub(priv2)
-	pub3 := g2pubs.PrivToPub(priv3)
+	pub1 := g1pubs.PrivToPub(priv1)
+	pub2 := g1pubs.PrivToPub(priv2)
+	pub3 := g1pubs.PrivToPub(priv3)
 
 	msg := []byte("test 1")
-	sig1 := g2pubs.Sign(msg, priv1)
-	sig2 := g2pubs.Sign(msg, priv2)
-	sig3 := g2pubs.Sign(msg, priv3)
+	sig1 := g1pubs.Sign(msg, priv1)
+	sig2 := g1pubs.Sign(msg, priv2)
+	sig3 := g1pubs.Sign(msg, priv3)
 
-	aggSigs := g2pubs.AggregateSignatures([]*g2pubs.Signature{sig1, sig2, sig3})
+	aggSigs := g1pubs.AggregateSignatures([]*g1pubs.Signature{sig1, sig2, sig3})
 
-	aggPubs := g2pubs.NewAggregatePubkey()
+	aggPubs := g1pubs.NewAggregatePubkey()
 	aggPubs.Aggregate(pub1)
 	aggPubs.Aggregate(pub2)
 	aggPubs.Aggregate(pub3)
 
-	valid := g2pubs.Verify(msg, aggPubs, aggSigs)
+	valid := g1pubs.Verify(msg, aggPubs, aggSigs)
 	if !valid {
 		t.Fatal("expected aggregate signature to be valid")
 	}
@@ -213,11 +213,11 @@ func TestAggregateSigsSeparate(t *testing.T) {
 
 func BenchmarkBLSAggregateSignature(b *testing.B) {
 	r := NewXORShift(5)
-	priv, _ := g2pubs.RandKey(r)
+	priv, _ := g1pubs.RandKey(r)
 	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
+	sig := g1pubs.Sign(msg, priv)
 
-	s := g2pubs.NewAggregateSignature()
+	s := g1pubs.NewAggregateSignature()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		s.Aggregate(sig)
@@ -226,16 +226,16 @@ func BenchmarkBLSAggregateSignature(b *testing.B) {
 
 func BenchmarkBLSSign(b *testing.B) {
 	r := NewXORShift(5)
-	privs := make([]*g2pubs.SecretKey, b.N)
+	privs := make([]*g1pubs.SecretKey, b.N)
 	for i := range privs {
-		privs[i], _ = g2pubs.RandKey(r)
+		privs[i], _ = g1pubs.RandKey(r)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		msg := []byte(fmt.Sprintf("Hello world! 16 characters %d", i))
-		g2pubs.Sign(msg, privs[i])
-		// if !g2pubs.Verify(msg, pub, sig) {
+		g1pubs.Sign(msg, privs[i])
+		// if !g1pubs.Verify(msg, pub, sig) {
 		// 	return errors.New("sig did not verify")
 		// }
 	}
@@ -243,104 +243,86 @@ func BenchmarkBLSSign(b *testing.B) {
 
 func BenchmarkBLSVerify(b *testing.B) {
 	r := NewXORShift(5)
-	priv, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(priv)
+	priv, _ := g1pubs.RandKey(r)
+	pub := g1pubs.PrivToPub(priv)
 	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
+	sig := g1pubs.Sign(msg, priv)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		g2pubs.Verify(msg, pub, sig)
+		g1pubs.Verify(msg, pub, sig)
 	}
 }
 
 func TestSignatureSerializeDeserialize(t *testing.T) {
 	r := NewXORShift(1)
-	priv, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(priv)
+	priv, _ := g1pubs.RandKey(r)
+	pub := g1pubs.PrivToPub(priv)
 	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
+	sig := g1pubs.Sign(msg, priv)
 
-	if !g2pubs.Verify(msg, pub, sig) {
+	if !g1pubs.Verify(msg, pub, sig) {
 		t.Fatal("message did not verify before serialization/deserialization")
 	}
 
 	sigSer := sig.Serialize()
-	sigDeser, err := g2pubs.DeserializeSignature(sigSer)
+	sigDeser, err := g1pubs.DeserializeSignature(sigSer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !g2pubs.Verify(msg, pub, sigDeser) {
+	if !g1pubs.Verify(msg, pub, sigDeser) {
 		t.Fatal("message did not verify after serialization/deserialization")
 	}
 }
 
 func TestPubkeySerializeDeserialize(t *testing.T) {
 	r := NewXORShift(1)
-	priv, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(priv)
+	priv, _ := g1pubs.RandKey(r)
+	pub := g1pubs.PrivToPub(priv)
 	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
+	sig := g1pubs.Sign(msg, priv)
 
-	if !g2pubs.Verify(msg, pub, sig) {
+	if !g1pubs.Verify(msg, pub, sig) {
 		t.Fatal("message did not verify before serialization/deserialization of pubkey")
 	}
 
 	pubSer := pub.Serialize()
-	pubDeser, err := g2pubs.DeserializePublicKey(pubSer)
+	pubDeser, err := g1pubs.DeserializePublicKey(pubSer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !g2pubs.Verify(msg, pubDeser, sig) {
+	if !g1pubs.Verify(msg, pubDeser, sig) {
 		t.Fatal("message did not verify after serialization/deserialization of pubkey")
 	}
 }
 
 func TestSecretkeySerializeDeserialize(t *testing.T) {
 	r := NewXORShift(3)
-	priv, _ := g2pubs.RandKey(r)
+	priv, _ := g1pubs.RandKey(r)
 	privSer := priv.Serialize()
-	privNew := g2pubs.DeserializeSecretKey(privSer)
-	pub := g2pubs.PrivToPub(priv)
+	privNew := g1pubs.DeserializeSecretKey(privSer)
+	pub := g1pubs.PrivToPub(priv)
 	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, privNew)
+	sig := g1pubs.Sign(msg, privNew)
 
-	if !g2pubs.Verify(msg, pub, sig) {
+	if !g1pubs.Verify(msg, pub, sig) {
 		t.Fatal("message did not verify before serialization/deserialization of secret")
 	}
 
 	pubSer := pub.Serialize()
-	pubDeser, err := g2pubs.DeserializePublicKey(pubSer)
+	pubDeser, err := g1pubs.DeserializePublicKey(pubSer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !g2pubs.Verify(msg, pubDeser, sig) {
+	if !g1pubs.Verify(msg, pubDeser, sig) {
 		t.Fatal("message did not verify after serialization/deserialization of secret")
-	}
-}
-
-func TestPubkeySerializeDeserializeBig(t *testing.T) {
-	r := NewXORShift(1)
-	priv, _ := g2pubs.RandKey(r)
-	pub := g2pubs.PrivToPub(priv)
-	msg := []byte(fmt.Sprintf(">16 character identical message"))
-	sig := g2pubs.Sign(msg, priv)
-
-	if !g2pubs.Verify(msg, pub, sig) {
-		t.Fatal("message did not verify before serialization/deserialization of uncompressed pubkey")
-	}
-
-	pubSer := pub.SerializeBig()
-	pubDeser := g2pubs.DeserializePublicKeyBig(pubSer)
-	if !g2pubs.Verify(msg, pubDeser, sig) {
-		t.Fatal("message did not verify after serialization/deserialization of uncompressed pubkey")
 	}
 }
 
 func TestDeriveSecretKey(t *testing.T) {
 	var secKeyIn [32]byte
 	copy(secKeyIn[:], []byte("11223344556677889900112233445566"))
-	k := g2pubs.DeriveSecretKey(secKeyIn)
+	k := g1pubs.DeriveSecretKey(secKeyIn)
 
 	expectedElement, _ := bls.FRReprFromString("414e2c2a330cf94edb70e1c88efa851e80fe5eb14ff08fe5b7e588b4fe9899e4", 16)
 	expectedFRElement := bls.FRReprToFR(expectedElement)

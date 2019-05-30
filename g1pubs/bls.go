@@ -1,4 +1,4 @@
-package g2pubs
+package g1pubs
 
 import (
 	"bytes"
@@ -69,35 +69,6 @@ func concatAppend(slices [][]byte) []byte {
 		tmp = append(tmp, s...)
 	}
 	return tmp
-}
-
-// SerializeBig serializes a public key uncompressed.
-func (p PublicKey) SerializeBig() [96]byte {
-	affine := p.p.ToAffine()
-	out := [96]byte{}
-	infinity := affine.IsZero()
-
-	if infinity {
-		out[0] = (1 << 6)
-		return out
-	}
-
-	return affine.SerializeBytes()
-}
-
-// DeserializePublicKeyBig deserializes a public key uncompressed.
-func DeserializePublicKeyBig(uncompressed [96]byte) *PublicKey {
-
-	if uncompressed[0] == (1 << 6) {
-		g := bls.G1AffineZero.Copy()
-		return &PublicKey{p: g.ToProjective()}
-	}
-	g := bls.G1Affine{}
-
-	// Set points given raw bytes for coordinates
-	g.SetRawBytes(uncompressed)
-
-	return &PublicKey{p: g.ToProjective()}
 }
 
 // Equals checks if two public keys are equal

@@ -19,11 +19,11 @@ func NewG1Affine(x FQ, y FQ) *G1Affine {
 }
 
 // G1AffineZero represents the point at infinity on G1.
-var G1AffineZero = &G1Affine{FQZero, FQOne, true}
+var G1AffineZero = &G1Affine{FQZero.Copy(), FQOne.Copy(), true}
 
 // IETF BLS standard
-var g1GeneratorX, _ = FQReprFromString("17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb", 16)
-var g1GeneratorY, _ = FQReprFromString("8b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1", 16)
+var g1GeneratorX, _ = FQReprFromString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
+var g1GeneratorY, _ = FQReprFromString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
 
 // BCoeff of the G1 curve.
 var BCoeff = FQReprToFQRaw(FQRepr{0xaa270000000cfff3, 0x53cc0032fc34000a, 0x478fe97a6b0a807f, 0xb1d37ebee6ba24d7, 0x8ec9733bbf78ab2f, 0x9d645513d83de7e})
@@ -58,7 +58,7 @@ func (g *G1Affine) NegAssign() {
 // ToProjective converts an affine point to a projective one.
 func (g G1Affine) ToProjective() *G1Projective {
 	if g.IsZero() {
-		return G1ProjectiveZero
+		return G1ProjectiveZero.Copy()
 	}
 	return NewG1Projective(g.x, g.y, FQOne)
 }
@@ -261,7 +261,7 @@ func NewG1Projective(x FQ, y FQ, z FQ) *G1Projective {
 }
 
 // G1ProjectiveZero is the point at infinity where Z = 0.
-var G1ProjectiveZero = &G1Projective{FQZero, FQOne, FQZero}
+var G1ProjectiveZero = &G1Projective{FQZero.Copy(), FQOne.Copy(), FQZero.Copy()}
 
 // G1ProjectiveOne is the generator point on G1.
 var G1ProjectiveOne = G1AffineOne.ToProjective()
@@ -316,7 +316,7 @@ func (g G1Projective) Equal(other *G1Projective) bool {
 // ToAffine converts a G1Projective point to affine form.
 func (g G1Projective) ToAffine() *G1Affine {
 	if g.IsZero() {
-		return G1AffineZero
+		return G1AffineZero.Copy()
 	} else if g.z.IsZero() {
 		return NewG1Affine(g.x, g.y)
 	}
