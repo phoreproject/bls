@@ -1,7 +1,9 @@
 package bls_test
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -64,6 +66,18 @@ func TestHashG2(t *testing.T) {
 
 	if !actualHash.Equals(expectedG2Hash) {
 		t.Fatal("expected hash to match other implementations")
+	}
+}
+
+var expectedSerializedG2, _ = hex.DecodeString("a6ef29e7241e1a1cc60fee328e3290c023d55a6701db500eefab7f91391a8b8726fd0024121e64637281f907137fe268187b4baca36388e96194b73a7d532f6eea6bc098778dbfd3404584613b5ba9da97d5602e31fdbe9270b863876529b254")
+
+func TestHashG2WithDomain(t *testing.T) {
+	actualHash := bls.HashG2WithDomain([32]byte{}, 0)
+
+	compressedPoint := bls.CompressG2(actualHash.ToAffine())
+
+	if !bytes.Equal(expectedSerializedG2, compressedPoint[:]) {
+		t.Fatal("expected hash to match test")
 	}
 }
 

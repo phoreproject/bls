@@ -1,10 +1,12 @@
 package bls
 
 import (
-	"encoding/hex"
+	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 )
 
 // G2Affine is an affine point on the G2 curve.
@@ -70,6 +72,7 @@ func (g G2Affine) ToProjective() *G2Projective {
 	if g.IsZero() {
 		return G2ProjectiveZero.Copy()
 	}
+
 	return NewG2Projective(g.x, g.y, FQ2One)
 }
 
@@ -99,13 +102,13 @@ func (g G2Affine) MulFR(b *FRRepr) *G2Projective {
 	return res
 }
 
-// MulBytes performs a EC multiply operation on the point.
-func (g G2Affine) MulBytes(b []byte) *G2Projective {
+// MulBig performs a EC multiply operation on the point.
+func (g G2Affine) MulBig(b big.Int) *G2Projective {
 	res := G2ProjectiveZero.Copy()
-	for i := uint(0); i < uint(len(b)*8); i++ {
-		o := b[i/8]&(1<<(i%8)) != 0
+	for i := 0; i < b.BitLen(); i++ {
+		o := b.Bit(b.BitLen() - i - 1)
 		res = res.Double()
-		if o {
+		if o == 1 {
 			res = res.AddAffine(&g)
 		}
 	}
@@ -128,11 +131,11 @@ func (g G2Affine) IsOnCurve() bool {
 }
 
 // G2 cofactor = (x^8 - 4 x^7 + 5 x^6) - (4 x^4 + 6 x^3 - 4 x^2 - 4 x + 13) // 9
-var g2Cofactor, _ = hex.DecodeString("5d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddfa628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5")
+var g2Cofactor, _ = new(big.Int).SetString("5d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddfa628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5", 16)
 
 // ScaleByCofactor scales the G2Affine point by the cofactor.
 func (g G2Affine) ScaleByCofactor() *G2Projective {
-	return g.MulBytes(g2Cofactor)
+	return g.MulBig(*g2Cofactor)
 }
 
 // Equals checks if two affine points are equal.
@@ -363,7 +366,7 @@ func (g G2Projective) Equals(other *G2Projective) bool {
 func (g G2Projective) ToAffine() *G2Affine {
 	if g.IsZero() {
 		return G2AffineZero
-	} else if g.z.IsZero() {
+	} else if g.z.Equals(FQ2One) {
 		return NewG2Affine(g.x, g.y)
 	}
 
@@ -1025,4 +1028,55 @@ func OptimizedSWU2MapHelper(t FQ2) *G2Affine {
 	}
 
 	return nil
+}
+
+// hashFunc returns the SHA-256 hash of the input
+func hashFunc(in []byte) []byte {
+	h := sha256.New()
+	h.Write(in)
+	return h.Sum(nil)
+}
+
+func HashG2WithDomain(messageHash [32]byte, domain uint64) *G2Projective {
+	var domainBytes [8]byte
+	binary.BigEndian.PutUint64(domainBytes[:], domain)
+
+	xReBytes := append(messageHash[:], domainBytes[:]...)
+	xReBytes = append(xReBytes, '\x01')
+
+	xImBytes := append(messageHash[:], domainBytes[:]...)
+	xImBytes = append(xImBytes, '\x02')
+
+	xRe := new(big.Int)
+	xRe.SetBytes(hashFunc(xReBytes))
+
+	xIm := new(big.Int)
+	xIm.SetBytes(hashFunc(xImBytes))
+
+	// hash function is only 256 bits so this will never overflow
+	xReFQ, _ := FQReprFromBigInt(xRe)
+	xImFQ, _ := FQReprFromBigInt(xIm)
+
+	x0 := NewFQ2(FQReprToFQ(xReFQ), FQReprToFQ(xImFQ))
+
+	for {
+		gx0 := x0.Copy()
+		gx0.SquareAssign()
+		gx0.MulAssign(x0)
+
+		gx0.AddAssign(BCoeffFQ2)
+
+		y0, found := gx0.Sqrt()
+
+		if found {
+			// favor the lower y value
+			if !y0.Parity() {
+				y0.NegAssign()
+			}
+
+			return NewG2Affine(x0, y0).ScaleByCofactor()
+		}
+
+		x0.AddAssign(FQ2One)
+	}
 }
