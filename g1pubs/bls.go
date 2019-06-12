@@ -124,7 +124,7 @@ func Sign(message []byte, key *SecretKey) *Signature {
 	return &Signature{s: h}
 }
 
-// Sign signs a message with a secret key.
+// SignWithDomain signs a message with a secret key and its domain.
 func SignWithDomain(message [32]byte, key *SecretKey, domain uint64) *Signature {
 	h := bls.HashG2WithDomain(message, domain).MulFR(key.f.ToRepr())
 	return &Signature{s: h}
