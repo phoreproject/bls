@@ -124,6 +124,12 @@ func Sign(message []byte, key *SecretKey) *Signature {
 	return &Signature{s: h}
 }
 
+// SignWithDomain signs a message with a secret key and its domain.
+func SignWithDomain(message [32]byte, key *SecretKey, domain uint64) *Signature {
+	h := bls.HashG2WithDomain(message, domain).MulFR(key.f.ToRepr())
+	return &Signature{s: h}
+}
+
 // PrivToPub converts the private key into a public key.
 func PrivToPub(k *SecretKey) *PublicKey {
 	return &PublicKey{p: bls.G1AffineOne.MulFR(k.f.ToRepr())}
@@ -150,6 +156,14 @@ func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
 	h := bls.HashG2(m)
 	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
 	rhs := bls.Pairing(pub.p, h.ToProjective())
+	return lhs.Equals(rhs)
+}
+
+// VerifyWithDomain verifies a signature against a message and a public key and a domain
+func VerifyWithDomain(m [32]byte, pub *PublicKey, sig *Signature, domain uint64) bool {
+	h := bls.HashG2WithDomain(m, domain)
+	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
+	rhs := bls.Pairing(pub.p, h.ToAffine().ToProjective())
 	return lhs.Equals(rhs)
 }
 
@@ -270,6 +284,18 @@ func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte) bool
 	rhs := bls.FQ12One.Copy()
 	for _, p := range pubKeys {
 		rhs.MulAssign(bls.Pairing(p.p, h.ToProjective()))
+	}
+	return lhs.Equals(rhs)
+}
+
+// VerifyAggregateCommonWithDomain verifies each public key against a message and
+// its domain.
+func (s *Signature) VerifyAggregateCommonWithDomain(pubKeys []*PublicKey, msg [32]byte, domain uint64) bool {
+	h := bls.HashG2WithDomain(msg, domain)
+	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
+	rhs := bls.FQ12One.Copy()
+	for _, p := range pubKeys {
+		rhs.MulAssign(bls.Pairing(p.p, h.ToAffine().ToProjective()))
 	}
 	return lhs.Equals(rhs)
 }
