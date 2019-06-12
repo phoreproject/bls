@@ -43,6 +43,21 @@ func SignVerify(loopCount int) error {
 	return nil
 }
 
+func SignVerifyWithDomain(loopCount int) error {
+	r := NewXORShift(1)
+	for i := 0; i < 1; i++ {
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
+		var hashedMsg [32]byte
+		copy(hashedMsg[:], []byte(fmt.Sprintf("Hello world! 16 characters %d", i)))
+		sig := g1pubs.SignWithDomain(hashedMsg, priv, 1)
+		if !g1pubs.VerifyWithDomain(hashedMsg, pub, sig, 1) {
+			return errors.New("sig did not verify")
+		}
+	}
+	return nil
+}
+
 func SignVerifyAggregateCommonMessage(loopCount int) error {
 	r := NewXORShift(2)
 	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
@@ -58,6 +73,30 @@ func SignVerifyAggregateCommonMessage(loopCount int) error {
 			newSig := g1pubs.AggregateSignatures(sigs)
 			if !newSig.VerifyAggregateCommon(pubkeys, msg) {
 				return errors.New("sig did not verify")
+			}
+		}
+	}
+	return nil
+}
+
+func SignVerifyAggregateCommonMessageWithDomain(loopCount int) error {
+	var hashedMessage [32]byte
+	domain := 100
+	r := NewXORShift(2)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
+	sigs := make([]*g1pubs.Signature, 0, 1000)
+	copy(hashedMessage[:], []byte(">16 character identical message"))
+
+	for i := 0; i < loopCount; i++ {
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
+		sig := g1pubs.SignWithDomain(hashedMessage, priv, uint64(domain))
+		pubkeys = append(pubkeys, pub)
+		sigs = append(sigs, sig)
+		if i < 10 || i > (loopCount-5) {
+			newSig := g1pubs.AggregateSignatures(sigs)
+			if !newSig.VerifyAggregateCommonWithDomain(pubkeys, hashedMessage, uint64(domain)) {
+				return fmt.Errorf("sig did not verify for loop %d", i)
 			}
 		}
 	}
@@ -119,8 +158,22 @@ func TestSignVerify(t *testing.T) {
 	}
 }
 
+func TestSignVerifyWithDomain(t *testing.T) {
+	err := SignVerifyWithDomain(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSignVerifyAggregateCommon(t *testing.T) {
 	err := SignVerifyAggregateCommonMessage(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSignVerifyAggregateCommonWithDomain(t *testing.T) {
+	err := SignVerifyAggregateCommonMessageWithDomain(10)
 	if err != nil {
 		t.Fatal(err)
 	}
