@@ -225,7 +225,8 @@ func (f FR) Inverse() *FR {
 	b := &FR{FRR2.Copy()}
 	c := bigZeroFR.Copy()
 
-	for u.Cmp(frOne) != 0 && v.Cmp(frOne) != 0 {
+	one := &FRRepr{1, 0, 0, 0}
+	for u.Cmp(one) != 0 && v.Cmp(one) != 0 {
 		for u.IsEven() {
 			u.Div2()
 			if b.n.IsEven() {
@@ -254,7 +255,7 @@ func (f FR) Inverse() *FR {
 			c.SubAssign(b)
 		}
 	}
-	if u.IsZero() {
+	if u.Equals(one) {
 		return b
 	}
 	return c
