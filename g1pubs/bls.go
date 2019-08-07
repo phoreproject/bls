@@ -125,7 +125,7 @@ func Sign(message []byte, key *SecretKey) *Signature {
 }
 
 // SignWithDomain signs a message with a secret key and its domain.
-func SignWithDomain(message [32]byte, key *SecretKey, domain uint64) *Signature {
+func SignWithDomain(message [32]byte, key *SecretKey, domain [8]byte) *Signature {
 	h := bls.HashG2WithDomain(message, domain).MulFR(key.f.ToRepr())
 	return &Signature{s: h}
 }
@@ -160,7 +160,7 @@ func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
 }
 
 // VerifyWithDomain verifies a signature against a message and a public key and a domain
-func VerifyWithDomain(m [32]byte, pub *PublicKey, sig *Signature, domain uint64) bool {
+func VerifyWithDomain(m [32]byte, pub *PublicKey, sig *Signature, domain [8]byte) bool {
 	h := bls.HashG2WithDomain(m, domain)
 	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
 	rhs := bls.Pairing(pub.p, h.ToAffine().ToProjective())
@@ -279,23 +279,13 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
 // This is vulnerable to rogue public-key attack. Each user must
 // provide a proof-of-knowledge of the public key.
 func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte) bool {
-	h := bls.HashG2(msg)
-	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
-	rhs := bls.FQ12One.Copy()
-	for _, p := range pubKeys {
-		rhs.MulAssign(bls.Pairing(p.p, h.ToProjective()))
-	}
-	return lhs.Equals(rhs)
+	aggPub := AggregatePublicKeys(pubKeys)
+	return Verify(msg, aggPub, s)
 }
 
 // VerifyAggregateCommonWithDomain verifies each public key against a message and
 // its domain.
-func (s *Signature) VerifyAggregateCommonWithDomain(pubKeys []*PublicKey, msg [32]byte, domain uint64) bool {
-	h := bls.HashG2WithDomain(msg, domain)
-	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
-	rhs := bls.FQ12One.Copy()
-	for _, p := range pubKeys {
-		rhs.MulAssign(bls.Pairing(p.p, h.ToAffine().ToProjective()))
-	}
-	return lhs.Equals(rhs)
+func (s *Signature) VerifyAggregateCommonWithDomain(pubKeys []*PublicKey, msg [32]byte, domain [8]byte) bool {
+	aggPub := AggregatePublicKeys(pubKeys)
+	return VerifyWithDomain(msg, aggPub, s, domain)
 }
