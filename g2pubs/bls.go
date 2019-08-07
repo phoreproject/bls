@@ -265,11 +265,6 @@ func (s *Signature) VerifyAggregate(pubKeys []*PublicKey, msgs [][]byte) bool {
 // This is vulnerable to rogue public-key attack. Each user must
 // provide a proof-of-knowledge of the public key.
 func (s *Signature) VerifyAggregateCommon(pubKeys []*PublicKey, msg []byte) bool {
-	h := bls.HashG1(msg)
-	lhs := bls.Pairing(s.s, bls.G2ProjectiveOne)
-	rhs := bls.FQ12One.Copy()
-	for _, p := range pubKeys {
-		rhs.MulAssign(bls.Pairing(h.ToProjective(), p.p))
-	}
-	return lhs.Equals(rhs)
+	aggPub := AggregatePublicKeys(pubKeys)
+	return Verify(msg, aggPub, s)
 }

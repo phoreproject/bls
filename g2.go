@@ -2,7 +2,6 @@ package bls
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -1037,15 +1036,18 @@ func hashFunc(in []byte) []byte {
 	return h.Sum(nil)
 }
 
-func HashG2WithDomain(messageHash [32]byte, domain uint64) *G2Projective {
-	var domainBytes [8]byte
-	binary.BigEndian.PutUint64(domainBytes[:], domain)
+// Warning: See BLS standardisation process. This implementation is known to be unsecure.
+func HashG2WithDomain(messageHash [32]byte, domain [8]byte) *G2Projective {
 
-	xReBytes := append(messageHash[:], domainBytes[:]...)
-	xReBytes = append(xReBytes, '\x01')
+	xReBytes := make([]byte, 0, 32+8+1)
+	xReBytes = append(xReBytes, messageHash[:]...)
+	xReBytes = append(xReBytes, domain[:]...)
+	xReBytes = append(xReBytes, 0x01)
 
-	xImBytes := append(messageHash[:], domainBytes[:]...)
-	xImBytes = append(xImBytes, '\x02')
+	xImBytes := make([]byte, 0, 32+8+1)
+	xImBytes = append(xImBytes, messageHash[:]...)
+	xImBytes = append(xImBytes, domain[:]...)
+	xImBytes = append(xImBytes, 0x02)
 
 	xRe := new(big.Int)
 	xRe.SetBytes(hashFunc(xReBytes))

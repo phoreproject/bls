@@ -50,8 +50,8 @@ func SignVerifyWithDomain(loopCount int) error {
 		pub := g1pubs.PrivToPub(priv)
 		var hashedMsg [32]byte
 		copy(hashedMsg[:], []byte(fmt.Sprintf("Hello world! 16 characters %d", i)))
-		sig := g1pubs.SignWithDomain(hashedMsg, priv, 1)
-		if !g1pubs.VerifyWithDomain(hashedMsg, pub, sig, 1) {
+		sig := g1pubs.SignWithDomain(hashedMsg, priv, [8]byte{1})
+		if !g1pubs.VerifyWithDomain(hashedMsg, pub, sig, [8]byte{1}) {
 			return errors.New("sig did not verify")
 		}
 	}
@@ -81,7 +81,7 @@ func SignVerifyAggregateCommonMessage(loopCount int) error {
 
 func SignVerifyAggregateCommonMessageWithDomain(loopCount int) error {
 	var hashedMessage [32]byte
-	domain := 100
+	domain := [8]byte{100}
 	r := NewXORShift(2)
 	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
 	sigs := make([]*g1pubs.Signature, 0, 1000)
@@ -90,12 +90,12 @@ func SignVerifyAggregateCommonMessageWithDomain(loopCount int) error {
 	for i := 0; i < loopCount; i++ {
 		priv, _ := g1pubs.RandKey(r)
 		pub := g1pubs.PrivToPub(priv)
-		sig := g1pubs.SignWithDomain(hashedMessage, priv, uint64(domain))
+		sig := g1pubs.SignWithDomain(hashedMessage, priv, domain)
 		pubkeys = append(pubkeys, pub)
 		sigs = append(sigs, sig)
 		if i < 10 || i > (loopCount-5) {
 			newSig := g1pubs.AggregateSignatures(sigs)
-			if !newSig.VerifyAggregateCommonWithDomain(pubkeys, hashedMessage, uint64(domain)) {
+			if !newSig.VerifyAggregateCommonWithDomain(pubkeys, hashedMessage, domain) {
 				return fmt.Errorf("sig did not verify for loop %d", i)
 			}
 		}
