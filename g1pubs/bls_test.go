@@ -151,6 +151,32 @@ func AggregateSignatures(loopCount int) error {
 	return nil
 }
 
+func AggregateSignaturesWithDomain(loopCount int) error {
+	var msg [32]byte
+	r := NewXORShift(4)
+	pubkeys := make([]*g1pubs.PublicKey, 0, 1000)
+	msgs := make([][32]byte, 0, 1000)
+	sigs := make([]*g1pubs.Signature, 0, 1000)
+	domain := [8]byte{0xFF}
+	for i := 0; i < loopCount; i++ {
+		priv, _ := g1pubs.RandKey(r)
+		pub := g1pubs.PrivToPub(priv)
+		copy(msg[:], []byte(fmt.Sprintf(">16 character identical message %d", i)))
+		sig := g1pubs.SignWithDomain(msg, priv, domain)
+		pubkeys = append(pubkeys, pub)
+		msgs = append(msgs, msg)
+		sigs = append(sigs, sig)
+
+		if i < 10 || i > (loopCount-5) {
+			newSig := g1pubs.AggregateSignatures(sigs)
+			if !newSig.VerifyAggregateWithDomain(pubkeys, msgs, domain) {
+				return errors.New("sig did not verify")
+			}
+		}
+	}
+	return nil
+}
+
 func TestSignVerify(t *testing.T) {
 	err := SignVerify(10)
 	if err != nil {
@@ -188,6 +214,13 @@ func TestSignVerifyAggregateCommonMissingSig(t *testing.T) {
 
 func TestSignAggregateSigs(t *testing.T) {
 	err := AggregateSignatures(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSignAggregateSigsWithDomain(t *testing.T) {
+	err := AggregateSignaturesWithDomain(10)
 	if err != nil {
 		t.Fatal(err)
 	}

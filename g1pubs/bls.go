@@ -289,3 +289,17 @@ func (s *Signature) VerifyAggregateCommonWithDomain(pubKeys []*PublicKey, msg [3
 	aggPub := AggregatePublicKeys(pubKeys)
 	return VerifyWithDomain(msg, aggPub, s, domain)
 }
+
+// VerifyAggregateWithDomain verifies each public key against each message and its domain.
+func (s *Signature) VerifyAggregateWithDomain(pubKeys []*PublicKey, msgs [][32]byte, domain [8]byte) bool {
+	if len(pubKeys) != len(msgs) {
+		return false
+	}
+	lhs := bls.Pairing(bls.G1ProjectiveOne, s.s)
+	rhs := bls.FQ12One.Copy()
+	for i := range pubKeys {
+		h := bls.HashG2WithDomain(msgs[i], domain)
+		rhs.MulAssign(bls.Pairing(pubKeys[i].p, h.ToAffine().ToProjective()))
+	}
+	return lhs.Equals(rhs)
+}
