@@ -134,3 +134,14 @@ func Pairing(p *G1Projective, q *G2Projective) *FQ12 {
 		{p.ToAffine(), G2AffineToPrepared(q.ToAffine())},
 	}))
 }
+
+// CompareTwoPairings checks e(P1, Q1) == e(P2, Q2)
+// <=> FE(ML(P1, Q1)ML(-P2, Q2)) == 1
+func CompareTwoPairings(P1 *G1Projective, Q1 *G2Projective, P2 *G1Projective, Q2 *G2Projective) bool {
+	negP2 := P2.Copy()
+	negP2.NegAssign()
+	return FinalExponentiation(
+		MillerLoop(
+			[]MillerLoopItem{{P1.ToAffine(), G2AffineToPrepared(Q1.ToAffine())}, {negP2.ToAffine(), G2AffineToPrepared(Q2.ToAffine())}})).Equals(FQ12One)
+
+}

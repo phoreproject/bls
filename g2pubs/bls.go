@@ -148,9 +148,7 @@ func KeyFromFQRepr(i *bls.FRRepr) *SecretKey {
 // Verify verifies a signature against a message and a public key.
 func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
 	h := bls.HashG1(m)
-	lhs := bls.Pairing(sig.s, bls.G2ProjectiveOne)
-	rhs := bls.Pairing(h.ToProjective(), pub.p)
-	return lhs.Equals(rhs)
+	return bls.CompareTwoPairings(sig.s, bls.G2ProjectiveOne, h.ToProjective(), pub.p)
 }
 
 // AggregateSignatures adds up all of the signatures.
