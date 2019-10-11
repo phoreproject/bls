@@ -154,17 +154,13 @@ func KeyFromFQRepr(i *bls.FRRepr) *SecretKey {
 // Verify verifies a signature against a message and a public key.
 func Verify(m []byte, pub *PublicKey, sig *Signature) bool {
 	h := bls.HashG2(m)
-	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
-	rhs := bls.Pairing(pub.p, h.ToProjective())
-	return lhs.Equals(rhs)
+	return bls.CompareTwoPairings(bls.G1ProjectiveOne, sig.s, pub.p, h.ToProjective())
 }
 
 // VerifyWithDomain verifies a signature against a message and a public key and a domain
 func VerifyWithDomain(m [32]byte, pub *PublicKey, sig *Signature, domain [8]byte) bool {
 	h := bls.HashG2WithDomain(m, domain)
-	lhs := bls.Pairing(bls.G1ProjectiveOne, sig.s)
-	rhs := bls.Pairing(pub.p, h.ToAffine().ToProjective())
-	return lhs.Equals(rhs)
+	return bls.CompareTwoPairings(bls.G1ProjectiveOne, sig.s, pub.p, h.ToAffine().ToProjective())
 }
 
 // AggregateSignatures adds up all of the signatures.

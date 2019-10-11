@@ -255,6 +255,11 @@ type G1Projective struct {
 	z FQ
 }
 
+// NegAssign negates the point.
+func (g *G1Projective) NegAssign() {
+	g.y.NegAssign()
+}
+
 // NewG1Projective creates a new G1Projective point.
 func NewG1Projective(x FQ, y FQ, z FQ) *G1Projective {
 	return &G1Projective{x, y, z}
