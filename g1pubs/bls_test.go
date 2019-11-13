@@ -1,6 +1,7 @@
 package g1pubs_test
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"testing"
@@ -415,5 +416,18 @@ func TestDeriveSecretKey(t *testing.T) {
 
 	if !expectedFRElement.Equals(k.GetFRElement()) {
 		t.Fatal("expected secret key to match")
+	}
+}
+
+func TestPubkeyDeserializeInvalid(t *testing.T) {
+	unexpectedPub := "b5a44e98d450f266567be0d82e60d965aa8703f73a9a71aa03b98215444f781d00000000000000000000000000000000"
+	var pubkey [48]byte
+	if _, err := hex.Decode(pubkey[:], []byte(unexpectedPub)); err != nil {
+		t.Fatal(err)
+	}
+	// panics unexpectedly! no error
+	_, err := g1pubs.DeserializePublicKey(pubkey)
+	if err == nil {
+		t.Fatal("expected deserialization of invalid pubkey to fail")
 	}
 }

@@ -108,7 +108,7 @@ func (g G1Affine) IsOnCurve() bool {
 // an x-coordinate. The point is not guaranteed to be in the subgroup.
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
-func GetG1PointFromX(x FQ, greatest bool) *G1Affine {
+func GetG1PointFromX(x FQ, greatest bool) (*G1Affine, error) {
 	x3b := x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(x)
@@ -117,7 +117,7 @@ func GetG1PointFromX(x FQ, greatest bool) *G1Affine {
 	y, success := x3b.Sqrt()
 
 	if !success {
-		return nil
+		return nil, errors.New("point not on curve")
 	}
 
 	negY := y.Copy()
@@ -127,7 +127,7 @@ func GetG1PointFromX(x FQ, greatest bool) *G1Affine {
 	if (y.Cmp(negY) < 0) != greatest {
 		yVal = y
 	}
-	return NewG1Affine(x, yVal)
+	return NewG1Affine(x, yVal), nil
 }
 
 var frChar, _ = FRReprFromString("52435875175126190479447740508185965837690552500527637822603658699938581184513", 10)
@@ -200,7 +200,7 @@ func DecompressG1Unchecked(b [48]byte) (*G1Affine, error) {
 	var copyBytes [48]byte
 	copy(copyBytes[:], b[:])
 
-	if len(copyBytes) == 0 || copyBytes[0]&(1<<7) == 0 {
+	if copyBytes[0]&(1<<7) == 0 {
 		return nil, errors.New("unexpected compression mode")
 	}
 
@@ -223,7 +223,7 @@ func DecompressG1Unchecked(b [48]byte) (*G1Affine, error) {
 	x := FQReprFromBytes(copyBytes)
 	xFQ := FQReprToFQ(x)
 
-	return GetG1PointFromX(xFQ, greatest), nil
+	return GetG1PointFromX(xFQ, greatest)
 }
 
 // CompressG1 compresses a G1 point into an int.
@@ -600,8 +600,8 @@ func RandG1(r io.Reader) (*G1Projective, error) {
 		if err != nil {
 			return nil, err
 		}
-		p := GetG1PointFromX(f, greatest)
-		if p == nil {
+		p, err := GetG1PointFromX(f, greatest)
+		if err != nil {
 			continue
 		}
 		p1 := p.ScaleByCofactor()

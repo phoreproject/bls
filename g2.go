@@ -146,7 +146,7 @@ func (g G2Affine) Equals(other *G2Affine) bool {
 // an x-coordinate. The point is not guaranteed to be in the subgroup.
 // If and only if `greatest` is set will the lexicographically
 // largest y-coordinate be selected.
-func GetG2PointFromX(x FQ2, greatest bool) *G2Affine {
+func GetG2PointFromX(x FQ2, greatest bool) (*G2Affine, error) {
 	x3b := x.Copy()
 	x3b.SquareAssign()
 	x3b.MulAssign(x)
@@ -155,7 +155,7 @@ func GetG2PointFromX(x FQ2, greatest bool) *G2Affine {
 	y, success := x3b.Sqrt()
 
 	if !success {
-		return nil
+		return nil, errors.New("point not on curve")
 	}
 
 	negY := y.Copy()
@@ -165,7 +165,7 @@ func GetG2PointFromX(x FQ2, greatest bool) *G2Affine {
 	if (y.Cmp(negY) < 0) != greatest {
 		yVal = y
 	}
-	return NewG2Affine(x, yVal)
+	return NewG2Affine(x, yVal), nil
 }
 
 // SerializeBytes returns the serialized bytes for the points represented.
@@ -261,7 +261,7 @@ func DecompressG2Unchecked(c [96]byte) (*G2Affine, error) {
 
 	x := NewFQ2(xC0FQ, xC1FQ)
 
-	return GetG2PointFromX(x, greatest), nil
+	return GetG2PointFromX(x, greatest)
 }
 
 // CompressG2 compresses a G2 point into an int.
@@ -816,8 +816,8 @@ func RandG2(r io.Reader) (*G2Projective, error) {
 		if err != nil {
 			return nil, err
 		}
-		p := GetG2PointFromX(f, greatest)
-		if p == nil {
+		p, err := GetG2PointFromX(f, greatest)
+		if err != nil {
 			continue
 		}
 		p1 := p.ScaleByCofactor()
@@ -861,14 +861,14 @@ func SWEncodeG2(t FQ2) *G2Affine {
 	x1.MulAssign(t)
 	x1.NegAssign()
 	x1.AddAssign(swencSqrtNegThreeMinusOneDivTwoFQ2)
-	if p := GetG2PointFromX(x1, parity); p != nil {
+	if p, err := GetG2PointFromX(x1, parity); err == nil {
 		return p
 	}
 
 	x2 := x1.Copy()
 	x2.NegAssign()
 	x2.SubAssign(FQ2One)
-	if p := GetG2PointFromX(x2, parity); p != nil {
+	if p, err := GetG2PointFromX(x2, parity); err == nil {
 		return p
 	}
 
@@ -876,7 +876,8 @@ func SWEncodeG2(t FQ2) *G2Affine {
 	x3.SquareAssign()
 	x3.InverseAssign()
 	x3.AddAssign(FQ2One)
-	return GetG2PointFromX(x3, parity)
+	point, _ := GetG2PointFromX(x3, parity)
+	return point
 }
 
 var ell2pA = NewFQ2(
