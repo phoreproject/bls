@@ -44,9 +44,19 @@ func (s *Signature) Copy() *Signature {
 	return &Signature{s.s.Copy()}
 }
 
+// GetPoint gets the G1 point associated with the signature.
+func (s *Signature) GetPoint() *bls.G1Projective {
+	return s.s.Copy()
+}
+
 // PublicKey is a public key.
 type PublicKey struct {
 	p *bls.G2Projective
+}
+
+// GetPoint gets the G2 point associated with the public key.
+func (p *PublicKey) GetPoint() *bls.G2Projective {
+	return p.p.Copy()
 }
 
 func (p PublicKey) String() string {

@@ -345,3 +345,31 @@ func TestPubkeyDeserializeInvalid(t *testing.T) {
 		t.Fatal("expected deserialization of invalid pubkey to fail")
 	}
 }
+
+func TestConvertPubkeyToFromPoint(t *testing.T) {
+	r := NewXORShift(3)
+	priv, _ := g2pubs.RandKey(r)
+	pub := g2pubs.PrivToPub(priv)
+
+	pubPoint := pub.GetPoint()
+	newPub := g2pubs.NewPublicKeyFromG2(pubPoint.ToAffine())
+
+	if !newPub.Equals(*pub) {
+		t.Fatal("expected pub -> point -> pub to return the same public key.")
+	}
+}
+
+func TestConvertSignatureToFromPoint(t *testing.T) {
+	r := NewXORShift(3)
+	priv, _ := g2pubs.RandKey(r)
+	pub := g2pubs.PrivToPub(priv)
+	msg := []byte("hello!")
+	sig := g2pubs.Sign(msg, priv)
+
+	sigPoint := sig.GetPoint()
+	newSig := g2pubs.NewSignatureFromG1(sigPoint.ToAffine())
+
+	if !g2pubs.Verify(msg, pub, newSig) {
+		t.Fatal("expected sig -> point -> sig to return the same public key.")
+	}
+}

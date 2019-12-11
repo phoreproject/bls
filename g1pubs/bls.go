@@ -23,6 +23,11 @@ func (s *Signature) String() string {
 	return s.s.String()
 }
 
+// GetPoint gets the G2 point associated with the signature.
+func (s *Signature) GetPoint() *bls.G2Projective {
+	return s.s.Copy()
+}
+
 // NewSignatureFromG2 creates a new signature from a G2
 // element.
 func NewSignatureFromG2(g2 *bls.G2Affine) *Signature {
@@ -51,6 +56,11 @@ type PublicKey struct {
 
 func (p PublicKey) String() string {
 	return p.p.String()
+}
+
+// GetPoint gets the G1 point associated with the public key.
+func (p *PublicKey) GetPoint() *bls.G1Projective {
+	return p.p.Copy()
 }
 
 // Serialize serializes a public key to bytes.
