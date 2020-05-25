@@ -134,22 +134,22 @@ func SubNoBorrow(a, b [6]uint64) (out [6]uint64) {
 }
 
 func AddWithCarry(a, b, carry uint64) (uint64, uint64) {
-	out, outCarry := bits.Add(uint(a), uint(b), 0)
-	out, outCarry2 := bits.Add(uint(out), uint(carry), 0)
-	return uint64(out), uint64(outCarry + outCarry2)
+	out, outCarry := bits.Add64(a, b, 0)
+	out, outCarry2 := bits.Add64(out, carry, 0)
+	return out, outCarry + outCarry2
 }
 
 var oneLsh64 = new(big.Int).Add(new(big.Int).SetUint64(0xffffffffffffffff), big.NewInt(1))
 
 func SubWithBorrow(a, b, borrow uint64) (uint64, uint64) {
-	o, c := bits.Sub(uint(a), uint(b), uint(borrow))
-	return uint64(o), uint64(c)
+	o, c := bits.Sub64(a, b, borrow)
+	return o, c
 }
 
 func MACWithCarry(a, b, c, carry uint64) (out uint64, newCarry uint64) {
-	carryOut, bc := bits.Mul(uint(b), uint(c))
-	abc, carryOut2 := bits.Add(uint(bc), uint(a), 0)
-	abcc, carryOut3 := bits.Add(uint(abc), uint(carry), 0)
+	carryOut, bc := bits.Mul64(b, c)
+	abc, carryOut2 := bits.Add64(bc, a, 0)
+	abcc, carryOut3 := bits.Add64(abc, carry, 0)
 
-	return uint64(abcc), uint64(carryOut + carryOut2 + carryOut3)
+	return abcc, carryOut + carryOut2 + carryOut3
 }
