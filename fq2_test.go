@@ -2,6 +2,7 @@ package bls_test
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"testing"
 
 	"github.com/phoreproject/bls"
@@ -598,5 +599,78 @@ func BenchmarkFQ2InverseAssign(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		inData[count].f1.InverseAssign()
 		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
+func decodeHexOrDie(hexStr string) []byte {
+	out, err := hex.DecodeString(hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func hexToFQReprFixed(hexStr string) [48]byte {
+	var out [48]byte
+	copy(out[:], decodeHexOrDie(hexStr))
+	return out
+}
+
+func TestFQ2Hash(t *testing.T) {
+	// tests from IETF spec
+	// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#appendix-K.1
+	tests := []struct {
+		msg        []byte
+		dst        []byte
+		outElement bls.FQ2
+	}{
+		{
+			msg: []byte{},
+			dst: []byte("QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.NewFQ2(
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("07355d25caf6e7f2f0cb2812ca0e513bd026ed09dda65b177500fa31714e09ea0ded3a078b526bed3307f804d4b93b04"))),
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("02829ce3c021339ccb5caf3e187f6370e1e2a311dec9b75363117063ab2015603ff52c3d3b98f19c2f65575e99e8b78c"))),
+			),
+		},
+		{
+			msg: []byte("abc"),
+			dst: []byte("QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.NewFQ2(
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("138879a9559e24cecee8697b8b4ad32cced053138ab913b99872772dc753a2967ed50aabc907937aefb2439ba06cc50c"))),
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("0a1ae7999ea9bab1dcc9ef8887a6cb6e8f1e22566015428d220b7eec90ffa70ad1f624018a9ad11e78d588bd3617f9f2"))),
+			),
+		},
+		{
+			msg: []byte("abcdef0123456789"),
+			dst: []byte("QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.NewFQ2(
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("18c16fe362b7dbdfa102e42bdfd3e2f4e6191d479437a59db4eb716986bf08ee1f42634db66bde97d6c16bbfd342b3b8"))),
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("0e37812ce1b146d998d5f92bdd5ada2a31bfd63dfe18311aa91637b5f279dd045763166aa1615e46a50d8d8f475f184e"))),
+			),
+		},
+		{
+			msg: []byte("q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"),
+			dst: []byte("QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.NewFQ2(
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("08d4a0997b9d52fecf99427abb721f0fa779479963315fe21c6445250de7183e3f63bfdf86570da8929489e421d4ee95"))),
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("16cb4ccad91ec95aab070f22043916cd6a59c4ca94097f7f510043d48515526dc8eaaea27e586f09151ae613688d5a89"))),
+			),
+		},
+		{
+			msg: []byte("a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			dst: []byte("QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.NewFQ2(
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("03f80ce4ff0ca2f576d797a3660e3f65b274285c054feccc3215c879e2c0589d376e83ede13f93c32f05da0f68fd6a10"))),
+				bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("006488a837c5413746d868d1efb7232724da10eca410b07d8b505b9363bdccf0a1fc0029bad07d65b15ccfe6dd25e20d"))),
+			),
+		},
+	}
+
+	for _, test := range tests {
+		output := bls.HashFQ2(test.msg, test.dst, 1)[0]
+
+		if !output.Equals(test.outElement) {
+			t.Fatalf("expected HashFQ2(%s, %s, 1) output of %s, but got %s", hex.EncodeToString(test.msg), hex.EncodeToString(test.dst), test.outElement.String(), output.String())
+		}
 	}
 }

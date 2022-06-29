@@ -2,6 +2,7 @@ package bls_test
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"math/big"
 	"testing"
 
@@ -397,5 +398,29 @@ func BenchmarkFQSqrt(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		inData[count].f1.Sqrt()
 		count = (count + 1) % g1MulAssignSamples
+	}
+}
+
+func TestFQHash(t *testing.T) {
+	// tests from IETF spec
+	// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#appendix-K.1
+	tests := []struct {
+		msg        []byte
+		dst        []byte
+		outElement bls.FQ
+	}{
+		{
+			msg:        []byte{},
+			dst:        []byte("QUUX-V01-CS02-with-BLS12381G1_XMD:SHA-256_SSWU_NU_"),
+			outElement: bls.FQReprToFQ(bls.FQReprFromBytes(hexToFQReprFixed("156c8a6a2c184569d69a76be144b5cdc5141d2d2ca4fe341f011e25e3969c55ad9e9b9ce2eb833c81a908e5fa4ac5f03"))),
+		},
+	}
+
+	for _, test := range tests {
+		output := bls.HashFQ(test.msg, test.dst, 1)[0]
+
+		if !output.Equals(test.outElement) {
+			t.Fatalf("expected HashFQ(%s, %s, 1) output of %s, but got %s", hex.EncodeToString(test.msg), hex.EncodeToString(test.dst), test.outElement.String(), output.String())
+		}
 	}
 }

@@ -3,8 +3,8 @@ package bls
 import (
 	"crypto/rand"
 	"fmt"
-	"hash"
 	"io"
+	"math/big"
 )
 
 // FQ is an element in a field.
@@ -24,6 +24,8 @@ var FQOne = FQReprToFQ(bigOne)
 
 // QFieldModulus is the modulus of the field.
 var QFieldModulus, _ = FQReprFromString("4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", 10)
+
+var QFieldModulusBig = QFieldModulus.ToBig()
 
 // FQR2 is R^2 % Q.
 var FQR2, _ = FQReprFromString("2708263910654730174793787626328176511836455197166317677006154293982164122222515399004018013397331347120527951271750", 10)
@@ -296,12 +298,6 @@ func (f FQ) MulBytes(b []byte) FQ {
 	return res
 }
 
-// HashFQ calculates a new FQ2 value based on a hash.
-func HashFQ(hasher hash.Hash) FQ {
-	digest := hasher.Sum(nil)
-	return FQOne.MulBytes(digest)
-}
-
 var qMinus1Over2 = FQRepr{0xdcff7fffffffd555, 0xf55ffff58a9ffff, 0xb39869507b587b12, 0xb23ba5c279c2895f, 0x258dd3db21a5d66b, 0xd0088f51cbff34d}
 
 // LegendreSymbol is the legendre symbol of an element.
@@ -346,4 +342,33 @@ func RandFQ(reader io.Reader) (FQ, error) {
 	b, _ := FQReprFromBigInt(r)
 	f := FQReprToFQ(b)
 	return f, nil
+}
+
+// HashFQ calculates a new FQ value based on a hash.
+func HashFQ(msg []byte, dst []byte, count int) []FQ {
+	// implements hash_to_field
+	// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#section-5.2
+	// p = QFieldModulus
+	// m = 1
+	// L = 64
+
+	lenInBytes := count * 64
+	uniformBytes := expandMessageXmd(msg, dst, uint16(lenInBytes))
+
+	fieldElements := make([]FQ, count)
+
+	for i := 0; i < count; i++ {
+		elmOffset := 64 * i
+		tv := uniformBytes[elmOffset : elmOffset+64]
+
+		fqElemInt := new(big.Int)
+		fqElemInt.SetBytes(tv)
+		fqElemInt.Mod(fqElemInt, QFieldModulusBig)
+
+		fqRepr := fqReprFromBigIntUnchecked(fqElemInt)
+		fieldElements[i] = FQReprToFQ(fqRepr)
+
+	}
+
+	return fieldElements
 }

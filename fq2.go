@@ -2,7 +2,6 @@ package bls
 
 import (
 	"fmt"
-	"hash"
 	"io"
 	"math/big"
 )
@@ -278,8 +277,35 @@ func (f *FQ2) DivAssign(other FQ2) {
 }
 
 // HashFQ2 calculates a new FQ2 value based on a hash.
-func HashFQ2(hasher hash.Hash) FQ2 {
-	digest := hasher.Sum(nil)
-	newB := new(big.Int).SetBytes(digest)
-	return FQ2One.MulBits(newB)
+func HashFQ2(msg []byte, dst []byte, count int) []FQ2 {
+	// implements hash_to_field
+	// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#section-5.2
+	// p = QFieldModulus
+	// m = 2
+	// L = 64
+
+	lenInBytes := count * 2 * 64
+	uniformBytes := expandMessageXmd(msg, dst, uint16(lenInBytes))
+
+	fieldElements := make([]FQ2, count)
+
+	for i := 0; i < count; i++ {
+		var fqs [2]FQ
+
+		for j := 0; j < 2; j++ {
+			elmOffset := 64 * (j + i*2)
+			tv := uniformBytes[elmOffset : elmOffset+64]
+
+			fqElemInt := new(big.Int)
+			fqElemInt.SetBytes(tv)
+			fqElemInt.Mod(fqElemInt, QFieldModulusBig)
+
+			fqRepr := fqReprFromBigIntUnchecked(fqElemInt)
+			fqs[j] = FQReprToFQ(fqRepr)
+		}
+
+		fieldElements[i] = NewFQ2(fqs[0], fqs[1])
+	}
+
+	return fieldElements
 }

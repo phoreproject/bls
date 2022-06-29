@@ -128,6 +128,8 @@ func decodeHexOrDie(hexStr string) []byte {
 }
 
 func TestExpandMessage(t *testing.T) {
+	// tests from IETF spec
+	// https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#appendix-K.1
 	tests := []struct {
 		msg        []byte
 		dst        []byte
