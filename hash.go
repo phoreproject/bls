@@ -3,6 +3,8 @@ package bls
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"math/big"
 )
 
@@ -408,4 +410,50 @@ func HashG2(msg []byte) *G2Affine {
 	t2 := hp2(cipherSuiteAndMessage, 1)
 	h := optimizedSWUMap2(&t1, &t2)
 	return h
+}
+
+func xorBytes(b0 []byte, b1 []byte) []byte {
+	xoredBytes := make([]byte, len(b0))
+	for i := range b0 {
+		xoredBytes[i] = b0[i] ^ b1[i]
+	}
+
+	return xoredBytes
+}
+
+func expandMessageXmd(msg []byte, dst []byte, lenInBytes uint16) []byte {
+	ell := (lenInBytes + 31) / 32
+
+	if ell > 255 || lenInBytes > 65535 || len(dst) > 255 {
+		panic("Invalid expandMessageXmd parameters")
+	}
+
+	dstLen := uint8(len(dst))
+
+	dstPrime := append(dst, dstLen)
+
+	zPad := make([]byte, 64)
+
+	lenInBytesStr := make([]byte, 2)
+	binary.BigEndian.PutUint16(lenInBytesStr, lenInBytes)
+
+	msgPrime := appendAll(zPad, msg, lenInBytesStr, []byte{0}, dstPrime)
+
+	fmt.Printf("msg prime: %s\n", hex.EncodeToString(msgPrime))
+
+	uniformBytes := []byte{}
+
+	firstBlock := hashFunc(msgPrime)
+
+	uniformBytes = append(uniformBytes, firstBlock...)
+	uniformBytes = append(uniformBytes, hashFunc(appendAll(uniformBytes[:32], []byte{1}, dstPrime))...)
+
+	for i := uint16(2); i <= ell; i++ {
+		lastBlock := uniformBytes[32*(i-1) : 32*i]
+		xorLastBlock := xorBytes(firstBlock, lastBlock)
+
+		uniformBytes = append(uniformBytes, hashFunc(appendAll(xorLastBlock, []byte{uint8(i)}, dstPrime))...)
+	}
+
+	return uniformBytes[32 : lenInBytes+32]
 }
